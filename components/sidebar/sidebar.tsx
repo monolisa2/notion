@@ -242,6 +242,7 @@ export function Sidebar({
           draggable={renaming !== node.id}
           onDragStart={(e) => {
             e.dataTransfer.effectAllowed = 'move';
+            e.dataTransfer.setData('text/plain', node.id);
             dragIdRef.current = node.id;
             setDragId(node.id);
           }}

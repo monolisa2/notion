@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
@@ -11,6 +11,7 @@ import { unitLabel } from '@/lib/org';
 import { PRIORITY_COLOR, RISK_COLOR, STATUS_COLOR, statusClass } from '@/lib/status-style';
 import type { TaskRow } from '@/lib/tasks';
 import { Avatar } from '@/components/avatar';
+import { BoardDragGhost, useBoardDrag } from '@/components/board-dnd';
 import type { Person } from '@/hooks/use-people';
 
 type View = 'table' | 'kanban';
@@ -303,34 +304,36 @@ function Kanban({
   onStatus: (id: string, s: PageStatus) => void;
   onAssignee: (id: string, a: string | null) => void;
 }) {
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [over, setOver] = useState<string | null>(null);
+  const { drag, over, registerColumn, startDrag, suppressClickCapture } = useBoardDrag((id, key) => {
+    const task = rows.find((t) => t.id === id);
+    if (groupBy === 'status') {
+      if (task?.status !== key) onStatus(id, key as PageStatus);
+    } else if (groupBy === 'assignee') {
+      if ((task?.assignee_id ?? '') !== key) onAssignee(id, key || null);
+    }
+  });
+  const draggable = groupBy !== 'unit';
 
-  // 열 정의: key, 라벨(노드), 필터
-  const columns: { key: string; head: React.ReactNode; match: (t: TaskRow) => boolean; droppable: boolean }[] =
+  const columns: { key: string; head: React.ReactNode; match: (t: TaskRow) => boolean }[] =
     groupBy === 'status'
       ? PAGE_STATUSES.map((s) => ({
           key: s,
           head: <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${STATUS_COLOR[s]}`}>{s}</span>,
           match: (t) => t.status === s,
-          droppable: true,
         }))
       : groupBy === 'assignee'
         ? [
-            { key: '', head: <span className="text-[11px] font-medium text-zinc-500">미지정</span>, match: (t: TaskRow) => !t.assignee_id, droppable: true },
-            ...people
-              .filter((p) => rows.some((t) => t.assignee_id === p.id) || true)
-              .map((p) => ({
-                key: p.id,
-                head: (
-                  <span className="flex items-center gap-1.5 text-[11px] font-medium">
-                    <Avatar name={p.name} src={p.avatar_url} size={16} />
-                    {p.name}
-                  </span>
-                ),
-                match: (t: TaskRow) => t.assignee_id === p.id,
-                droppable: true,
-              })),
+            { key: '', head: <span className="text-[11px] font-medium text-zinc-500">미지정</span>, match: (t: TaskRow) => !t.assignee_id },
+            ...people.map((p) => ({
+              key: p.id,
+              head: (
+                <span className="flex items-center gap-1.5 text-[11px] font-medium">
+                  <Avatar name={p.name} src={p.avatar_url} size={16} />
+                  {p.name}
+                </span>
+              ),
+              match: (t: TaskRow) => t.assignee_id === p.id,
+            })),
           ]
         : units
             .filter((u) => u.id)
@@ -339,21 +342,11 @@ function Kanban({
               key: u.id!,
               head: <span className="text-[11px] font-medium">{u.name}</span>,
               match: (t: TaskRow) => t.unit_id === u.id,
-              droppable: false,
             }));
 
-  // 담당자별일 때 업무가 하나도 없는 사람 열은 접어서 뒤로
   const visibleCols = groupBy === 'assignee'
     ? [...columns.filter((c) => rows.some(c.match) || c.key === ''), ...columns.filter((c) => !rows.some(c.match) && c.key !== '')]
     : columns;
-
-  const drop = (colKey: string) => {
-    if (!dragId) return;
-    if (groupBy === 'status') onStatus(dragId, colKey as PageStatus);
-    else if (groupBy === 'assignee') onAssignee(dragId, colKey || null);
-    setDragId(null);
-    setOver(null);
-  };
 
   return (
     <div className="flex gap-3 overflow-x-auto pb-4">
@@ -363,18 +356,9 @@ function Kanban({
         return (
           <div
             key={c.key || 'none'}
-            onDragOver={(e) => {
-              if (!dragId || !c.droppable) return;
-              e.preventDefault();
-              if (over !== c.key) setOver(c.key);
-            }}
-            onDragLeave={() => over === c.key && setOver(null)}
-            onDrop={(e) => {
-              e.preventDefault();
-              if (c.droppable) drop(c.key);
-            }}
-            className={`flex shrink-0 flex-col rounded-xl border p-2 ${empty && groupBy === 'assignee' ? 'w-40 opacity-70' : 'w-64'} ${
-              over === c.key ? 'border-blue-400 bg-blue-50/40' : 'border-zinc-200 bg-zinc-50/60'
+            ref={draggable ? registerColumn(c.key) : undefined}
+            className={`flex shrink-0 flex-col rounded-xl border p-2 transition-colors ${empty && groupBy === 'assignee' ? 'w-40 opacity-70' : 'w-64'} ${
+              over === c.key ? 'border-blue-400 bg-blue-50/60' : 'border-zinc-200 bg-zinc-50/60'
             }`}
           >
             <div className="flex items-center gap-2 px-1 py-1">
@@ -385,15 +369,12 @@ function Kanban({
               {col.map((t) => (
                 <li
                   key={t.id}
-                  draggable={groupBy !== 'unit'}
-                  onDragStart={() => setDragId(t.id)}
-                  onDragEnd={() => {
-                    setDragId(null);
-                    setOver(null);
-                  }}
-                  className={`rounded-lg border border-zinc-200 bg-white p-2.5 text-sm shadow-sm ${dragId === t.id ? 'opacity-40' : ''}`}
+                  onPointerDown={draggable ? startDrag(t.id, t.title) : undefined}
+                  className={`select-none rounded-lg border border-zinc-200 bg-white p-2.5 text-sm shadow-sm ${
+                    draggable ? 'cursor-grab' : ''
+                  } ${drag?.id === t.id ? 'opacity-30' : ''}`}
                 >
-                  <Link href={`/p/${t.id}`} className="block hover:underline">
+                  <Link href={`/p/${t.id}`} draggable={false} onClickCapture={suppressClickCapture} className="block hover:underline">
                     {t.icon ?? '☑'} {t.title}
                   </Link>
                   <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
@@ -420,6 +401,7 @@ function Kanban({
         );
       })}
       {groupBy === 'unit' && <p className="self-start pt-2 text-[11px] text-zinc-400">팀은 페이지가 속한 공간이라 드래그로 바꿀 수 없습니다.</p>}
+      {drag && <BoardDragGhost drag={drag} />}
     </div>
   );
 }

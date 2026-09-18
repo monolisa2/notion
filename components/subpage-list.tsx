@@ -7,6 +7,7 @@ import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
 import { PAGE_STATUSES, type PageStatus } from '@/lib/types';
+import { BoardDragGhost, useBoardDrag } from '@/components/board-dnd';
 import { useTree } from '@/components/tree-context';
 import { useNewPage } from '@/components/new-page-provider';
 import { statusClass } from '@/lib/status-style';
@@ -19,8 +20,6 @@ export function SubpageList({ page }: { page: PageRow }) {
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
   const [view, setView] = useState<'list' | 'board'>('list');
-  const [dragId, setDragId] = useState<string | null>(null);
-  const [over, setOver] = useState<string | null>(null);
   const children = useMemo(
     () =>
       rows
@@ -70,53 +69,7 @@ export function SubpageList({ page }: { page: PageRow }) {
         </button>
       </div>
       {view === 'board' && tasks.length > 0 && (
-        <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
-          {PAGE_STATUSES.map((st) => {
-            const col = tasks.filter((t) => t.status === st);
-            return (
-              <div
-                key={st}
-                onDragOver={(e) => {
-                  if (!dragId) return;
-                  e.preventDefault();
-                  if (over !== st) setOver(st);
-                }}
-                onDragLeave={() => over === st && setOver(null)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  if (dragId) void moveStatus(dragId, st);
-                  setDragId(null);
-                  setOver(null);
-                }}
-                className={`w-44 shrink-0 rounded-lg border p-1.5 ${over === st ? 'border-blue-400 bg-blue-50/40' : 'border-zinc-200 bg-zinc-50/60'}`}
-              >
-                <div className="flex items-center gap-1.5 px-1 py-0.5">
-                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${statusClass(st)}`}>{st}</span>
-                  <span className="text-[10px] text-zinc-400">{col.length}</span>
-                </div>
-                <ul className="mt-1 space-y-1.5">
-                  {col.map((t) => (
-                    <li
-                      key={t.id}
-                      draggable
-                      onDragStart={() => setDragId(t.id!)}
-                      onDragEnd={() => {
-                        setDragId(null);
-                        setOver(null);
-                      }}
-                      className={`rounded-md border border-zinc-200 bg-white p-2 text-xs shadow-sm ${dragId === t.id ? 'opacity-40' : ''}`}
-                    >
-                      <Link href={`/p/${t.id}`} className="block hover:underline">
-                        {t.icon ?? '☑'} {t.title}
-                      </Link>
-                      {t.due_date && <div className="mt-1 text-[10px] text-zinc-400">기한 {t.due_date}</div>}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            );
-          })}
-        </div>
+        <SubpageBoard tasks={tasks} onStatus={moveStatus} />
       )}
 
       {view === 'list' && children.length > 0 && (
@@ -141,5 +94,59 @@ export function SubpageList({ page }: { page: PageRow }) {
         </ul>
       )}
     </section>
+  );
+}
+
+function SubpageBoard({
+  tasks,
+  onStatus,
+}: {
+  tasks: ReturnType<typeof useTree>['rows'];
+  onStatus: (id: string, status: PageStatus) => Promise<void>;
+}) {
+  const { drag, over, registerColumn, startDrag, suppressClickCapture } = useBoardDrag((id, key) => {
+    const t = tasks.find((x) => x.id === id);
+    if (t?.status !== key) void onStatus(id, key as PageStatus);
+  });
+
+  return (
+    <>
+      <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
+        {PAGE_STATUSES.map((st) => {
+          const col = tasks.filter((t) => t.status === st);
+          return (
+            <div
+              key={st}
+              ref={registerColumn(st)}
+              className={`w-44 shrink-0 rounded-lg border p-1.5 transition-colors ${
+                over === st ? 'border-blue-400 bg-blue-50/60' : 'border-zinc-200 bg-zinc-50/60'
+              }`}
+            >
+              <div className="flex items-center gap-1.5 px-1 py-0.5">
+                <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${statusClass(st)}`}>{st}</span>
+                <span className="text-[10px] text-zinc-400">{col.length}</span>
+              </div>
+              <ul className="mt-1 space-y-1.5">
+                {col.map((t) => (
+                  <li
+                    key={t.id}
+                    onPointerDown={startDrag(t.id!, t.title ?? '')}
+                    className={`select-none rounded-md border border-zinc-200 bg-white p-2 text-xs shadow-sm cursor-grab ${
+                      drag?.id === t.id ? 'opacity-30' : ''
+                    }`}
+                  >
+                    <Link href={`/p/${t.id}`} draggable={false} onClickCapture={suppressClickCapture} className="block hover:underline">
+                      {t.icon ?? '☑'} {t.title}
+                    </Link>
+                    {t.due_date && <div className="mt-1 text-[10px] text-zinc-400">기한 {t.due_date}</div>}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          );
+        })}
+      </div>
+      {drag && <BoardDragGhost drag={drag} />}
+    </>
   );
 }
