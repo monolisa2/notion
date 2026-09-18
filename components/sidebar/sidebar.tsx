@@ -348,6 +348,7 @@ export function Sidebar({
       <div className="px-2">
         <NavLink href="/" label="대시보드" icon="▦" active={pathname === '/'} />
         <NavLink href="/tasks" label="업무 목록" icon="☑" active={pathname.startsWith('/tasks')} />
+        <NavLink href="/reports/new" label="주간보고" icon="✎" active={pathname.startsWith('/reports')} />
         <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
         <button
           type="button"
