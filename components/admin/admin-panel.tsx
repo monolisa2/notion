@@ -103,15 +103,15 @@ export function AdminPanel({
     <div className="mx-auto w-full max-w-6xl px-6 py-8 sm:px-8">
       <div className="flex items-center gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">관리자</h1>
-        <div className="ml-4 flex gap-1 rounded-md border border-zinc-200 p-0.5 dark:border-zinc-700">
+        <div className="ml-4 flex gap-1 rounded-lg border border-zinc-200 p-0.5">
           {(['members', 'org'] as const).map((t) => (
             <button
               key={t}
               type="button"
               onClick={() => setTab(t)}
-              className={`rounded px-3 py-1 text-xs ${tab === t ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500'}`}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium ${tab === t ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-100'}`}
             >
-              {t === 'members' ? `멤버 ${members.length}` : `조직도 ${units.length}`}
+              {t === 'members' ? `👥 멤버 관리 (${members.filter((m) => !m.deactivated_at).length})` : `🏢 조직도 관리 (${units.length})`}
             </button>
           ))}
         </div>
@@ -182,8 +182,17 @@ function MembersTab({
   const [bulkOpen, setBulkOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
+  const [q, setQ] = useState('');
 
-  const visible = members.filter((m) => showInactive || !m.deactivated_at);
+  const query = q.trim().toLowerCase();
+  const visible = members.filter((m) => {
+    if (!showInactive && m.deactivated_at) return false;
+    if (!query) return true;
+    return [m.name, m.email ?? '', unitName(m.unit_id), m.rank ?? '', m.job_title ?? '']
+      .join(' ')
+      .toLowerCase()
+      .includes(query);
+  });
 
   const submitOne = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -230,6 +239,7 @@ function MembersTab({
       <section className="mt-6 rounded-xl border border-zinc-200 p-4 dark:border-zinc-800">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-semibold">계정 만들기</h2>
+          <span className="ml-1 text-xs text-zinc-400">실·팀을 만들거나 없애려면 위의 🏢 조직도 관리 탭</span>
           <button type="button" onClick={() => setBulkOpen((v) => !v)} className="text-xs text-blue-600 hover:underline dark:text-blue-400">
             {bulkOpen ? '한 명씩 등록' : '명단 붙여넣기(일괄)'}
           </button>
@@ -279,8 +289,21 @@ function MembersTab({
 
       {/* 멤버 표 */}
       <section className="mt-6">
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
           <h2 className="text-sm font-semibold">멤버</h2>
+          <label className="flex items-center gap-2 rounded-md border border-zinc-200 bg-white px-2 py-1 text-zinc-400 focus-within:border-zinc-400">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+            <input
+              value={q}
+              onChange={(e) => setQ(e.target.value)}
+              placeholder="이름·이메일·소속 검색"
+              className="w-44 bg-transparent text-xs text-zinc-800 outline-none placeholder:text-zinc-400"
+            />
+            {q && (
+              <button type="button" onClick={() => setQ('')} aria-label="검색 지우기" className="text-zinc-400 hover:text-zinc-600">×</button>
+            )}
+          </label>
+          {query && <span className="text-xs text-zinc-400">{visible.length}명</span>}
           <label className="flex items-center gap-1.5 text-xs text-zinc-500">
             <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> 비활성 포함
           </label>
@@ -382,7 +405,7 @@ function MembersTab({
                 );
               })}
               {visible.length === 0 && (
-                <tr><td colSpan={9} className="px-3 py-8 text-center text-sm text-zinc-400">멤버가 없습니다</td></tr>
+                <tr><td colSpan={9} className="px-3 py-8 text-center text-sm text-zinc-400">{query ? `"${q.trim()}" 에 맞는 멤버가 없습니다` : '멤버가 없습니다'}</td></tr>
               )}
             </tbody>
           </table>
