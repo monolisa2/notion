@@ -192,14 +192,30 @@ export async function updateUnit(id: string, patch: { name?: string; parentId?: 
 export async function deleteUnit(id: string) {
   return wrap(async () => {
     const { supabase } = await requireAdmin();
-    const [{ count: kids }, { count: members }, { count: pages }] = await Promise.all([
-      supabase.from('org_units').select('id', { count: 'exact', head: true }).eq('parent_id', id),
-      supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('unit_id', id),
-      supabase.from('pages').select('id', { count: 'exact', head: true }).eq('unit_id', id),
-    ]);
+    const [{ count: kids }, { count: activeMembers }, { count: livePages }, { count: trashedPages }] =
+      await Promise.all([
+        supabase.from('org_units').select('id', { count: 'exact', head: true }).eq('parent_id', id),
+        // 비활성(퇴사 처리) 멤버는 세지 않는다 — 삭제 시 소속이 '미지정' 으로 풀린다
+        supabase.from('profiles').select('id', { count: 'exact', head: true }).eq('unit_id', id).is('deactivated_at', null),
+        supabase.from('pages').select('id', { count: 'exact', head: true }).eq('unit_id', id).is('archived_at', null),
+        supabase.from('pages').select('id', { count: 'exact', head: true }).eq('unit_id', id).not('archived_at', 'is', null),
+      ]);
     if (kids) throw new Error('하위 조직이 있어 삭제할 수 없습니다. 먼저 옮기거나 삭제하세요');
-    if (members) throw new Error(`소속 인원 ${members}명이 있어 삭제할 수 없습니다. 먼저 소속을 옮기세요`);
-    if (pages) throw new Error(`이 공간의 페이지 ${pages}개가 있어 삭제할 수 없습니다. 먼저 다른 공간으로 옮기세요`);
+    if (activeMembers) throw new Error(`소속 인원 ${activeMembers}명이 있어 삭제할 수 없습니다. 먼저 소속을 옮기세요`);
+    if (livePages || trashedPages) {
+      const parts = [];
+      if (livePages) parts.push(`페이지 ${livePages}개`);
+      if (trashedPages) parts.push(`보관함의 페이지 ${trashedPages}개`);
+      throw new Error(
+        `이 공간에 ${parts.join(' + ')} 가 있어 삭제할 수 없습니다. ` +
+          (livePages ? '페이지 상단에서 다른 공간으로 옮기거나 보관 후 ' : '') +
+          '보관함에서 복구해 옮기거나 영구 삭제하세요',
+      );
+    }
+    // 비활성 멤버의 소속을 미리 풀어 준다 (FK set null 과 같지만 명시적으로)
+    const admin = createAdminClient();
+    const { error: unsetErr } = await admin.from('profiles').update({ unit_id: null }).eq('unit_id', id);
+    if (unsetErr) throw new Error(unsetErr.message);
     const { error } = await supabase.from('org_units').delete().eq('id', id);
     if (error) throw new Error(error.message);
   });
