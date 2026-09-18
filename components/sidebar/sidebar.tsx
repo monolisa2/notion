@@ -372,16 +372,19 @@ export function Sidebar({
     );
   };
 
-  const spaceHeader = (key: string, label: string, badge: string | null, level: number, onAdd: () => void, mine: boolean) => (
+  const spaceHeader = (key: string, emoji: string, label: string, badge: string | null, level: number, onAdd: () => void, mine: boolean) => (
     <div
-      className="group flex items-center gap-1 rounded-md pr-1 text-xs font-semibold text-zinc-500 hover:bg-zinc-200/40 dark:text-zinc-400 dark:hover:bg-zinc-800/60"
+      className="group flex items-center gap-1 rounded-md pr-1 text-sm font-semibold text-zinc-500 hover:bg-zinc-200/40 dark:text-zinc-400 dark:hover:bg-zinc-800/60"
       style={{ paddingLeft: 4 + level * 10 }}
     >
-      <button type="button" onClick={() => toggleSpace(key)} className="flex h-6 w-5 items-center justify-center text-zinc-400" aria-label="접기/펼치기">
+      <button type="button" onClick={() => toggleSpace(key)} className="flex h-6 w-5 shrink-0 items-center justify-center text-zinc-400" aria-label="접기/펼치기">
         <svg width="10" height="10" viewBox="0 0 10 10" className={`transition-transform ${closedSpaces.has(key) ? '' : 'rotate-90'}`} aria-hidden="true">
           <path d="M3 1.5 7 5 3 8.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
         </svg>
       </button>
+      <span className="w-5 shrink-0 text-center text-[13px] leading-none" aria-hidden="true">
+        {emoji}
+      </span>
       <button type="button" onClick={() => toggleSpace(key)} className="min-w-0 flex-1 truncate py-1 text-left">
         {label}
         {mine && <span className="ml-1 rounded bg-blue-100 px-1 text-[9px] font-medium text-blue-700 dark:bg-blue-900/60 dark:text-blue-200">내 소속</span>}
@@ -409,6 +412,7 @@ export function Sidebar({
       <div key={key} className="mt-1">
         {spaceHeader(
           key,
+          isRoot ? '🏢' : unit.level === '실' ? '📁' : '👥',
           isRoot ? `${unit.name} 공용` : unit.name ?? '',
           isRoot ? null : `${unit.member_count ?? 0}명`,
           level,
@@ -440,7 +444,7 @@ export function Sidebar({
     const pageTree = buildTree(rowsByUnit.personal);
     return (
       <div key={key} className="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-800">
-        {spaceHeader(key, '개인 메모', '나만 봄', 0, () => addChild(null, { unitId: null, visibility: '개인' }), false)}
+        {spaceHeader(key, '📝', '개인 메모', '나만 봄', 0, () => addChild(null, { unitId: null, visibility: '개인' }), false)}
         {!closedSpaces.has(key) &&
           (pageTree.length > 0 ? (
             <ul className="space-y-px">{pageTree.map((n) => renderNode(n, 1))}</ul>
@@ -452,7 +456,7 @@ export function Sidebar({
   };
 
   return (
-    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-zinc-200/80 bg-[#f7f7f5] text-[13.5px]">
+    <aside className="flex h-full w-60 shrink-0 flex-col border-r border-zinc-200/80 bg-[#f7f7f5] text-sm">
       <div className="flex items-center gap-2 px-3 pb-1 pt-3">
         {me.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -504,22 +508,22 @@ export function Sidebar({
           <input
             name="q"
             placeholder="검색"
-            className="w-full bg-transparent text-[13px] text-zinc-800 outline-none placeholder:text-zinc-400"
+            className="w-full bg-transparent text-sm text-zinc-800 outline-none placeholder:text-zinc-400"
           />
         </label>
       </form>
 
       <div className="px-2">
-        <NavLink href="/" label="홈" icon="⌂" active={pathname === '/'} />
-        <NavLink href="/tasks" label="업무" icon="☑" active={pathname.startsWith('/tasks')} />
+        <NavLink href="/" label="홈" icon="🏠" active={pathname === '/'} />
+        <NavLink href="/tasks" label="업무" icon="✅" active={pathname.startsWith('/tasks')} />
         <NavLink href="/calendar" label="캘린더" icon="📅" active={pathname.startsWith('/calendar')} />
-        <NavLink href="/collections/meeting" label="모아보기" icon="≡" active={pathname.startsWith('/collections')} />
+        <NavLink href="/collections/meeting" label="모아보기" icon="🗂️" active={pathname.startsWith('/collections')} />
         <button
           type="button"
           onClick={() => openLog()}
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
-          <span className="w-4 text-center text-xs leading-none">✎</span> 진행 로그 남기기
+          <span className="w-5 text-center text-[13px] leading-none">✏️</span> 진행 로그 남기기
           <kbd className="ml-auto text-[10px] text-zinc-400">⌃⇧L</kbd>
         </button>
       </div>
@@ -533,7 +537,7 @@ export function Sidebar({
       >
         {favorites.length > 0 && (
           <div className="mb-1">
-            <div className="px-1 py-1 text-[11px] font-semibold text-zinc-400">★ 즐겨찾기</div>
+            <div className="px-1 py-1 text-[11px] font-semibold text-zinc-400">⭐ 즐겨찾기</div>
             <ul className="space-y-px">
               {favorites.map((f) => (
                 <li key={f.id}>
@@ -558,8 +562,8 @@ export function Sidebar({
         {orgTree.map((root) => renderSpace(root, 0))}
         {renderPersonal()}
         <div className="mt-3 border-t border-zinc-200 pt-2">
-          <NavLink href="/trash" label="보관함" icon="🗑" active={pathname.startsWith('/trash')} />
-          {me.isAdmin && <NavLink href="/admin" label="관리자 설정" icon="⚙" active={pathname.startsWith('/admin')} />}
+          <NavLink href="/trash" label="보관함" icon="🗑️" active={pathname.startsWith('/trash')} />
+          {me.isAdmin && <NavLink href="/admin" label="관리자 설정" icon="⚙️" active={pathname.startsWith('/admin')} />}
         </div>
       </nav>
 
@@ -575,11 +579,11 @@ function LitePageLink({ p, active }: { p: SidebarPageLite; active: boolean }) {
   return (
     <Link
       href={`/p/${p.id}`}
-      className={`flex items-center gap-1.5 rounded-md px-1 py-1 text-[13px] ${
+      className={`flex items-center gap-1.5 rounded-md px-1 py-1 text-sm ${
         active ? 'bg-zinc-200/80 font-medium text-zinc-900' : 'text-zinc-700 hover:bg-zinc-200/60'
       }`}
     >
-      <span className="flex w-5 shrink-0 items-center justify-center text-[13px] leading-none">{p.icon ?? (p.type === 'task' ? '☑' : '📄')}</span>
+      <span className="flex w-5 shrink-0 items-center justify-center text-[13px] leading-none">{p.icon ?? (p.type === 'task' ? '✅' : '📄')}</span>
       <span className="min-w-0 flex-1 truncate">{p.title}</span>
       {p.type === 'task' && p.status && (
         <span className="shrink-0 rounded bg-zinc-200 px-1 text-[10px] text-zinc-600">{p.status}</span>
@@ -598,7 +602,7 @@ function NavLink({ href, label, icon, active }: { href: string; label: string; i
           : 'text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800'
       }`}
     >
-      <span className="w-4 text-center text-xs leading-none" aria-hidden="true">
+      <span className="w-5 text-center text-[13px] leading-none" aria-hidden="true">
         {icon}
       </span>
       {label}

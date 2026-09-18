@@ -13,10 +13,13 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className="h-full antialiased" suppressHydrationWarning>
       <head>
-        {/* 한글 본문 폰트 (무료, CDN) */}
+        {/* SUITE 폰트 프리로드 (본문 기본 굵기) */}
         <link
-          rel="stylesheet"
-          href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css"
+          rel="preload"
+          href="/fonts/suite/SUITE-Regular.woff2"
+          as="font"
+          type="font/woff2"
+          crossOrigin="anonymous"
         />
       </head>
       <body className="flex min-h-full flex-col bg-white text-zinc-900">
