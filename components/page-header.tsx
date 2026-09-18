@@ -1,72 +1,108 @@
 'use client';
 
+import Link from 'next/link';
 import { useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
-import { setPageSpace } from '@/lib/pages';
+import { archivePages, convertPageType, setPageSpace } from '@/lib/pages';
+import { ancestorIds, buildTree, collectSubtreeIds, findNode } from '@/lib/tree';
+import { unitLabel } from '@/lib/org';
 import type { OrgUnitRow, PageRow, PageVisibility } from '@/lib/types';
+import { useTree } from '@/components/tree-context';
 
-const VIS_LABEL: Record<PageVisibility, string> = {
-  본부: '본부 전체 공개',
-  소속: '소속 조직만',
-  개인: '나만 봄',
-};
+const VIS_LABEL: Record<PageVisibility, string> = { 본부: '본부 전체', 소속: '소속 조직만', 개인: '나만 봄' };
 
 /**
- * 페이지 상단 메타: 유형 · 공간 · 공개 범위.
- * 루트 페이지만 공간/공개 범위를 바꿀 수 있고, 하위 페이지는 상속 표시만 한다.
+ * 페이지 상단 (노션식): 브레드크럼(공간 › 상위 페이지 › 현재) · 공개 범위 · ⋯ 메뉴
  */
 export function PageHeader({ page, units }: { page: PageRow; units: OrgUnitRow[] }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
+  const { rows } = useTree();
   const [busy, setBusy] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
+  const tree = useMemo(() => buildTree(rows), [rows]);
+  const crumbs = useMemo(
+    () => ancestorIds(tree, page.id).map((id) => findNode(tree, id)).filter(Boolean),
+    [tree, page.id],
+  );
   const isRoot = page.parent_id === null;
   const isPersonal = page.visibility === '개인';
-  const unit = units.find((u) => u.id === page.unit_id);
   const isTask = page.type === 'task';
+  const spaceName = isPersonal ? '개인 메모' : unitLabel(units, page.unit_id) || '공간 미지정';
 
-  const apply = async (patch: { unitId?: string | null; visibility?: PageVisibility }) => {
+  const apply = async (label: string, fn: () => Promise<void>, after?: () => void) => {
     setBusy(true);
+    setMenuOpen(false);
     try {
-      await setPageSpace(supabase, page.id, patch);
+      await fn();
+      after?.();
       router.refresh();
     } catch (e) {
-      toast.error(`변경 실패: ${errorMessage(e)}`);
+      toast.error(`${label} 실패: ${errorMessage(e)}`);
     } finally {
       setBusy(false);
     }
   };
 
-  const chip = 'rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800';
-  const sel = 'rounded border border-zinc-200 bg-transparent px-1.5 py-0.5 text-xs outline-none dark:border-zinc-700';
+  const archive = () => {
+    const node = findNode(tree, page.id);
+    const ids = node ? collectSubtreeIds(node) : [page.id];
+    const ok = ids.length === 1 || window.confirm(`하위 페이지 ${ids.length - 1}개도 함께 보관됩니다. 계속할까요?`);
+    if (!ok) return;
+    void apply('보관', () => archivePages(supabase, ids), () => {
+      toast.success('보관했습니다');
+      router.push('/');
+    });
+  };
+
+  const sel = 'rounded-md px-1.5 py-0.5 text-xs text-zinc-600 outline-none hover:bg-zinc-100';
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-2 px-6 pt-6 text-xs text-zinc-400 sm:px-10">
-      <span className={chip}>{isTask ? '업무' : '문서'}</span>
+    <div className="sticky top-0 z-10 flex items-center gap-1 border-b border-transparent bg-white/90 px-4 py-2 text-[13px] text-zinc-500 backdrop-blur sm:px-6">
+      {/* 브레드크럼 */}
+      <nav className="flex min-w-0 items-center gap-1 overflow-hidden" aria-label="경로">
+        <span className="shrink-0 rounded px-1 py-0.5 text-zinc-500">{spaceName}</span>
+        {crumbs.map((c) => (
+          <span key={c!.id} className="flex min-w-0 items-center gap-1">
+            <span className="text-zinc-300">/</span>
+            <Link href={`/p/${c!.id}`} className="truncate rounded px-1 py-0.5 hover:bg-zinc-100 hover:text-zinc-800">
+              {c!.icon ? `${c!.icon} ` : ''}{c!.title}
+            </Link>
+          </span>
+        ))}
+        <span className="text-zinc-300">/</span>
+        <span className="truncate rounded px-1 py-0.5 text-zinc-800">
+          {page.icon ? `${page.icon} ` : ''}{page.title}
+        </span>
+      </nav>
 
+      <span className="ml-auto" />
+
+      {/* 공개 범위 (루트만 변경) */}
       {isPersonal ? (
-        <span className={chip}>🔒 개인 메모</span>
+        <span className="rounded-md px-1.5 py-0.5 text-xs text-zinc-500">🔒 나만 봄</span>
       ) : isRoot ? (
         <>
           <select
             value={page.unit_id ?? ''}
             disabled={busy}
-            onChange={(e) => void apply({ unitId: e.target.value || null })}
+            onChange={(e) => void apply('공간 변경', () => setPageSpace(supabase, page.id, { unitId: e.target.value || null }))}
             className={sel}
             aria-label="공간"
+            title="이 페이지가 속한 공간"
           >
             {units.map((u) => (
-              <option key={u.id} value={u.id ?? ''}>
-                {u.name}
-              </option>
+              <option key={u.id} value={u.id ?? ''}>{u.name}</option>
             ))}
           </select>
           <select
             value={page.visibility}
             disabled={busy}
-            onChange={(e) => void apply({ visibility: e.target.value as PageVisibility })}
+            onChange={(e) => void apply('공개 범위 변경', () => setPageSpace(supabase, page.id, { visibility: e.target.value as PageVisibility }))}
             className={sel}
             aria-label="공개 범위"
           >
@@ -75,12 +111,42 @@ export function PageHeader({ page, units }: { page: PageRow; units: OrgUnitRow[]
           </select>
         </>
       ) : (
-        <span className={chip} title="상위 페이지의 공간·공개 범위를 따릅니다">
-          {unit?.name ?? '공간 미지정'} · {VIS_LABEL[page.visibility as PageVisibility] ?? page.visibility}
+        <span className="rounded-md px-1.5 py-0.5 text-xs text-zinc-400" title="상위 페이지의 공간·공개 범위를 따릅니다">
+          {VIS_LABEL[page.visibility as PageVisibility] ?? page.visibility}
         </span>
       )}
 
-      <span className="ml-auto">수정 {page.updated_at.slice(0, 10)}</span>
+      <span className="hidden text-xs text-zinc-400 sm:inline">수정 {page.updated_at.slice(0, 10)}</span>
+
+      {/* ⋯ 메뉴 */}
+      <div className="relative">
+        <button
+          type="button"
+          aria-label="페이지 메뉴"
+          onClick={() => setMenuOpen((v) => !v)}
+          className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-100"
+        >
+          ⋯
+        </button>
+        {menuOpen && (
+          <>
+            <div className="fixed inset-0 z-10" onMouseDown={() => setMenuOpen(false)} />
+            <div role="menu" className="absolute right-0 top-full z-20 mt-1 w-48 rounded-lg border border-zinc-200 bg-white p-1 text-sm shadow-lg">
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => void apply('전환', () => convertPageType(supabase, page.id, isTask ? 'doc' : 'task'))}
+                className="block w-full rounded-md px-3 py-1.5 text-left hover:bg-zinc-100"
+              >
+                {isTask ? '문서로 전환' : '업무로 전환'}
+              </button>
+              <button type="button" role="menuitem" onClick={archive} className="block w-full rounded-md px-3 py-1.5 text-left text-red-600 hover:bg-zinc-100">
+                보관
+              </button>
+            </div>
+          </>
+        )}
+      </div>
     </div>
   );
 }

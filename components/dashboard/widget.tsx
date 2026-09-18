@@ -14,7 +14,7 @@ export function Widget({
   return (
     <section
       className={[
-        'flex min-h-40 flex-col rounded-2xl border bg-white p-4 dark:bg-zinc-900',
+        'flex min-h-40 flex-col rounded-2xl border bg-white p-4',
         accent ? 'border-red-200 dark:border-red-900/60' : 'border-zinc-200 dark:border-zinc-800',
       ].join(' ')}
     >

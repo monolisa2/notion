@@ -4,34 +4,126 @@ import { fetchDashboard, FEED_DAYS } from '@/lib/dashboard';
 import { Widget } from '@/components/dashboard/widget';
 import { ActivityFeed } from '@/components/dashboard/activity-feed';
 import { AssigneeSummary, BlockedTasks, DueRisk, StaleTasks } from '@/components/dashboard/widgets';
+import { statusClass } from '@/lib/status-style';
 
 export const dynamic = 'force-dynamic';
 
-/**
- * 대시보드 — 위젯은 정확히 5개. 더 만들지 말 것 (CLAUDE.md 6절).
- * 정체 업무가 관리자가 제일 먼저 보는 카드라 맨 위에 둔다.
- */
-export default async function Dashboard() {
+function greeting() {
+  const h = new Date().getHours();
+  if (h < 11) return '좋은 아침입니다';
+  if (h < 17) return '좋은 오후입니다';
+  return '수고 많으셨습니다';
+}
+
+export default async function Home() {
   const supabase = await createClient();
-  const { feed, assignees, dueRisk, stale, blocked } = await fetchDashboard(supabase);
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  const [{ data: profile }, dash, { data: myTasks }, { data: recent }] = await Promise.all([
+    supabase.from('profiles').select('name').eq('id', user!.id).maybeSingle(),
+    fetchDashboard(supabase),
+    supabase
+      .from('pages')
+      .select('id, title, icon, status, progress, due_date')
+      .eq('type', 'task')
+      .eq('assignee_id', user!.id)
+      .in('status', ['대기', '진행', '검토'])
+      .is('archived_at', null)
+      .order('due_date', { ascending: true, nullsFirst: false })
+      .limit(8),
+    supabase
+      .from('pages')
+      .select('id, title, icon, type, updated_at')
+      .is('archived_at', null)
+      .order('updated_at', { ascending: false })
+      .limit(8),
+  ]);
+  const { feed, assignees, dueRisk, stale, blocked } = dash;
   const today = new Date().toISOString().slice(0, 10);
+  const empty = (recent ?? []).length === 0;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-8 sm:px-8">
-      <div className="flex items-baseline gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">대시보드</h1>
-        <span className="text-sm text-zinc-400">{today}</span>
-        <Link href="/tasks" className="ml-auto text-sm text-blue-600 hover:underline dark:text-blue-400">
-          업무 목록 →
-        </Link>
+    <div className="mx-auto w-full max-w-6xl px-6 py-10 sm:px-10">
+      <h1 className="text-2xl font-semibold tracking-tight">
+        {greeting()}, {profile?.name ?? '반갑습니다'}님
+      </h1>
+      <p className="mt-1 text-sm text-zinc-500">{today} · 경영관리본부 TeamHub</p>
+
+      {/* 시작하기 (첫 사용 안내) */}
+      {empty && (
+        <section className="mt-8 grid gap-3 sm:grid-cols-3">
+          {[
+            ['1', '페이지 만들기', '왼쪽 사이드바에서 팀 이름에 마우스를 올리면 ＋ 가 나옵니다. 회의록·업무·공지 양식을 고르세요.'],
+            ['2', '쓰고 공유하기', '본문은 자동 저장됩니다. / 로 블록 메뉴, @ 로 동료 언급, 하단에서 댓글.'],
+            ['3', '업무로 관리하기', '페이지를 업무로 전환하면 상태·담당자·기한이 붙고, 업무 목록과 이 홈에 모입니다.'],
+          ].map(([n, t, d]) => (
+            <div key={n} className="rounded-xl border border-zinc-200 p-4">
+              <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white">{n}</div>
+              <h2 className="mt-3 text-sm font-semibold">{t}</h2>
+              <p className="mt-1 text-xs leading-relaxed text-zinc-500">{d}</p>
+            </div>
+          ))}
+        </section>
+      )}
+
+      <div className="mt-8 grid gap-6 lg:grid-cols-2">
+        {/* 내 업무 */}
+        <section>
+          <div className="flex items-baseline justify-between">
+            <h2 className="text-sm font-semibold text-zinc-700">내 업무</h2>
+            <Link href={`/tasks?assignee=${user!.id}`} className="text-xs text-zinc-400 hover:underline">전체 보기</Link>
+          </div>
+          <ul className="mt-2 divide-y divide-zinc-100 rounded-xl border border-zinc-200">
+            {(myTasks ?? []).length === 0 && (
+              <li className="px-4 py-6 text-center text-xs text-zinc-400">배정된 진행 중 업무가 없습니다</li>
+            )}
+            {(myTasks ?? []).map((t) => (
+              <li key={t.id}>
+                <Link href={`/p/${t.id}`} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-zinc-50">
+                  <span className="w-5 text-center">{t.icon ?? '☑'}</span>
+                  <span className="min-w-0 flex-1 truncate">{t.title}</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[11px] ${statusClass(t.status)}`}>{t.status}</span>
+                  <span className="w-9 text-right text-xs tabular-nums text-zinc-500">{t.progress ?? 0}%</span>
+                  <span className={`w-20 text-right text-xs tabular-nums ${t.due_date && t.due_date < today ? 'text-red-600' : 'text-zinc-400'}`}>
+                    {t.due_date ?? ''}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
+
+        {/* 최근 수정 */}
+        <section>
+          <h2 className="text-sm font-semibold text-zinc-700">최근 수정된 페이지</h2>
+          <ul className="mt-2 divide-y divide-zinc-100 rounded-xl border border-zinc-200">
+            {empty && <li className="px-4 py-6 text-center text-xs text-zinc-400">아직 페이지가 없습니다</li>}
+            {(recent ?? []).map((p) => (
+              <li key={p.id}>
+                <Link href={`/p/${p.id}`} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-zinc-50">
+                  <span className="w-5 text-center">{p.icon ?? (p.type === 'task' ? '☑' : '📄')}</span>
+                  <span className="min-w-0 flex-1 truncate">{p.title}</span>
+                  <span className="text-xs text-zinc-400">{p.updated_at.slice(0, 10)}</span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        </section>
       </div>
 
-      <div className="mt-6 grid gap-4 lg:grid-cols-5">
+      {/* 본부 현황 — 위젯 5개 고정 */}
+      <div className="mt-10 flex items-baseline gap-3">
+        <h2 className="text-sm font-semibold text-zinc-700">본부 현황</h2>
+        <Link href="/tasks" className="ml-auto text-xs text-zinc-400 hover:underline">업무 목록 →</Link>
+      </div>
+      <div className="mt-3 grid gap-4 lg:grid-cols-5">
         <div className="space-y-4 lg:col-span-3">
-          <Widget title="정체 업무" hint="3일 이상 진행 로그 없음" count={stale.length} accent>
+          <Widget title="정체 업무" hint="3일 이상 진행 기록 없음" count={stale.length} accent>
             <StaleTasks rows={stale} />
           </Widget>
-          <Widget title="막힌 업무" hint="최신 로그에 blocker" count={blocked.length} accent>
+          <Widget title="막힌 업무" hint="최신 기록에 막힘 표시" count={blocked.length} accent>
             <BlockedTasks rows={blocked} />
           </Widget>
           <Widget title="기한 리스크" hint="7일 이내" count={dueRisk.length}>

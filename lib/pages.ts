@@ -25,6 +25,8 @@ export async function createPage(
     /** 루트 페이지일 때만 의미 있음. 하위 페이지는 부모의 공간/공개범위를 상속한다 */
     unitId?: string | null;
     visibility?: PageVisibility;
+    icon?: string | null;
+    content?: unknown;
   },
 ): Promise<string> {
   const type = params.type ?? 'doc';
@@ -37,6 +39,8 @@ export async function createPage(
       title: params.title ?? '제목 없음',
       status: type === 'task' ? '대기' : null,
       progress: type === 'task' ? 0 : null,
+      icon: params.icon ?? null,
+      content: (params.content ?? null) as never,
       ...(params.parentId === null
         ? {
             visibility: params.visibility ?? '본부',
@@ -103,5 +107,10 @@ export async function setPageSpace(
   if ('unitId' in patch) row.unit_id = patch.unitId;
   if (patch.visibility) row.visibility = patch.visibility;
   const { error } = await sb.from('pages').update(row).eq('id', id);
+  if (error) throw error;
+}
+
+export async function setPageIcon(sb: Db, id: string, icon: string | null) {
+  const { error } = await sb.from('pages').update({ icon }).eq('id', id);
   if (error) throw error;
 }

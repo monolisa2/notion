@@ -5,7 +5,7 @@
 
 :root {
   color-scheme: only light;
-  --background: #fafafa;
+  --background: #ffffff;
   --foreground: #171717;
 }
 
@@ -52,4 +52,13 @@ body {
 }
 .teamhub-comment-editor .bn-container {
   background: transparent;
+}
+
+/* 노션에 가까운 본문 타이포 */
+.teamhub-editor .bn-editor {
+  font-size: 16px;
+  line-height: 1.6;
+}
+.teamhub-editor .bn-block-content[data-content-type="heading"][data-level="2"] {
+  margin-top: 0.9em;
 }

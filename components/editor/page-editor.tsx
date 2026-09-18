@@ -7,6 +7,9 @@ import { errorMessage } from '@/lib/errors';
 import { createClient } from '@/lib/supabase/client';
 import { savePage } from '@/lib/mentions';
 import { useAutosave, type SaveStatus } from '@/hooks/use-autosave';
+import { setPageIcon } from '@/lib/pages';
+import { ICON_CHOICES } from '@/lib/templates';
+import { useRouter } from 'next/navigation';
 import type { PageRow } from '@/lib/types';
 
 // BlockNote 는 브라우저 전용 (window 사용) → SSR 끔
@@ -27,7 +30,21 @@ const STATUS_LABEL: Record<SaveStatus, string> = {
 
 export function PageEditor({ page, userId }: { page: PageRow; userId: string }) {
   const supabase = useMemo(() => createClient(), []);
+  const router = useRouter();
   const [title, setTitle] = useState(page.title);
+  const [icon, setIcon] = useState<string | null>(page.icon);
+  const [iconOpen, setIconOpen] = useState(false);
+
+  const changeIcon = async (next: string | null) => {
+    setIcon(next);
+    setIconOpen(false);
+    try {
+      await setPageIcon(supabase, page.id, next);
+      router.refresh();
+    } catch (e) {
+      toast.error(`아이콘 저장 실패: ${errorMessage(e)}`);
+    }
+  };
   const latest = useRef<Payload>({ title: page.title, content: page.content });
 
   const { status, schedule, flush } = useAutosave<Payload>(
@@ -74,16 +91,50 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
   }, [flush]);
 
   return (
-    <div className="relative mx-auto w-full max-w-3xl px-6 pb-32 pt-10 sm:px-10">
+    <div className="relative mx-auto w-full max-w-[900px] px-6 pb-32 pt-8 sm:px-12">
       <div
         className={[
-          'pointer-events-none absolute right-6 top-3 text-xs transition-opacity sm:right-10',
+          'pointer-events-none absolute right-6 top-2 text-xs transition-opacity sm:right-12',
           status === 'idle' ? 'opacity-0' : 'opacity-100',
           status === 'error' ? 'text-red-500' : 'text-zinc-400',
         ].join(' ')}
         aria-live="polite"
       >
         {STATUS_LABEL[status]}
+      </div>
+
+      {/* 페이지 아이콘 (노션처럼 제목 위) */}
+      <div className="group relative mb-2 h-14">
+        <button
+          type="button"
+          onClick={() => setIconOpen((v) => !v)}
+          aria-label="페이지 아이콘"
+          className={[
+            'flex h-14 w-14 items-center justify-center rounded-lg text-[44px] leading-none hover:bg-zinc-100',
+            icon ? '' : 'invisible text-sm text-zinc-400 group-hover:visible',
+          ].join(' ')}
+        >
+          {icon ?? <span className="text-xs">아이콘 추가</span>}
+        </button>
+        {iconOpen && (
+          <>
+            <div className="fixed inset-0 z-10" onMouseDown={() => setIconOpen(false)} />
+            <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-xl border border-zinc-200 bg-white p-2 shadow-xl">
+              <div className="grid grid-cols-8 gap-1">
+                {ICON_CHOICES.map((e) => (
+                  <button key={e} type="button" onClick={() => void changeIcon(e)} className="flex h-8 w-8 items-center justify-center rounded text-lg hover:bg-zinc-100">
+                    {e}
+                  </button>
+                ))}
+              </div>
+              {icon && (
+                <button type="button" onClick={() => void changeIcon(null)} className="mt-2 w-full rounded-md px-2 py-1 text-left text-xs text-zinc-500 hover:bg-zinc-100">
+                  아이콘 제거
+                </button>
+              )}
+            </div>
+          </>
+        )}
       </div>
 
       {/* 제목은 본문 첫 블록과 섞지 않고 별도 input */}
@@ -95,10 +146,10 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
         }}
         placeholder="제목 없음"
         aria-label="페이지 제목"
-        className="w-full bg-transparent text-3xl font-bold tracking-tight outline-none placeholder:text-zinc-300 dark:placeholder:text-zinc-700"
+        className="w-full bg-transparent text-[40px] font-bold leading-tight tracking-tight text-zinc-900 outline-none placeholder:text-zinc-300"
       />
 
-      <div className="mt-4 -mx-12">
+      <div className="mt-3 -mx-12">
         <BlockNoteEditor initialContent={page.content} meId={userId} onChange={onContentChange} />
       </div>
     </div>
