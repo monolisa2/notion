@@ -1,17 +1,26 @@
 import type { ReactNode } from 'react';
 
+type TableContent = {
+  type: 'tableContent';
+  headerRows?: number;
+  rows?: { cells?: (AnyNode[] | { type: 'tableCell'; content?: AnyNode[] })[] }[];
+};
 type AnyNode = Record<string, unknown> & {
   type?: string;
   text?: string;
   href?: string;
   styles?: Record<string, unknown>;
   props?: Record<string, unknown>;
-  content?: AnyNode[] | string;
+  content?: AnyNode[] | string | TableContent;
   children?: AnyNode[];
 };
 
-function renderInline(nodes: AnyNode[] | string | undefined, keyPrefix: string): ReactNode[] {
-  if (!nodes) return [];
+function isTable(c: AnyNode['content']): c is TableContent {
+  return !!c && typeof c === 'object' && !Array.isArray(c) && (c as TableContent).type === 'tableContent';
+}
+
+function renderInline(nodes: AnyNode['content'], keyPrefix: string): ReactNode[] {
+  if (!nodes || isTable(nodes)) return [];
   if (typeof nodes === 'string') return [nodes];
   return nodes.map((n, i) => {
     const key = `${keyPrefix}-${i}`;
@@ -51,7 +60,27 @@ export function RenderDoc({ doc, className = '' }: { doc: unknown; className?: s
     <div className={`space-y-1 text-sm ${className}`}>
       {blocks.map((b, i) => (
         <div key={i}>
-          <p className="whitespace-pre-wrap break-words">{renderInline(b.content, `b${i}`)}</p>
+          {isTable(b.content) ? (
+            <table className="my-1 border-collapse text-sm">
+              <tbody>
+                {(b.content.rows ?? []).map((row, ri) => (
+                  <tr key={ri}>
+                    {(row.cells ?? []).map((cell, ci) => {
+                      const nodes = Array.isArray(cell) ? cell : cell?.content ?? [];
+                      const Tag = ri < ((b.content as TableContent).headerRows ?? 0) ? 'th' : 'td';
+                      return (
+                        <Tag key={ci} className="border border-zinc-200 px-2 py-1 text-left align-top">
+                          {renderInline(nodes, `b${i}r${ri}c${ci}`)}
+                        </Tag>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          ) : (
+            <p className="whitespace-pre-wrap break-words">{renderInline(b.content, `b${i}`)}</p>
+          )}
           {b.children && b.children.length > 0 && (
             <div className="ml-4 border-l border-zinc-200 pl-2 dark:border-zinc-700">
               <RenderDoc doc={b.children} />

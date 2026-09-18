@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
-import { archivePages, convertPageType, setPageSpace, setPinned } from '@/lib/pages';
+import { archivePages, convertPageType, setPageSpace, setPinned, toggleFavorite } from '@/lib/pages';
 import { ancestorIds, buildTree, collectSubtreeIds, findNode } from '@/lib/tree';
 import { unitLabel } from '@/lib/org';
 import type { OrgUnitRow, PageRow, PageVisibility } from '@/lib/types';
@@ -17,7 +17,20 @@ const VIS_LABEL: Record<PageVisibility, string> = { 본부: '본부 전체', 소
 /**
  * 페이지 상단 (노션식): 브레드크럼(공간 › 상위 페이지 › 현재) · 공개 범위 · ⋯ 메뉴
  */
-export function PageHeader({ page, units, isAdmin = false }: { page: PageRow; units: OrgUnitRow[]; isAdmin?: boolean }) {
+export function PageHeader({
+  page,
+  units,
+  isAdmin = false,
+  meId,
+  isFavorite = false,
+}: {
+  page: PageRow;
+  units: OrgUnitRow[];
+  isAdmin?: boolean;
+  meId?: string;
+  isFavorite?: boolean;
+}) {
+  const [fav, setFav] = useState(isFavorite);
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const { rows } = useTree();
@@ -118,6 +131,27 @@ export function PageHeader({ page, units, isAdmin = false }: { page: PageRow; un
       )}
 
       <span className="hidden text-xs text-zinc-400 sm:inline">수정 {page.updated_at.slice(0, 10)}</span>
+
+      {meId && (
+        <button
+          type="button"
+          aria-label={fav ? '즐겨찾기 해제' : '즐겨찾기'}
+          title={fav ? '즐겨찾기 해제' : '즐겨찾기에 추가 (사이드바 상단)'}
+          onClick={() => {
+            const next = !fav;
+            setFav(next);
+            toggleFavorite(supabase, meId, page.id, next)
+              .then(() => router.refresh())
+              .catch((e) => {
+                setFav(!next);
+                toast.error(`즐겨찾기 실패: ${errorMessage(e)}`);
+              });
+          }}
+          className={`flex h-7 w-7 items-center justify-center rounded-md hover:bg-zinc-100 ${fav ? 'text-amber-500' : 'text-zinc-400'}`}
+        >
+          {fav ? '★' : '☆'}
+        </button>
+      )}
 
       {/* ⋯ 메뉴 */}
       <div className="relative">

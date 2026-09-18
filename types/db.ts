@@ -80,7 +80,19 @@ export type Database = {
           {
             foreignKeyName: "comments_page_id_fkey"
             columns: ["page_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_page_id_fkey"
+            columns: ["page_id"]
             referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_recent_pages"
             referencedColumns: ["id"]
           },
           {
@@ -198,7 +210,19 @@ export type Database = {
           {
             foreignKeyName: "mentions_page_id_fkey"
             columns: ["page_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentions_page_id_fkey"
+            columns: ["page_id"]
             referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "mentions_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_recent_pages"
             referencedColumns: ["id"]
           },
           {
@@ -292,7 +316,19 @@ export type Database = {
           {
             foreignKeyName: "notifications_page_id_fkey"
             columns: ["page_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_page_id_fkey"
+            columns: ["page_id"]
             referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_recent_pages"
             referencedColumns: ["id"]
           },
           {
@@ -425,6 +461,85 @@ export type Database = {
           },
         ]
       }
+      page_favorites: {
+        Row: {
+          created_at: string
+          page_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          page_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          page_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_favorites_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_favorites_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_blocked_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_favorites_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_due_risk"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_favorites_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_favorites_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_favorites_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_recent_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_favorites_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_stale_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_favorites_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_trash"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_favorites_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_favorites_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
+          },
+        ]
+      }
       page_updates: {
         Row: {
           author_id: string
@@ -490,7 +605,19 @@ export type Database = {
           {
             foreignKeyName: "page_updates_page_id_fkey"
             columns: ["page_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_updates_page_id_fkey"
+            columns: ["page_id"]
             referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_updates_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_recent_pages"
             referencedColumns: ["id"]
           },
           {
@@ -504,6 +631,85 @@ export type Database = {
             columns: ["page_id"]
             referencedRelation: "v_trash"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      page_visits: {
+        Row: {
+          page_id: string
+          user_id: string
+          visited_at: string
+        }
+        Insert: {
+          page_id: string
+          user_id: string
+          visited_at?: string
+        }
+        Update: {
+          page_id?: string
+          user_id?: string
+          visited_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_visits_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_visits_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_blocked_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_visits_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_due_risk"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_visits_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_visits_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_visits_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_recent_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_visits_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_stale_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_visits_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_trash"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_visits_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_visits_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
           },
         ]
       }
@@ -653,7 +859,19 @@ export type Database = {
           {
             foreignKeyName: "pages_parent_id_fkey"
             columns: ["parent_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_parent_id_fkey"
+            columns: ["parent_id"]
             referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "v_recent_pages"
             referencedColumns: ["id"]
           },
           {
@@ -790,7 +1008,19 @@ export type Database = {
           {
             foreignKeyName: "page_updates_page_id_fkey"
             columns: ["page_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_updates_page_id_fkey"
+            columns: ["page_id"]
             referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_updates_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_recent_pages"
             referencedColumns: ["id"]
           },
           {
@@ -849,6 +1079,31 @@ export type Database = {
           title: string | null
         }
         Relationships: []
+      }
+      v_favorite_pages: {
+        Row: {
+          created_at: string | null
+          icon: string | null
+          id: string | null
+          status: string | null
+          title: string | null
+          type: string | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_favorites_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_favorites_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
+          },
+        ]
       }
       v_org_units: {
         Row: {
@@ -985,7 +1240,19 @@ export type Database = {
           {
             foreignKeyName: "pages_parent_id_fkey"
             columns: ["parent_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_parent_id_fkey"
+            columns: ["parent_id"]
             referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "v_recent_pages"
             referencedColumns: ["id"]
           },
           {
@@ -1011,6 +1278,31 @@ export type Database = {
             columns: ["unit_id"]
             referencedRelation: "v_org_units"
             referencedColumns: ["id"]
+          },
+        ]
+      }
+      v_recent_pages: {
+        Row: {
+          icon: string | null
+          id: string | null
+          status: string | null
+          title: string | null
+          type: string | null
+          user_id: string | null
+          visited_at: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_visits_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_visits_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
           },
         ]
       }
@@ -1160,6 +1452,7 @@ export type Database = {
         Returns: number
       }
       text2ltree: { Args: { "": string }; Returns: unknown }
+      touch_page_visit: { Args: { p_page_id: string }; Returns: undefined }
       weekly_digest: {
         Args: { p_days?: number }
         Returns: {

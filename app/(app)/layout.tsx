@@ -2,7 +2,7 @@ import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { fetchTree } from '@/lib/pages';
 import { AppShell } from '@/components/app-shell';
-import type { Me, OrgUnitRow } from '@/lib/types';
+import type { Me, OrgUnitRow, SidebarPageLite } from '@/lib/types';
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createClient();
@@ -11,7 +11,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const [{ data: profile }, tree, { data: units }] = await Promise.all([
+  const [{ data: profile }, tree, { data: units }, { data: favorites }, { data: recents }] = await Promise.all([
     supabase
       .from('profiles')
       .select('id, name, email, avatar_url, is_admin, unit_id, rank, job_title, must_change_password')
@@ -19,6 +19,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       .maybeSingle(),
     fetchTree(supabase),
     supabase.from('v_org_units').select('*'),
+    supabase.from('v_favorite_pages').select('id, title, icon, type, status').eq('user_id', user.id).limit(20),
+    supabase.from('v_recent_pages').select('id, title, icon, type, status').eq('user_id', user.id).limit(6),
   ]);
 
   // 관리자가 만든 계정의 첫 로그인: 비밀번호를 바꿔야 들어올 수 있다
@@ -36,7 +38,13 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   };
 
   return (
-    <AppShell me={me} initialTree={tree} units={(units ?? []) as OrgUnitRow[]}>
+    <AppShell
+      me={me}
+      initialTree={tree}
+      units={(units ?? []) as OrgUnitRow[]}
+      favorites={(favorites ?? []) as SidebarPageLite[]}
+      recents={(recents ?? []) as SidebarPageLite[]}
+    >
       {children}
     </AppShell>
   );

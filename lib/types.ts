@@ -7,6 +7,8 @@ export type PageRow = Tables['pages']['Row'];
 export type ProfileRow = Tables['profiles']['Row'];
 export type PageTreeRow = Views['v_page_tree']['Row'];
 export type OrgUnitRow = Views['v_org_units']['Row'];
+/** 사이드바 즐겨찾기·최근용 최소 페이지 정보 */
+export type SidebarPageLite = { id: string; title: string; icon: string | null; type: string; status: string | null };
 export type PageVisibility = '본부' | '소속' | '개인';
 export const RANKS = ['사원', '주임', '대리', '과장', '차장', '부장'] as const;
 export const JOB_TITLES = ['팀원', '팀장', '실장', '본부장'] as const;

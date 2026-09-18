@@ -1,7 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
+import { toast } from 'sonner';
+import { createClient } from '@/lib/supabase/client';
+import { errorMessage } from '@/lib/errors';
+import { PAGE_STATUSES, type PageStatus } from '@/lib/types';
 import { useTree } from '@/components/tree-context';
 import { useNewPage } from '@/components/new-page-provider';
 import { statusClass } from '@/lib/status-style';
@@ -11,6 +16,11 @@ import type { PageRow, PageVisibility } from '@/lib/types';
 export function SubpageList({ page }: { page: PageRow }) {
   const { rows } = useTree();
   const { open } = useNewPage();
+  const router = useRouter();
+  const supabase = useMemo(() => createClient(), []);
+  const [view, setView] = useState<'list' | 'board'>('list');
+  const [dragId, setDragId] = useState<string | null>(null);
+  const [over, setOver] = useState<string | null>(null);
   const children = useMemo(
     () =>
       rows
@@ -19,10 +29,31 @@ export function SubpageList({ page }: { page: PageRow }) {
     [rows, page.id],
   );
 
+  const tasks = children.filter((c) => c.type === 'task');
+  const moveStatus = async (id: string, status: PageStatus) => {
+    const { error } = await supabase.from('pages').update({ status }).eq('id', id);
+    if (error) toast.error(`상태 변경 실패: ${errorMessage(error)}`);
+    else router.refresh();
+  };
+
   return (
     <section className="mx-auto w-full max-w-[900px] px-6 pb-8 sm:px-12">
       <div className="flex items-center gap-2">
         <h2 className="text-sm font-medium text-zinc-500">하위 페이지 {children.length > 0 && `· ${children.length}`}</h2>
+        {tasks.length > 0 && (
+          <div className="ml-2 flex gap-0.5 rounded-md border border-zinc-200 p-0.5">
+            {(['list', 'board'] as const).map((v) => (
+              <button
+                key={v}
+                type="button"
+                onClick={() => setView(v)}
+                className={`rounded px-2 py-0.5 text-[11px] ${view === v ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-100'}`}
+              >
+                {v === 'list' ? '목록' : '보드'}
+              </button>
+            ))}
+          </div>
+        )}
         <button
           type="button"
           onClick={() =>
@@ -38,7 +69,57 @@ export function SubpageList({ page }: { page: PageRow }) {
           ＋ 하위 페이지
         </button>
       </div>
-      {children.length > 0 && (
+      {view === 'board' && tasks.length > 0 && (
+        <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
+          {PAGE_STATUSES.map((st) => {
+            const col = tasks.filter((t) => t.status === st);
+            return (
+              <div
+                key={st}
+                onDragOver={(e) => {
+                  if (!dragId) return;
+                  e.preventDefault();
+                  if (over !== st) setOver(st);
+                }}
+                onDragLeave={() => over === st && setOver(null)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  if (dragId) void moveStatus(dragId, st);
+                  setDragId(null);
+                  setOver(null);
+                }}
+                className={`w-44 shrink-0 rounded-lg border p-1.5 ${over === st ? 'border-blue-400 bg-blue-50/40' : 'border-zinc-200 bg-zinc-50/60'}`}
+              >
+                <div className="flex items-center gap-1.5 px-1 py-0.5">
+                  <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${statusClass(st)}`}>{st}</span>
+                  <span className="text-[10px] text-zinc-400">{col.length}</span>
+                </div>
+                <ul className="mt-1 space-y-1.5">
+                  {col.map((t) => (
+                    <li
+                      key={t.id}
+                      draggable
+                      onDragStart={() => setDragId(t.id!)}
+                      onDragEnd={() => {
+                        setDragId(null);
+                        setOver(null);
+                      }}
+                      className={`rounded-md border border-zinc-200 bg-white p-2 text-xs shadow-sm ${dragId === t.id ? 'opacity-40' : ''}`}
+                    >
+                      <Link href={`/p/${t.id}`} className="block hover:underline">
+                        {t.icon ?? '☑'} {t.title}
+                      </Link>
+                      {t.due_date && <div className="mt-1 text-[10px] text-zinc-400">기한 {t.due_date}</div>}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {view === 'list' && children.length > 0 && (
         <ul className="mt-2 grid gap-2 sm:grid-cols-2">
           {children.map((c) => (
             <li key={c.id}>

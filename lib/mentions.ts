@@ -17,10 +17,39 @@ type AnyNode = Record<string, unknown> & {
   type?: string;
   props?: Record<string, unknown>;
   attrs?: Record<string, unknown>;
-  content?: AnyNode[];
+  /** 인라인 배열 | 문자열 | 표(tableContent 객체) */
+  content?: AnyNode[] | string | TableContent;
   children?: AnyNode[];
   text?: string;
 };
+
+type TableContent = {
+  type: 'tableContent';
+  rows?: { cells?: (AnyNode[] | { type: 'tableCell'; content?: AnyNode[] })[] }[];
+};
+
+/**
+ * 블록의 content 를 인라인 노드 배열로 정규화한다.
+ * BlockNote 의 표(table) 블록은 content 가 배열이 아니라 { type:'tableContent', rows:[{cells:[...]}] } 객체라서
+ * 그대로 순회하면 "object is not iterable" 로 저장이 실패한다.
+ */
+function inlineNodes(content: AnyNode['content']): AnyNode[] {
+  if (!content) return [];
+  if (typeof content === 'string') return [{ type: 'text', text: content }];
+  if (Array.isArray(content)) return content;
+  if (typeof content === 'object' && (content as TableContent).type === 'tableContent') {
+    const out: AnyNode[] = [];
+    for (const row of (content as TableContent).rows ?? []) {
+      for (const cell of row.cells ?? []) {
+        const nodes = Array.isArray(cell) ? cell : cell?.content ?? [];
+        out.push(...nodes, { type: 'text', text: ' ' });
+      }
+      out.push({ type: 'text', text: '\n' });
+    }
+    return out;
+  }
+  return [];
+}
 
 export interface ExtractedMention {
   userId: string;
@@ -55,7 +84,7 @@ function inlineText(node: AnyNode): string {
   const walk = (n: AnyNode) => {
     if (typeof n.text === 'string') out.push(n.text);
     if (n.type && MENTION_TYPES.has(n.type)) out.push(`@${nodeLabel(n)}`);
-    for (const child of n.content ?? []) walk(child);
+    for (const child of inlineNodes(n.content)) walk(child);
   };
   walk(node);
   return out.join('').replace(/\s+/g, ' ').trim();
@@ -96,7 +125,7 @@ export function extractMentions(doc: unknown): ExtractedMention[] {
           });
         }
       }
-      for (const child of n.content ?? []) scan(child);
+      for (const child of inlineNodes(n.content)) scan(child);
     };
 
     scan(block);

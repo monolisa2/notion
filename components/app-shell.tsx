@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { fetchTree } from '@/lib/pages';
-import type { Me, OrgUnitRow, PageTreeRow } from '@/lib/types';
+import type { Me, OrgUnitRow, PageTreeRow, SidebarPageLite } from '@/lib/types';
 import { Sidebar } from '@/components/sidebar/sidebar';
 import { ProgressLogProvider } from '@/components/progress-log-provider';
 import { TreeContext } from '@/components/tree-context';
@@ -17,11 +17,15 @@ export function AppShell({
   me,
   initialTree,
   units,
+  favorites,
+  recents,
   children,
 }: {
   me: Me;
   initialTree: PageTreeRow[];
   units: OrgUnitRow[];
+  favorites: SidebarPageLite[];
+  recents: SidebarPageLite[];
   children: React.ReactNode;
 }) {
   const [tree, setTree] = useState<PageTreeRow[]>(initialTree);
@@ -59,7 +63,7 @@ export function AppShell({
       <ProgressLogProvider me={me} rows={tree}>
         <NewPageProvider me={me} onCreated={refresh}>
           <div className="flex h-dvh w-full overflow-hidden bg-white">
-            <Sidebar me={me} rows={tree} units={units} onChanged={refresh} />
+            <Sidebar me={me} rows={tree} units={units} favorites={favorites} recents={recents} onChanged={refresh} />
             <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
           </div>
         </NewPageProvider>

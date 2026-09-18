@@ -136,3 +136,18 @@ export async function setPinned(sb: Db, id: string, pinned: boolean) {
   const { error } = await sb.from('pages').update({ pinned }).eq('id', id);
   if (error) throw error;
 }
+
+export async function toggleFavorite(sb: Db, userId: string, pageId: string, on: boolean) {
+  if (on) {
+    const { error } = await sb.from('page_favorites').upsert({ user_id: userId, page_id: pageId });
+    if (error) throw error;
+  } else {
+    const { error } = await sb.from('page_favorites').delete().eq('user_id', userId).eq('page_id', pageId);
+    if (error) throw error;
+  }
+}
+
+export async function touchVisit(sb: Db, pageId: string) {
+  const { error } = await sb.rpc('touch_page_visit', { p_page_id: pageId });
+  if (error) throw error;
+}

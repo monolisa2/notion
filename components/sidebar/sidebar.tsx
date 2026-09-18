@@ -21,7 +21,7 @@ import {
   siblingsOf,
   type TreeNode,
 } from '@/lib/tree';
-import type { Me, OrgUnitRow, PageTreeRow, PageVisibility } from '@/lib/types';
+import type { Me, OrgUnitRow, PageTreeRow, PageVisibility, SidebarPageLite } from '@/lib/types';
 import { buildOrgTree, chainOf, type OrgNode } from '@/lib/org';
 import { ContextMenu, type MenuItem } from './context-menu';
 import { useProgressLog } from '@/components/progress-log-provider';
@@ -36,11 +36,15 @@ export function Sidebar({
   me,
   rows,
   units,
+  favorites = [],
+  recents = [],
   onChanged,
 }: {
   me: Me;
   rows: PageTreeRow[];
   units: OrgUnitRow[];
+  favorites?: SidebarPageLite[];
+  recents?: SidebarPageLite[];
   onChanged: () => Promise<void>;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -524,6 +528,30 @@ export function Sidebar({
           e.preventDefault();
         }}
       >
+        {favorites.length > 0 && (
+          <div className="mb-1">
+            <div className="px-1 py-1 text-[11px] font-semibold text-zinc-400">★ 즐겨찾기</div>
+            <ul className="space-y-px">
+              {favorites.map((f) => (
+                <li key={f.id}>
+                  <LitePageLink p={f} active={currentId === f.id} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+        {recents.length > 0 && (
+          <div className="mb-1">
+            <div className="px-1 py-1 text-[11px] font-semibold text-zinc-400">🕘 최근 항목</div>
+            <ul className="space-y-px">
+              {recents.slice(0, 5).map((f) => (
+                <li key={f.id}>
+                  <LitePageLink p={f} active={currentId === f.id} />
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {orgTree.map((root) => renderSpace(root, 0))}
         {renderPersonal()}
         <div className="mt-3 border-t border-zinc-200 pt-2">
@@ -537,6 +565,23 @@ export function Sidebar({
       )}
 
     </aside>
+  );
+}
+
+function LitePageLink({ p, active }: { p: SidebarPageLite; active: boolean }) {
+  return (
+    <Link
+      href={`/p/${p.id}`}
+      className={`flex items-center gap-1.5 rounded-md px-1 py-1 text-[13px] ${
+        active ? 'bg-zinc-200/80 font-medium text-zinc-900' : 'text-zinc-700 hover:bg-zinc-200/60'
+      }`}
+    >
+      <span className="flex w-5 shrink-0 items-center justify-center text-[13px] leading-none">{p.icon ?? (p.type === 'task' ? '☑' : '📄')}</span>
+      <span className="min-w-0 flex-1 truncate">{p.title}</span>
+      {p.type === 'task' && p.status && (
+        <span className="shrink-0 rounded bg-zinc-200 px-1 text-[10px] text-zinc-600">{p.status}</span>
+      )}
+    </Link>
   );
 }
 

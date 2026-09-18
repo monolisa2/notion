@@ -9,6 +9,7 @@ import { CommentThread } from '@/components/comments/comment-thread';
 import type { Me, OrgUnitRow } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { SubpageList } from '@/components/subpage-list';
+import { VisitTracker } from '@/components/visit-tracker';
 
 export default async function PageView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -29,7 +30,7 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
   if (!page) notFound();
 
   const isTask = page.type === 'task';
-  const [assignees, updates, comments, profile, units] = await Promise.all([
+  const [assignees, updates, comments, profile, units, fav] = await Promise.all([
     isTask
       ? supabase
           .from('profiles')
@@ -42,6 +43,7 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
     fetchComments(supabase, page.id),
     supabase.from('profiles').select('name, avatar_url, is_admin, unit_id, rank, job_title').eq('id', user.id).maybeSingle().then((r) => r.data),
     supabase.from('v_org_units').select('*').then((r) => (r.data ?? []) as OrgUnitRow[]),
+    supabase.from('page_favorites').select('page_id').eq('user_id', user.id).eq('page_id', page.id).maybeSingle().then((r) => !!r.data),
   ]);
   const me: Me = {
     id: user.id,
@@ -56,7 +58,8 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
 
   return (
     <article className="min-h-full">
-      <PageHeader key={`hdr-${page.id}`} page={page} units={units} isAdmin={me.isAdmin} />
+      <PageHeader key={`hdr-${page.id}`} page={page} units={units} isAdmin={me.isAdmin} meId={user.id} isFavorite={fav} />
+      <VisitTracker pageId={page.id} />
 
       {isTask && <PropertyBar key={`props-${page.id}`} page={page} assignees={assignees} meId={user.id} />}
 
