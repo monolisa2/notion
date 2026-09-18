@@ -25,6 +25,7 @@ import {
 import type { Me, PageTreeRow } from '@/lib/types';
 import { ContextMenu, type MenuItem } from './context-menu';
 import { useProgressLog } from '@/components/progress-log-provider';
+import { NotificationBell } from '@/components/notifications/notification-bell';
 
 type DropPos = 'before' | 'after' | 'inside';
 type DropTarget = { id: string; pos: DropPos } | { id: null; pos: 'root' };
@@ -332,7 +333,9 @@ export function Sidebar({
         <Link href="/" className="truncate text-sm font-semibold">
           TeamHub
         </Link>
-        <form action="/auth/signout" method="post" className="ml-auto">
+        <span className="ml-auto" />
+        <NotificationBell meId={me.id} />
+        <form action="/auth/signout" method="post">
           <button
             type="submit"
             className="rounded px-1.5 py-0.5 text-xs text-zinc-500 hover:bg-zinc-200 dark:hover:bg-zinc-800"

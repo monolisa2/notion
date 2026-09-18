@@ -34,3 +34,30 @@ body {
 .teamhub-editor .bn-container {
   background: transparent;
 }
+
+/* 멘션 칩 */
+.bn-mention {
+  display: inline;
+  border-radius: 4px;
+  padding: 0 3px;
+  background: rgba(59, 130, 246, 0.12);
+  color: rgb(29, 78, 216);
+  font-weight: 500;
+}
+@media (prefers-color-scheme: dark) {
+  .bn-mention {
+    background: rgba(96, 165, 250, 0.18);
+    color: rgb(147, 197, 253);
+  }
+}
+
+/* 댓글용 소형 에디터 */
+.teamhub-comment-editor .bn-editor {
+  background: transparent;
+  padding-inline: 12px;
+  padding-block: 8px;
+  min-height: 3.5rem;
+}
+.teamhub-comment-editor .bn-container {
+  background: transparent;
+}

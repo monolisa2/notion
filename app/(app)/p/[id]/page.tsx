@@ -4,6 +4,9 @@ import { PageEditor } from '@/components/editor/page-editor';
 import { PropertyBar } from '@/components/task/property-bar';
 import { UpdateTimeline } from '@/components/task/update-timeline';
 import { fetchUpdates } from '@/lib/updates';
+import { fetchComments } from '@/lib/comments';
+import { CommentThread } from '@/components/comments/comment-thread';
+import type { Me } from '@/lib/types';
 
 export default async function PageView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -24,17 +27,26 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
   if (!page) notFound();
 
   const isTask = page.type === 'task';
-  const [assignees, updates] = isTask
-    ? await Promise.all([
-        supabase
+  const [assignees, updates, comments, profile] = await Promise.all([
+    isTask
+      ? supabase
           .from('profiles')
           .select('id, name, avatar_url')
           .is('deactivated_at', null)
           .order('name')
-          .then((r) => r.data ?? []),
-        fetchUpdates(supabase, page.id),
-      ])
-    : [[], []];
+          .then((r) => r.data ?? [])
+      : Promise.resolve([]),
+    isTask ? fetchUpdates(supabase, page.id) : Promise.resolve([]),
+    fetchComments(supabase, page.id),
+    supabase.from('profiles').select('name, avatar_url, is_admin').eq('id', user.id).maybeSingle().then((r) => r.data),
+  ]);
+  const me: Me = {
+    id: user.id,
+    name: profile?.name ?? '나',
+    email: user.email ?? null,
+    avatarUrl: profile?.avatar_url ?? null,
+    isAdmin: profile?.is_admin ?? false,
+  };
 
   return (
     <article className="min-h-full">
@@ -49,6 +61,8 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
       <PageEditor key={page.id} page={page} userId={user.id} />
 
       {isTask && <UpdateTimeline key={`updates-${page.id}`} pageId={page.id} initial={updates} />}
+
+      <CommentThread key={`comments-${page.id}`} pageId={page.id} me={me} initial={comments} />
     </article>
   );
 }

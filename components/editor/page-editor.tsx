@@ -99,7 +99,7 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
       />
 
       <div className="mt-4 -mx-12">
-        <BlockNoteEditor initialContent={page.content} onChange={onContentChange} />
+        <BlockNoteEditor initialContent={page.content} meId={userId} onChange={onContentChange} />
       </div>
     </div>
   );

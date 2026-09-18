@@ -10,7 +10,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import type { Database } from '@/types/db';
 
 /** 로그인 없이 접근 가능한 경로 */
-const PUBLIC_PATHS = ['/login', '/auth'];
+const PUBLIC_PATHS = ['/login', '/auth', '/dev-editor'];
 
 export async function updateSession(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request });
