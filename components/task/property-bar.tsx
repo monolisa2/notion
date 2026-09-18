@@ -12,27 +12,12 @@ import {
   type PageStatus,
 } from '@/lib/types';
 import { Avatar } from '@/components/avatar';
+import { PRIORITY_COLOR, STATUS_COLOR } from '@/lib/status-style';
 import { useProgressLog } from '@/components/progress-log-provider';
 
 export type AssigneeOption = { id: string; name: string; avatar_url: string | null };
 
 type TaskFields = Pick<PageRow, 'status' | 'assignee_id' | 'progress' | 'due_date' | 'priority'>;
-
-const STATUS_COLOR: Record<PageStatus, string> = {
-  대기: 'bg-zinc-100 text-zinc-700 dark:bg-zinc-800 dark:text-zinc-200',
-  진행: 'bg-blue-100 text-blue-800 dark:bg-blue-900/60 dark:text-blue-200',
-  검토: 'bg-violet-100 text-violet-800 dark:bg-violet-900/60 dark:text-violet-200',
-  완료: 'bg-emerald-100 text-emerald-800 dark:bg-emerald-900/60 dark:text-emerald-200',
-  보류: 'bg-amber-100 text-amber-800 dark:bg-amber-900/60 dark:text-amber-200',
-  드롭: 'bg-zinc-200 text-zinc-500 line-through dark:bg-zinc-800 dark:text-zinc-400',
-};
-
-const PRIORITY_COLOR: Record<PagePriority, string> = {
-  긴급: 'text-red-600 dark:text-red-400',
-  높음: 'text-orange-600 dark:text-orange-400',
-  보통: 'text-zinc-600 dark:text-zinc-300',
-  낮음: 'text-zinc-400',
-};
 
 /**
  * type='task' 페이지 상단 속성 바 (한 줄).

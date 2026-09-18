@@ -346,6 +346,9 @@ export function Sidebar({
       </div>
 
       <div className="px-2">
+        <NavLink href="/" label="대시보드" icon="▦" active={pathname === '/'} />
+        <NavLink href="/tasks" label="업무 목록" icon="☑" active={pathname.startsWith('/tasks')} />
+        <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
         <button
           type="button"
           onClick={() => addChild(null)}
@@ -392,6 +395,24 @@ export function Sidebar({
         <ContextMenu x={menu.x} y={menu.y} items={menuItems(menu.node)} onClose={() => setMenu(null)} />
       )}
     </aside>
+  );
+}
+
+function NavLink({ href, label, icon, active }: { href: string; label: string; icon: string; active: boolean }) {
+  return (
+    <Link
+      href={href}
+      className={`flex items-center gap-2 rounded-md px-2 py-1.5 text-sm ${
+        active
+          ? 'bg-zinc-200/70 font-medium dark:bg-zinc-800'
+          : 'text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800'
+      }`}
+    >
+      <span className="w-4 text-center text-xs leading-none" aria-hidden="true">
+        {icon}
+      </span>
+      {label}
+    </Link>
   );
 }
 
