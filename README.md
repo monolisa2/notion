@@ -5,7 +5,7 @@
 ```
 CLAUDE.md                        Claude Code 가 매 세션 읽는 규칙
 docs/BUILD_PROMPTS.md            Phase 0~7 빌드 프롬프트 (순서대로 붙여넣기)
-supabase/migrations/0001~0006    스키마 전체
+supabase/migrations/0001~0007    스키마 전체 (0007 = 미입력 리마인드)
 supabase/tests/smoke.sql         검증 스크립트 24종
 lib/mentions.ts                  멘션 추출 + diff 동기화
 ```
@@ -20,7 +20,7 @@ git init teamhub && cd teamhub
 
 # 2) Supabase 프로젝트 생성 후 마이그레이션 적용
 supabase link --project-ref <ref>
-supabase db push            # 0001 → 0006 순서로 적용됨
+supabase db push            # 0001 → 0007 순서로 적용됨
 
 # 0006_labels_optional.sql 은 '합병' '채용' 같은 분류 라벨용.
 # 사람 멘션은 0003 에 이미 있으므로, 분류 라벨이 필요 없으면 이 파일을 삭제.

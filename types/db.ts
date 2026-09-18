@@ -792,6 +792,7 @@ export type Database = {
     }
     Functions: {
       dearmor: { Args: { "": string }; Returns: string }
+      enqueue_daily_reminders: { Args: { p_today?: string }; Returns: number }
       enqueue_notification: {
         Args: {
           p_actor: string

@@ -140,4 +140,5 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0004_dashboard.sql       뷰 5종 + weekly_digest()
 0005_rls.sql             RLS + Realtime publication
 0006_labels_optional.sql 분류 라벨 — 필요 없으면 파일 삭제
+0007_stale_reminder.sql  미입력 리마인드 함수 + pg_cron(평일 17:30 KST)
 ```
