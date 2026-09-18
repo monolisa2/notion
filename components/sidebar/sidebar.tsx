@@ -22,7 +22,8 @@ import {
   siblingsOf,
   type TreeNode,
 } from '@/lib/tree';
-import type { Me, PageTreeRow } from '@/lib/types';
+import type { Me, OrgUnitRow, PageTreeRow, PageVisibility } from '@/lib/types';
+import { buildOrgTree, chainOf, type OrgNode } from '@/lib/org';
 import { ContextMenu, type MenuItem } from './context-menu';
 import { useProgressLog } from '@/components/progress-log-provider';
 import { NotificationBell } from '@/components/notifications/notification-bell';
@@ -33,10 +34,12 @@ type DropTarget = { id: string; pos: DropPos } | { id: null; pos: 'root' };
 export function Sidebar({
   me,
   rows,
+  units,
   onChanged,
 }: {
   me: Me;
   rows: PageTreeRow[];
+  units: OrgUnitRow[];
   onChanged: () => Promise<void>;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -45,7 +48,28 @@ export function Sidebar({
   const pathname = usePathname();
   const currentId = pathname.startsWith('/p/') ? pathname.slice(3).split('/')[0] : null;
 
+  // 전체 트리(이동 계산용) + 공간별 루트 분리
   const tree = useMemo(() => buildTree(rows), [rows]);
+  const orgTree = useMemo(() => buildOrgTree(units), [units]);
+  const myChain = useMemo(() => chainOf(units, me.unitId), [units, me.unitId]);
+  const rowsByUnit = useMemo(() => {
+    const m = new Map<string, PageTreeRow[]>();
+    const personal: PageTreeRow[] = [];
+    for (const r of rows) {
+      if (r.visibility === '개인') personal.push(r);
+      else if (r.unit_id) m.set(r.unit_id, [...(m.get(r.unit_id) ?? []), r]);
+    }
+    return { m, personal };
+  }, [rows]);
+  // 공간(조직) 접기 상태
+  const [closedSpaces, setClosedSpaces] = useState<Set<string>>(new Set());
+  const toggleSpace = (k: string) =>
+    setClosedSpaces((prev) => {
+      const next = new Set(prev);
+      if (next.has(k)) next.delete(k);
+      else next.add(k);
+      return next;
+    });
 
   // 접기/펼치기는 컴포넌트 state 로만 (localStorage 금지).
   // 현재 페이지의 조상은 기본으로 펼쳐지되, 사용자가 접으면 closed 에 기록해 존중한다.
@@ -98,9 +122,14 @@ export function Sidebar({
     }
   };
 
-  const addChild = (parentId: string | null) =>
+  const addChild = (parentId: string | null, space?: { unitId: string | null; visibility: PageVisibility }) =>
     run('페이지 추가', async () => {
-      const id = await createPage(supabase, { parentId, createdBy: me.id });
+      const id = await createPage(supabase, {
+        parentId,
+        createdBy: me.id,
+        unitId: space?.unitId ?? null,
+        visibility: space?.visibility ?? '본부',
+      });
       if (parentId) expand(parentId);
       router.push(`/p/${id}`);
     });
@@ -147,10 +176,7 @@ export function Sidebar({
     let afterId: string | null;
 
     if (target.id === null) {
-      // 빈 공간에 놓기 → 루트 맨 뒤
-      parentId = null;
-      const sibs = tree.filter((n) => n.id !== pageId);
-      afterId = sibs.length ? sibs[sibs.length - 1].id : null;
+      return;
     } else {
       if (target.id === pageId) return;
       const t = findNode(tree, target.id);
@@ -319,6 +345,85 @@ export function Sidebar({
     );
   };
 
+  const spaceHeader = (key: string, label: string, badge: string | null, level: number, onAdd: () => void, mine: boolean) => (
+    <div
+      className="group flex items-center gap-1 rounded-md pr-1 text-xs font-semibold text-zinc-500 hover:bg-zinc-200/40 dark:text-zinc-400 dark:hover:bg-zinc-800/60"
+      style={{ paddingLeft: 4 + level * 10 }}
+    >
+      <button type="button" onClick={() => toggleSpace(key)} className="flex h-6 w-5 items-center justify-center text-zinc-400" aria-label="접기/펼치기">
+        <svg width="10" height="10" viewBox="0 0 10 10" className={`transition-transform ${closedSpaces.has(key) ? '' : 'rotate-90'}`} aria-hidden="true">
+          <path d="M3 1.5 7 5 3 8.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
+        </svg>
+      </button>
+      <button type="button" onClick={() => toggleSpace(key)} className="min-w-0 flex-1 truncate py-1 text-left">
+        {label}
+        {mine && <span className="ml-1 rounded bg-blue-100 px-1 text-[9px] font-medium text-blue-700 dark:bg-blue-900/60 dark:text-blue-200">내 소속</span>}
+      </button>
+      {badge && <span className="text-[10px] font-normal text-zinc-400">{badge}</span>}
+      <button
+        type="button"
+        aria-label="이 공간에 새 페이지"
+        onClick={onAdd}
+        className="invisible h-6 w-6 rounded text-zinc-500 hover:bg-zinc-300/60 group-hover:visible dark:hover:bg-zinc-700"
+      >
+        ＋
+      </button>
+    </div>
+  );
+
+  const renderSpace = (unit: OrgNode, level: number) => {
+    const key = unit.id;
+    const isRoot = unit.level === '본부';
+    const visibility: PageVisibility = isRoot ? '본부' : '소속';
+    const pageTree = buildTree(rowsByUnit.m.get(unit.id) ?? []);
+    const mine = myChain.has(unit.id) && me.unitId === unit.id;
+    const open = !closedSpaces.has(key);
+    return (
+      <div key={key} className="mt-1">
+        {spaceHeader(
+          key,
+          isRoot ? `${unit.name} 공용` : unit.name ?? '',
+          isRoot ? null : `${unit.member_count ?? 0}명`,
+          level,
+          () => addChild(null, { unitId: unit.id, visibility }),
+          mine,
+        )}
+        {open && (
+          <>
+            {pageTree.length > 0 ? (
+              <ul className="space-y-px" style={{ paddingLeft: level * 10 }}>
+                {pageTree.map((n) => renderNode(n, 1))}
+              </ul>
+            ) : (
+              unit.children.length === 0 && (
+                <p className="py-1 text-[11px] text-zinc-400" style={{ paddingLeft: 28 + level * 10 }}>
+                  페이지 없음
+                </p>
+              )
+            )}
+            {unit.children.map((c) => renderSpace(c, level + 1))}
+          </>
+        )}
+      </div>
+    );
+  };
+
+  const renderPersonal = () => {
+    const key = 'personal';
+    const pageTree = buildTree(rowsByUnit.personal);
+    return (
+      <div key={key} className="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-800">
+        {spaceHeader(key, '개인 메모', '나만 봄', 0, () => addChild(null, { unitId: null, visibility: '개인' }), false)}
+        {!closedSpaces.has(key) &&
+          (pageTree.length > 0 ? (
+            <ul className="space-y-px">{pageTree.map((n) => renderNode(n, 1))}</ul>
+          ) : (
+            <p className="py-1 pl-7 text-[11px] text-zinc-400">메모 없음</p>
+          ))}
+      </div>
+    );
+  };
+
   return (
     <aside className="flex h-full w-64 shrink-0 flex-col border-r border-zinc-200 bg-zinc-100/70 dark:border-zinc-800 dark:bg-zinc-900/60">
       <div className="flex items-center gap-2 px-3 py-3">
@@ -346,50 +451,28 @@ export function Sidebar({
       </div>
 
       <div className="px-2">
-        <NavLink href="/" label="대시보드" icon="▦" active={pathname === '/'} />
+        <NavLink href="/" label="홈" icon="▦" active={pathname === '/'} />
         <NavLink href="/tasks" label="업무 목록" icon="☑" active={pathname.startsWith('/tasks')} />
-        <NavLink href="/reports/new" label="주간보고" icon="✎" active={pathname.startsWith('/reports')} />
-        <div className="my-1 border-t border-zinc-200 dark:border-zinc-800" />
-        <button
-          type="button"
-          onClick={() => addChild(null)}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          <span className="text-base leading-none">＋</span> 새 페이지
-        </button>
+        {me.isAdmin && <NavLink href="/admin" label="관리자" icon="⚙" active={pathname.startsWith('/admin')} />}
         <button
           type="button"
           onClick={() => openLog()}
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
-          <span className="text-base leading-none">✎</span> 진행 로그 남기기
+          <span className="w-4 text-center text-xs leading-none">✎</span> 진행 로그 남기기
           <kbd className="ml-auto text-[10px] text-zinc-400">⌃⇧L</kbd>
         </button>
       </div>
 
       <nav
-        className="mt-1 flex-1 overflow-y-auto px-2 pb-8"
+        className="mt-2 flex-1 overflow-y-auto px-2 pb-8"
         onDragOver={(e) => {
           if (!dragIdRef.current) return;
           e.preventDefault();
-          if (!dropTarget || dropTarget.id !== null) setDropTarget({ id: null, pos: 'root' });
-        }}
-        onDrop={(e) => {
-          e.preventDefault();
-          void handleDrop({ id: null, pos: 'root' });
         }}
       >
-        {tree.length === 0 ? (
-          <p className="px-2 py-6 text-center text-xs text-zinc-400">
-            아직 페이지가 없습니다.
-            <br />위 &ldquo;새 페이지&rdquo;로 시작하세요.
-          </p>
-        ) : (
-          <ul className="space-y-px">{tree.map((n) => renderNode(n, 0))}</ul>
-        )}
-        {dropTarget?.id === null && dragId && (
-          <div className="mx-1 mt-1 h-0.5 rounded bg-blue-500" />
-        )}
+        {orgTree.map((root) => renderSpace(root, 0))}
+        {renderPersonal()}
       </nav>
 
       {menu && (

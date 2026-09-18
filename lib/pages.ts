@@ -5,7 +5,7 @@
  */
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/db';
-import type { PageTreeRow, PageType } from './types';
+import type { PageTreeRow, PageType, PageVisibility, Tables } from './types';
 
 export type Db = SupabaseClient<Database>;
 
@@ -17,7 +17,15 @@ export async function fetchTree(sb: Db): Promise<PageTreeRow[]> {
 
 export async function createPage(
   sb: Db,
-  params: { parentId: string | null; createdBy: string; type?: PageType; title?: string },
+  params: {
+    parentId: string | null;
+    createdBy: string;
+    type?: PageType;
+    title?: string;
+    /** 루트 페이지일 때만 의미 있음. 하위 페이지는 부모의 공간/공개범위를 상속한다 */
+    unitId?: string | null;
+    visibility?: PageVisibility;
+  },
 ): Promise<string> {
   const type = params.type ?? 'doc';
   const { data, error } = await sb
@@ -29,6 +37,12 @@ export async function createPage(
       title: params.title ?? '제목 없음',
       status: type === 'task' ? '대기' : null,
       progress: type === 'task' ? 0 : null,
+      ...(params.parentId === null
+        ? {
+            visibility: params.visibility ?? '본부',
+            unit_id: params.visibility === '개인' ? null : (params.unitId ?? null),
+          }
+        : {}),
     })
     .select('id')
     .single();
@@ -76,5 +90,18 @@ export async function movePage(
     p_parent_id: params.parentId as unknown as string,
     p_after_id: (params.afterId ?? null) as unknown as string | undefined,
   });
+  if (error) throw error;
+}
+
+/** 루트 페이지의 공간/공개범위 변경 (후손은 트리거가 따라 바꾼다) */
+export async function setPageSpace(
+  sb: Db,
+  id: string,
+  patch: { unitId?: string | null; visibility?: PageVisibility },
+) {
+  const row: Tables['pages']['Update'] = {};
+  if ('unitId' in patch) row.unit_id = patch.unitId;
+  if (patch.visibility) row.visibility = patch.visibility;
+  const { error } = await sb.from('pages').update(row).eq('id', id);
   if (error) throw error;
 }

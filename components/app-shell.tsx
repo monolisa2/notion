@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { fetchTree } from '@/lib/pages';
-import type { Me, PageTreeRow } from '@/lib/types';
+import type { Me, OrgUnitRow, PageTreeRow } from '@/lib/types';
 import { Sidebar } from '@/components/sidebar/sidebar';
 import { ProgressLogProvider } from '@/components/progress-log-provider';
 
@@ -14,10 +14,12 @@ import { ProgressLogProvider } from '@/components/progress-log-provider';
 export function AppShell({
   me,
   initialTree,
+  units,
   children,
 }: {
   me: Me;
   initialTree: PageTreeRow[];
+  units: OrgUnitRow[];
   children: React.ReactNode;
 }) {
   const [tree, setTree] = useState<PageTreeRow[]>(initialTree);
@@ -53,7 +55,7 @@ export function AppShell({
   return (
     <ProgressLogProvider me={me} rows={tree}>
       <div className="flex h-dvh w-full overflow-hidden">
-        <Sidebar me={me} rows={tree} onChanged={refresh} />
+        <Sidebar me={me} rows={tree} units={units} onChanged={refresh} />
         <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
       </div>
     </ProgressLogProvider>

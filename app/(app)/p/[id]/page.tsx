@@ -6,7 +6,8 @@ import { UpdateTimeline } from '@/components/task/update-timeline';
 import { fetchUpdates } from '@/lib/updates';
 import { fetchComments } from '@/lib/comments';
 import { CommentThread } from '@/components/comments/comment-thread';
-import type { Me } from '@/lib/types';
+import type { Me, OrgUnitRow } from '@/lib/types';
+import { PageHeader } from '@/components/page-header';
 
 export default async function PageView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -27,7 +28,7 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
   if (!page) notFound();
 
   const isTask = page.type === 'task';
-  const [assignees, updates, comments, profile] = await Promise.all([
+  const [assignees, updates, comments, profile, units] = await Promise.all([
     isTask
       ? supabase
           .from('profiles')
@@ -38,7 +39,8 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
       : Promise.resolve([]),
     isTask ? fetchUpdates(supabase, page.id) : Promise.resolve([]),
     fetchComments(supabase, page.id),
-    supabase.from('profiles').select('name, avatar_url, is_admin').eq('id', user.id).maybeSingle().then((r) => r.data),
+    supabase.from('profiles').select('name, avatar_url, is_admin, unit_id, rank, job_title').eq('id', user.id).maybeSingle().then((r) => r.data),
+    supabase.from('v_org_units').select('*').then((r) => (r.data ?? []) as OrgUnitRow[]),
   ]);
   const me: Me = {
     id: user.id,
@@ -46,14 +48,14 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
     email: user.email ?? null,
     avatarUrl: profile?.avatar_url ?? null,
     isAdmin: profile?.is_admin ?? false,
+    unitId: profile?.unit_id ?? null,
+    rank: profile?.rank ?? null,
+    jobTitle: profile?.job_title ?? null,
   };
 
   return (
     <article className="min-h-full">
-      <div className="mx-auto flex w-full max-w-3xl items-center gap-2 px-6 pt-6 text-xs text-zinc-400 sm:px-10">
-        <span className="rounded bg-zinc-100 px-1.5 py-0.5 dark:bg-zinc-800">{isTask ? '업무' : '문서'}</span>
-        <span>수정 {page.updated_at.slice(0, 10)}</span>
-      </div>
+      <PageHeader key={`hdr-${page.id}`} page={page} units={units} />
 
       {isTask && <PropertyBar key={`props-${page.id}`} page={page} assignees={assignees} />}
 
