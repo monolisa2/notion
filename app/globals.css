@@ -25,3 +25,12 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
 }
+
+/* BlockNote 를 페이지 배경에 녹인다 */
+.teamhub-editor .bn-editor {
+  background: transparent;
+  padding-inline: 54px;
+}
+.teamhub-editor .bn-container {
+  background: transparent;
+}
