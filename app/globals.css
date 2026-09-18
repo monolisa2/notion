@@ -4,6 +4,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
+  color-scheme: only light;
   --background: #fafafa;
   --foreground: #171717;
 }
