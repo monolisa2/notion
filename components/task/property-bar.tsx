@@ -24,7 +24,7 @@ type TaskFields = Pick<PageRow, 'status' | 'assignee_id' | 'progress' | 'due_dat
  * 각 필드는 변경 즉시 optimistic 반영 → 저장 실패 시 되돌리고 토스트.
  * 다른 사람이 바꾸거나 진행 로그 트리거가 갱신하면 Realtime 으로 따라온다.
  */
-export function PropertyBar({ page, assignees }: { page: PageRow; assignees: AssigneeOption[] }) {
+export function PropertyBar({ page, assignees, meId }: { page: PageRow; assignees: AssigneeOption[]; meId?: string }) {
   const supabase = useMemo(() => createClient(), []);
   const { open: openLog } = useProgressLog();
   const [fields, setFields] = useState<TaskFields>({
@@ -78,9 +78,9 @@ export function PropertyBar({ page, assignees }: { page: PageRow; assignees: Ass
   const progress = fields.progress ?? 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-wrap items-center gap-2 px-6 pt-4 text-sm sm:px-10">
+    <div className="mx-auto flex w-full max-w-[900px] flex-nowrap items-center gap-2 overflow-x-auto px-6 pt-4 text-sm sm:px-12 [scrollbar-width:thin]">
       {/* 상태 */}
-      <label className="relative">
+      <label className="relative shrink-0">
         <span className="sr-only">상태</span>
         <select
           value={status}
@@ -97,7 +97,7 @@ export function PropertyBar({ page, assignees }: { page: PageRow; assignees: Ass
       </label>
 
       {/* 담당자 */}
-      <label className="relative flex items-center gap-1.5 rounded-md border border-zinc-200 py-0.5 pl-1.5 pr-6 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">
+      <label className="relative flex shrink-0 items-center gap-1.5 rounded-md border border-zinc-200 py-0.5 pl-1.5 pr-6 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-900">
         <span className="sr-only">담당자</span>
         {assignee ? (
           <Avatar name={assignee.name} src={assignee.avatar_url} size={18} />
@@ -118,9 +118,19 @@ export function PropertyBar({ page, assignees }: { page: PageRow; assignees: Ass
         </select>
         <Chevron />
       </label>
+      {meId && fields.assignee_id !== meId && (
+        <button
+          type="button"
+          onClick={() => update({ assignee_id: meId })}
+          className="shrink-0 rounded-md border border-dashed border-zinc-300 px-2 py-0.5 text-xs text-zinc-500 hover:bg-zinc-50"
+          title="담당자를 나로 지정"
+        >
+          나에게
+        </button>
+      )}
 
       {/* 진행률 */}
-      <label className="flex items-center gap-2 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700">
+      <label className="flex shrink-0 items-center gap-2 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700">
         <span className="text-xs text-zinc-500">진행률</span>
         <input
           type="range"
@@ -139,7 +149,7 @@ export function PropertyBar({ page, assignees }: { page: PageRow; assignees: Ass
       </label>
 
       {/* 기한 */}
-      <label className="flex items-center gap-1.5 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700">
+      <label className="flex shrink-0 items-center gap-1.5 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700">
         <span className="text-xs text-zinc-500">기한</span>
         <input
           type="date"
@@ -151,7 +161,7 @@ export function PropertyBar({ page, assignees }: { page: PageRow; assignees: Ass
       </label>
 
       {/* 우선순위 */}
-      <label className="relative">
+      <label className="relative shrink-0">
         <span className="sr-only">우선순위</span>
         <select
           value={fields.priority ?? ''}
@@ -173,7 +183,7 @@ export function PropertyBar({ page, assignees }: { page: PageRow; assignees: Ass
       <button
         type="button"
         onClick={() => openLog(page.id)}
-        className="ml-auto rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        className="ml-auto shrink-0 rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700"
       >
         진행 기록 <kbd className="ml-1 opacity-60">⌃⇧L</kbd>
       </button>

@@ -90,6 +90,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "comments_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_trash"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "comments_parent_id_fkey"
             columns: ["parent_id"]
             referencedRelation: "comments"
@@ -201,6 +207,12 @@ export type Database = {
             referencedRelation: "v_stale_tasks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "mentions_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_trash"
+            referencedColumns: ["id"]
+          },
         ]
       }
       notifications: {
@@ -287,6 +299,12 @@ export type Database = {
             foreignKeyName: "notifications_page_id_fkey"
             columns: ["page_id"]
             referencedRelation: "v_stale_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "notifications_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_trash"
             referencedColumns: ["id"]
           },
           {
@@ -481,6 +499,12 @@ export type Database = {
             referencedRelation: "v_stale_tasks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "page_updates_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_trash"
+            referencedColumns: ["id"]
+          },
         ]
       }
       pages: {
@@ -493,16 +517,20 @@ export type Database = {
           created_by: string
           depth: number
           due_date: string | null
+          event_date: string | null
           icon: string | null
           id: string
           owner_id: string | null
           parent_id: string | null
           path: unknown
+          pinned: boolean
           priority: string | null
           progress: number | null
+          search_text: string | null
           sort_order: number
           start_date: string | null
           status: string | null
+          template: string | null
           title: string
           type: string
           unit_id: string | null
@@ -518,16 +546,20 @@ export type Database = {
           created_by: string
           depth?: number
           due_date?: string | null
+          event_date?: string | null
           icon?: string | null
           id?: string
           owner_id?: string | null
           parent_id?: string | null
           path?: unknown
+          pinned?: boolean
           priority?: string | null
           progress?: number | null
+          search_text?: string | null
           sort_order?: number
           start_date?: string | null
           status?: string | null
+          template?: string | null
           title?: string
           type?: string
           unit_id?: string | null
@@ -543,16 +575,20 @@ export type Database = {
           created_by?: string
           depth?: number
           due_date?: string | null
+          event_date?: string | null
           icon?: string | null
           id?: string
           owner_id?: string | null
           parent_id?: string | null
           path?: unknown
+          pinned?: boolean
           priority?: string | null
           progress?: number | null
+          search_text?: string | null
           sort_order?: number
           start_date?: string | null
           status?: string | null
+          template?: string | null
           title?: string
           type?: string
           unit_id?: string | null
@@ -624,6 +660,12 @@ export type Database = {
             foreignKeyName: "pages_parent_id_fkey"
             columns: ["parent_id"]
             referencedRelation: "v_stale_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "v_trash"
             referencedColumns: ["id"]
           },
           {
@@ -757,6 +799,12 @@ export type Database = {
             referencedRelation: "v_stale_tasks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "page_updates_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_trash"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_assignee_summary: {
@@ -845,47 +893,62 @@ export type Database = {
       v_page_tree: {
         Row: {
           depth: number | null
+          due_date: string | null
+          event_date: string | null
           has_children: boolean | null
           icon: string | null
           id: string | null
           owner_id: string | null
           parent_id: string | null
           path: unknown
+          pinned: boolean | null
           sort_order: number | null
           status: string | null
+          template: string | null
           title: string | null
           type: string | null
           unit_id: string | null
+          updated_at: string | null
           visibility: string | null
         }
         Insert: {
           depth?: number | null
+          due_date?: string | null
+          event_date?: string | null
           has_children?: never
           icon?: string | null
           id?: string | null
           owner_id?: string | null
           parent_id?: string | null
           path?: unknown
+          pinned?: boolean | null
           sort_order?: number | null
           status?: string | null
+          template?: string | null
           title?: string | null
           type?: string | null
           unit_id?: string | null
+          updated_at?: string | null
           visibility?: string | null
         }
         Update: {
           depth?: number | null
+          due_date?: string | null
+          event_date?: string | null
           has_children?: never
           icon?: string | null
           id?: string | null
           owner_id?: string | null
           parent_id?: string | null
           path?: unknown
+          pinned?: boolean | null
           sort_order?: number | null
           status?: string | null
+          template?: string | null
           title?: string | null
           type?: string | null
           unit_id?: string | null
+          updated_at?: string | null
           visibility?: string | null
         }
         Relationships: [
@@ -932,6 +995,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pages_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "v_trash"
+            referencedColumns: ["id"]
+          },
+          {
             foreignKeyName: "pages_unit_id_fkey"
             columns: ["unit_id"]
             referencedRelation: "org_units"
@@ -959,6 +1028,67 @@ export type Database = {
           title: string | null
         }
         Relationships: []
+      }
+      v_trash: {
+        Row: {
+          archived_at: string | null
+          created_by: string | null
+          descendants: number | null
+          icon: string | null
+          id: string | null
+          title: string | null
+          type: string | null
+          unit_id: string | null
+          visibility: string | null
+        }
+        Insert: {
+          archived_at?: string | null
+          created_by?: string | null
+          descendants?: never
+          icon?: string | null
+          id?: string | null
+          title?: string | null
+          type?: string | null
+          unit_id?: string | null
+          visibility?: string | null
+        }
+        Update: {
+          archived_at?: string | null
+          created_by?: string | null
+          descendants?: never
+          icon?: string | null
+          id?: string | null
+          title?: string | null
+          type?: string | null
+          unit_id?: string | null
+          visibility?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "pages_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_created_by_fkey"
+            columns: ["created_by"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
+          },
+          {
+            foreignKeyName: "pages_unit_id_fkey"
+            columns: ["unit_id"]
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_unit_id_fkey"
+            columns: ["unit_id"]
+            referencedRelation: "v_org_units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Functions: {
@@ -991,6 +1121,21 @@ export type Database = {
         Args: { "": string }
         Returns: Record<string, unknown>[]
       }
+      restore_page: { Args: { p_id: string }; Returns: number }
+      search_pages: {
+        Args: { p_limit?: number; p_q: string }
+        Returns: {
+          icon: string
+          id: string
+          snippet: string
+          template: string
+          title: string
+          type: string
+          unit_id: string
+          updated_at: string
+          visibility: string
+        }[]
+      }
       silent_members: {
         Args: { p_days?: number }
         Returns: {
@@ -1000,6 +1145,7 @@ export type Database = {
           profile_id: string
         }[]
       }
+      storage_usage_bytes: { Args: Record<PropertyKey, never>; Returns: number }
       sync_comment_mentions: {
         Args: { p_comment_id: string; p_mentioned: string[] }
         Returns: number

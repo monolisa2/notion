@@ -27,6 +27,8 @@ export async function createPage(
     visibility?: PageVisibility;
     icon?: string | null;
     content?: unknown;
+    template?: string | null;
+    eventDate?: string | null;
   },
 ): Promise<string> {
   const type = params.type ?? 'doc';
@@ -41,6 +43,8 @@ export async function createPage(
       progress: type === 'task' ? 0 : null,
       icon: params.icon ?? null,
       content: (params.content ?? null) as never,
+      template: params.template ?? (type === 'task' ? 'task' : null),
+      event_date: params.eventDate ?? null,
       ...(params.parentId === null
         ? {
             visibility: params.visibility ?? '본부',
@@ -112,5 +116,23 @@ export async function setPageSpace(
 
 export async function setPageIcon(sb: Db, id: string, icon: string | null) {
   const { error } = await sb.from('pages').update({ icon }).eq('id', id);
+  if (error) throw error;
+}
+
+/** 보관 취소 (같이 보관된 후손 포함) */
+export async function restorePage(sb: Db, id: string) {
+  const { error } = await sb.rpc('restore_page', { p_id: id });
+  if (error) throw error;
+}
+
+/** 영구 삭제 (작성자·관리자만, RLS). 하위 페이지는 FK cascade */
+export async function deletePagePermanently(sb: Db, id: string) {
+  const { error } = await sb.from('pages').delete().eq('id', id);
+  if (error) throw error;
+}
+
+/** 공지 고정 (관리자만, DB 트리거가 검사) */
+export async function setPinned(sb: Db, id: string, pinned: boolean) {
+  const { error } = await sb.from('pages').update({ pinned }).eq('id', id);
   if (error) throw error;
 }

@@ -6,13 +6,15 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
-import { PAGE_STATUSES, type PageStatus } from '@/lib/types';
+import { PAGE_STATUSES, type OrgUnitRow, type PageStatus } from '@/lib/types';
+import { unitLabel } from '@/lib/org';
 import { PRIORITY_COLOR, RISK_COLOR, STATUS_COLOR, statusClass } from '@/lib/status-style';
 import type { TaskRow } from '@/lib/tasks';
 import { Avatar } from '@/components/avatar';
 import type { Person } from '@/hooks/use-people';
 
 type View = 'table' | 'kanban';
+type GroupBy = 'status' | 'assignee' | 'unit';
 type DueFilter = 'all' | 'overdue' | 'today' | 'week' | 'none';
 
 const DUE_OPTIONS: { value: DueFilter; label: string }[] = [
@@ -46,13 +48,14 @@ function riskOf(due: string | null, today: string): string | null {
  * 업무 목록: 테이블 / 칸반(status) 토글, 필터는 URL 쿼리로 유지.
  * (라벨 필터는 0006 마이그레이션을 실행하지 않았으므로 없음)
  */
-export function TaskList({ tasks, people }: { tasks: TaskRow[]; people: Person[] }) {
+export function TaskList({ tasks, people, units }: { tasks: TaskRow[]; people: Person[]; units: OrgUnitRow[] }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const pathname = usePathname();
   const params = useSearchParams();
 
   const view = (params.get('view') as View) || 'table';
+  const groupBy = (params.get('group') as GroupBy) || 'status';
   const assignee = params.get('assignee') ?? '';
   const status = params.get('status') ?? '';
   const due = (params.get('due') as DueFilter) || 'all';
@@ -101,6 +104,11 @@ export function TaskList({ tasks, people }: { tasks: TaskRow[]; people: Person[]
     if (error) toast.error(`상태 변경 실패: ${errorMessage(error)}`);
     else router.refresh();
   };
+  const changeAssignee = async (id: string, next: string | null) => {
+    const { error } = await supabase.from('pages').update({ assignee_id: next }).eq('id', id);
+    if (error) toast.error(`담당자 변경 실패: ${errorMessage(error)}`);
+    else router.refresh();
+  };
 
   const select =
     'rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs outline-none dark:border-zinc-700 dark:bg-zinc-900';
@@ -111,7 +119,14 @@ export function TaskList({ tasks, people }: { tasks: TaskRow[]; people: Person[]
         <h1 className="mr-2 text-2xl font-semibold tracking-tight">업무 목록</h1>
         <span className="text-sm text-zinc-400">{filtered.length}건</span>
 
-        <div className="ml-auto flex items-center gap-1 rounded-md border border-zinc-200 p-0.5 dark:border-zinc-700">
+        {view === 'kanban' && (
+          <select value={groupBy} onChange={(e) => setParam({ group: e.target.value === 'status' ? null : e.target.value })} className={`${'rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs outline-none'} ml-auto`} aria-label="칸반 기준">
+            <option value="status">상태별</option>
+            <option value="assignee">담당자별</option>
+            <option value="unit">팀별</option>
+          </select>
+        )}
+        <div className={`${view === 'kanban' ? '' : 'ml-auto'} flex items-center gap-1 rounded-md border border-zinc-200 p-0.5`}>
           {(['table', 'kanban'] as View[]).map((v) => (
             <button
               key={v}
@@ -173,7 +188,7 @@ export function TaskList({ tasks, people }: { tasks: TaskRow[]; people: Person[]
         {view === 'table' ? (
           <TaskTable rows={filtered} today={today} onStatus={changeStatus} />
         ) : (
-          <Kanban rows={filtered} today={today} onStatus={changeStatus} />
+          <Kanban rows={filtered} today={today} groupBy={groupBy} people={people} units={units} onStatus={changeStatus} onAssignee={changeAssignee} />
         )}
       </div>
     </div>
@@ -274,65 +289,124 @@ function TaskTable({
 function Kanban({
   rows,
   today,
+  groupBy,
+  people,
+  units,
   onStatus,
+  onAssignee,
 }: {
   rows: TaskRow[];
   today: string;
+  groupBy: GroupBy;
+  people: Person[];
+  units: OrgUnitRow[];
   onStatus: (id: string, s: PageStatus) => void;
+  onAssignee: (id: string, a: string | null) => void;
 }) {
   const [dragId, setDragId] = useState<string | null>(null);
-  const [over, setOver] = useState<PageStatus | null>(null);
+  const [over, setOver] = useState<string | null>(null);
+
+  // 열 정의: key, 라벨(노드), 필터
+  const columns: { key: string; head: React.ReactNode; match: (t: TaskRow) => boolean; droppable: boolean }[] =
+    groupBy === 'status'
+      ? PAGE_STATUSES.map((s) => ({
+          key: s,
+          head: <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${STATUS_COLOR[s]}`}>{s}</span>,
+          match: (t) => t.status === s,
+          droppable: true,
+        }))
+      : groupBy === 'assignee'
+        ? [
+            { key: '', head: <span className="text-[11px] font-medium text-zinc-500">미지정</span>, match: (t: TaskRow) => !t.assignee_id, droppable: true },
+            ...people
+              .filter((p) => rows.some((t) => t.assignee_id === p.id) || true)
+              .map((p) => ({
+                key: p.id,
+                head: (
+                  <span className="flex items-center gap-1.5 text-[11px] font-medium">
+                    <Avatar name={p.name} src={p.avatar_url} size={16} />
+                    {p.name}
+                  </span>
+                ),
+                match: (t: TaskRow) => t.assignee_id === p.id,
+                droppable: true,
+              })),
+          ]
+        : units
+            .filter((u) => u.id)
+            .sort((a, b) => (a.sort_order ?? 0) - (b.sort_order ?? 0))
+            .map((u) => ({
+              key: u.id!,
+              head: <span className="text-[11px] font-medium">{u.name}</span>,
+              match: (t: TaskRow) => t.unit_id === u.id,
+              droppable: false,
+            }));
+
+  // 담당자별일 때 업무가 하나도 없는 사람 열은 접어서 뒤로
+  const visibleCols = groupBy === 'assignee'
+    ? [...columns.filter((c) => rows.some(c.match) || c.key === ''), ...columns.filter((c) => !rows.some(c.match) && c.key !== '')]
+    : columns;
+
+  const drop = (colKey: string) => {
+    if (!dragId) return;
+    if (groupBy === 'status') onStatus(dragId, colKey as PageStatus);
+    else if (groupBy === 'assignee') onAssignee(dragId, colKey || null);
+    setDragId(null);
+    setOver(null);
+  };
 
   return (
     <div className="flex gap-3 overflow-x-auto pb-4">
-      {PAGE_STATUSES.map((s) => {
-        const col = rows.filter((t) => t.status === s);
+      {visibleCols.map((c) => {
+        const col = rows.filter(c.match);
+        const empty = col.length === 0;
         return (
           <div
-            key={s}
+            key={c.key || 'none'}
             onDragOver={(e) => {
-              if (!dragId) return;
+              if (!dragId || !c.droppable) return;
               e.preventDefault();
-              if (over !== s) setOver(s);
+              if (over !== c.key) setOver(c.key);
             }}
-            onDragLeave={() => over === s && setOver(null)}
+            onDragLeave={() => over === c.key && setOver(null)}
             onDrop={(e) => {
               e.preventDefault();
-              if (dragId) onStatus(dragId, s);
-              setDragId(null);
-              setOver(null);
+              if (c.droppable) drop(c.key);
             }}
-            className={`flex w-64 shrink-0 flex-col rounded-xl border p-2 ${
-              over === s ? 'border-blue-400 bg-blue-50/40 dark:bg-blue-950/20' : 'border-zinc-200 bg-zinc-50/60 dark:border-zinc-800 dark:bg-zinc-900/40'
+            className={`flex shrink-0 flex-col rounded-xl border p-2 ${empty && groupBy === 'assignee' ? 'w-40 opacity-70' : 'w-64'} ${
+              over === c.key ? 'border-blue-400 bg-blue-50/40' : 'border-zinc-200 bg-zinc-50/60'
             }`}
           >
             <div className="flex items-center gap-2 px-1 py-1">
-              <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${STATUS_COLOR[s]}`}>{s}</span>
+              {c.head}
               <span className="text-xs text-zinc-400">{col.length}</span>
             </div>
             <ul className="mt-1 flex-1 space-y-2">
               {col.map((t) => (
                 <li
                   key={t.id}
-                  draggable
+                  draggable={groupBy !== 'unit'}
                   onDragStart={() => setDragId(t.id)}
                   onDragEnd={() => {
                     setDragId(null);
                     setOver(null);
                   }}
-                  className={`rounded-lg border border-zinc-200 bg-white p-2.5 text-sm shadow-sm dark:border-zinc-700 dark:bg-zinc-900 ${
-                    dragId === t.id ? 'opacity-40' : ''
-                  }`}
+                  className={`rounded-lg border border-zinc-200 bg-white p-2.5 text-sm shadow-sm ${dragId === t.id ? 'opacity-40' : ''}`}
                 >
                   <Link href={`/p/${t.id}`} className="block hover:underline">
                     {t.icon ?? '☑'} {t.title}
                   </Link>
                   <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
-                    {t.assignee ? (
-                      <Avatar name={t.assignee.name} src={t.assignee.avatar_url} size={16} />
-                    ) : (
-                      <span className="inline-block h-4 w-4 rounded-full border border-dashed border-zinc-300" />
+                    {groupBy !== 'status' && t.status && (
+                      <span className={`rounded px-1 py-0.5 text-[10px] ${statusClass(t.status)}`}>{t.status}</span>
                     )}
+                    {groupBy !== 'assignee' &&
+                      (t.assignee ? (
+                        <Avatar name={t.assignee.name} src={t.assignee.avatar_url} size={16} />
+                      ) : (
+                        <span className="inline-block h-4 w-4 rounded-full border border-dashed border-zinc-300" />
+                      ))}
+                    {groupBy !== 'unit' && t.unit_id && <span className="truncate text-[10px] text-zinc-400">{unitLabel(units, t.unit_id)}</span>}
                     <span className="tabular-nums">{t.progress ?? 0}%</span>
                     <span className="ml-auto">
                       <DueCell due={t.due_date} today={today} />
@@ -340,11 +414,12 @@ function Kanban({
                   </div>
                 </li>
               ))}
-              {col.length === 0 && <li className="py-4 text-center text-[11px] text-zinc-300 dark:text-zinc-600">비어 있음</li>}
+              {empty && <li className="py-4 text-center text-[11px] text-zinc-300">비어 있음</li>}
             </ul>
           </div>
         );
       })}
+      {groupBy === 'unit' && <p className="self-start pt-2 text-[11px] text-zinc-400">팀은 페이지가 속한 공간이라 드래그로 바꿀 수 없습니다.</p>}
     </div>
   );
 }

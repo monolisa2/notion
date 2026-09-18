@@ -8,6 +8,7 @@ import { fetchComments } from '@/lib/comments';
 import { CommentThread } from '@/components/comments/comment-thread';
 import type { Me, OrgUnitRow } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
+import { SubpageList } from '@/components/subpage-list';
 
 export default async function PageView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -55,12 +56,14 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
 
   return (
     <article className="min-h-full">
-      <PageHeader key={`hdr-${page.id}`} page={page} units={units} />
+      <PageHeader key={`hdr-${page.id}`} page={page} units={units} isAdmin={me.isAdmin} />
 
-      {isTask && <PropertyBar key={`props-${page.id}`} page={page} assignees={assignees} />}
+      {isTask && <PropertyBar key={`props-${page.id}`} page={page} assignees={assignees} meId={user.id} />}
 
       {/* key 로 페이지 이동 시 에디터를 새로 마운트 */}
       <PageEditor key={page.id} page={page} userId={user.id} />
+
+      <SubpageList key={`sub-${page.id}`} page={page} />
 
       {isTask && <UpdateTimeline key={`updates-${page.id}`} pageId={page.id} initial={updates} />}
 

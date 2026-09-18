@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
-import { archivePages, convertPageType, setPageSpace } from '@/lib/pages';
+import { archivePages, convertPageType, setPageSpace, setPinned } from '@/lib/pages';
 import { ancestorIds, buildTree, collectSubtreeIds, findNode } from '@/lib/tree';
 import { unitLabel } from '@/lib/org';
 import type { OrgUnitRow, PageRow, PageVisibility } from '@/lib/types';
@@ -17,7 +17,7 @@ const VIS_LABEL: Record<PageVisibility, string> = { 본부: '본부 전체', 소
 /**
  * 페이지 상단 (노션식): 브레드크럼(공간 › 상위 페이지 › 현재) · 공개 범위 · ⋯ 메뉴
  */
-export function PageHeader({ page, units }: { page: PageRow; units: OrgUnitRow[] }) {
+export function PageHeader({ page, units, isAdmin = false }: { page: PageRow; units: OrgUnitRow[]; isAdmin?: boolean }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const { rows } = useTree();
@@ -78,6 +78,7 @@ export function PageHeader({ page, units }: { page: PageRow; units: OrgUnitRow[]
         <span className="truncate rounded px-1 py-0.5 text-zinc-800">
           {page.icon ? `${page.icon} ` : ''}{page.title}
         </span>
+        {page.pinned && <span className="ml-1 shrink-0 rounded bg-amber-100 px-1.5 py-0.5 text-[11px] text-amber-800">📌 공지</span>}
       </nav>
 
       <span className="ml-auto" />
@@ -140,6 +141,16 @@ export function PageHeader({ page, units }: { page: PageRow; units: OrgUnitRow[]
               >
                 {isTask ? '문서로 전환' : '업무로 전환'}
               </button>
+              {isAdmin && !isPersonal && (
+                <button
+                  type="button"
+                  role="menuitem"
+                  onClick={() => void apply('공지 고정', () => setPinned(supabase, page.id, !page.pinned))}
+                  className="block w-full rounded-md px-3 py-1.5 text-left hover:bg-zinc-100"
+                >
+                  {page.pinned ? '공지 고정 해제' : '공지로 고정 (홈 상단)'}
+                </button>
+              )}
               <button type="button" role="menuitem" onClick={archive} className="block w-full rounded-md px-3 py-1.5 text-left text-red-600 hover:bg-zinc-100">
                 보관
               </button>

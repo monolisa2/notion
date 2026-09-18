@@ -9,7 +9,6 @@ import { createClient } from '@/lib/supabase/client';
 import {
   archivePages,
   convertPageType,
-  createPage,
   CYCLE_MOVE_MESSAGE,
   movePage,
   renamePage,
@@ -27,8 +26,7 @@ import { buildOrgTree, chainOf, type OrgNode } from '@/lib/org';
 import { ContextMenu, type MenuItem } from './context-menu';
 import { useProgressLog } from '@/components/progress-log-provider';
 import { NotificationBell } from '@/components/notifications/notification-bell';
-import { NewPageDialog } from '@/components/new-page-dialog';
-import { todayStr, type Template } from '@/lib/templates';
+import { useNewPage } from '@/components/new-page-provider';
 import { unitLabel } from '@/lib/org';
 
 type DropPos = 'before' | 'after' | 'inside';
@@ -113,6 +111,7 @@ export function Sidebar({
 
   // ---- 우클릭 메뉴 ----
   const [menu, setMenu] = useState<{ x: number; y: number; node: TreeNode } | null>(null);
+  const [accountOpen, setAccountOpen] = useState(false);
   const [renaming, setRenaming] = useState<string | null>(null);
 
   const run = async (label: string, fn: () => Promise<void>) => {
@@ -125,19 +124,13 @@ export function Sidebar({
     }
   };
 
-  // 새 페이지: 양식(템플릿)을 고른 뒤 만든다
-  const [newPage, setNewPage] = useState<{
-    parentId: string | null;
-    unitId: string | null;
-    visibility: PageVisibility;
-    label: string;
-  } | null>(null);
-
+  // 새 페이지: 양식 선택은 NewPageProvider 가 담당
+  const { open: openNewPage } = useNewPage();
   const addChild = (parentId: string | null, space?: { unitId: string | null; visibility: PageVisibility }) => {
     if (parentId) {
       const parent = findNode(tree, parentId);
       const row = rows.find((r) => r.id === parentId);
-      setNewPage({
+      openNewPage({
         parentId,
         unitId: row?.unit_id ?? null,
         visibility: (row?.visibility as PageVisibility) ?? '본부',
@@ -147,32 +140,11 @@ export function Sidebar({
     }
     const unitId = space?.unitId ?? null;
     const visibility = space?.visibility ?? '본부';
-    setNewPage({
+    openNewPage({
       parentId: null,
       unitId,
       visibility,
       label: visibility === '개인' ? '개인 메모' : unitLabel(units, unitId) || '본부 공용',
-    });
-  };
-
-  const createFromTemplate = (t: Template) => {
-    const target = newPage;
-    setNewPage(null);
-    if (!target) return;
-    void run('페이지 추가', async () => {
-      const today = todayStr();
-      const id = await createPage(supabase, {
-        parentId: target.parentId,
-        createdBy: me.id,
-        unitId: target.unitId,
-        visibility: target.visibility,
-        type: t.type,
-        title: t.title(today),
-        icon: t.key === 'blank' ? null : t.icon,
-        content: t.content({ author: me.name, today }),
-      });
-      if (target.parentId) expand(target.parentId);
-      router.push(`/p/${id}`);
     });
   };
 
@@ -490,22 +462,51 @@ export function Sidebar({
           </div>
         </div>
         <NotificationBell meId={me.id} />
-        <form action="/auth/signout" method="post">
+        <div className="relative">
           <button
-            type="submit"
-            title="로그아웃"
+            type="button"
+            title="계정"
+            aria-label="계정 메뉴"
+            onClick={() => setAccountOpen((v) => !v)}
             className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-500 hover:bg-zinc-200"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
-              <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" />
-            </svg>
+            ⋯
           </button>
-        </form>
+          {accountOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onMouseDown={() => setAccountOpen(false)} />
+              <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-zinc-200 bg-white p-1 text-sm shadow-lg">
+                <Link href="/account/password" onClick={() => setAccountOpen(false)} className="block rounded-md px-3 py-1.5 hover:bg-zinc-100">
+                  비밀번호 변경
+                </Link>
+                <form action="/auth/signout" method="post">
+                  <button type="submit" className="block w-full rounded-md px-3 py-1.5 text-left hover:bg-zinc-100">
+                    로그아웃
+                  </button>
+                </form>
+              </div>
+            </>
+          )}
+        </div>
       </div>
+
+      {/* 검색 */}
+      <form action="/search" method="get" className="px-2 pb-1">
+        <label className="flex items-center gap-2 rounded-md border border-zinc-200/80 bg-white px-2 py-1 text-zinc-400 focus-within:border-zinc-400">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
+          <input
+            name="q"
+            placeholder="검색"
+            className="w-full bg-transparent text-[13px] text-zinc-800 outline-none placeholder:text-zinc-400"
+          />
+        </label>
+      </form>
 
       <div className="px-2">
         <NavLink href="/" label="홈" icon="⌂" active={pathname === '/'} />
         <NavLink href="/tasks" label="업무" icon="☑" active={pathname.startsWith('/tasks')} />
+        <NavLink href="/calendar" label="캘린더" icon="📅" active={pathname.startsWith('/calendar')} />
+        <NavLink href="/collections/meeting" label="모아보기" icon="≡" active={pathname.startsWith('/collections')} />
         {me.isAdmin && <NavLink href="/admin" label="관리자 설정" icon="⚙" active={pathname.startsWith('/admin')} />}
         <button
           type="button"
@@ -526,14 +527,15 @@ export function Sidebar({
       >
         {orgTree.map((root) => renderSpace(root, 0))}
         {renderPersonal()}
+        <div className="mt-3 border-t border-zinc-200 pt-2">
+          <NavLink href="/trash" label="보관함" icon="🗑" active={pathname.startsWith('/trash')} />
+        </div>
       </nav>
 
       {menu && (
         <ContextMenu x={menu.x} y={menu.y} items={menuItems(menu.node)} onClose={() => setMenu(null)} />
       )}
-      {newPage && (
-        <NewPageDialog spaceLabel={newPage.label} onPick={createFromTemplate} onClose={() => setNewPage(null)} />
-      )}
+
     </aside>
   );
 }

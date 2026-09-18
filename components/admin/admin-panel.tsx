@@ -26,7 +26,21 @@ type Member = {
   deactivated_at: string | null;
   must_change_password: boolean;
   created_at: string;
+  last_sign_in_at?: string | null;
 };
+
+function fmtBytes(n: number) {
+  if (n < 1024 * 1024) return `${Math.round(n / 1024)} KB`;
+  if (n < 1024 * 1024 * 1024) return `${(n / 1024 / 1024).toFixed(1)} MB`;
+  return `${(n / 1024 / 1024 / 1024).toFixed(2)} GB`;
+}
+function ago(iso: string | null | undefined) {
+  if (!iso) return '없음';
+  const d = (Date.now() - new Date(iso).getTime()) / 86400000;
+  if (d < 1) return '오늘';
+  if (d < 2) return '어제';
+  return `${Math.floor(d)}일 전`;
+}
 
 type Issued = { name: string; email: string; tempPassword: string };
 
@@ -58,12 +72,17 @@ export function AdminPanel({
   members,
   units,
   serviceKeyConfigured,
+  storageBytes = 0,
+  recentLoginCount = 0,
 }: {
   meId: string;
   members: Member[];
   units: OrgUnitRow[];
   serviceKeyConfigured: boolean;
+  storageBytes?: number;
+  recentLoginCount?: number;
 }) {
+  const STORAGE_LIMIT = 1024 * 1024 * 1024; // 무료 플랜 1GB
   const router = useRouter();
   const [tab, setTab] = useState<'members' | 'org'>('members');
   const [issued, setIssued] = useState<Issued[]>([]);
@@ -96,6 +115,22 @@ export function AdminPanel({
             </button>
           ))}
         </div>
+      </div>
+
+      {/* 요약 카드 */}
+      <div className="mt-5 grid gap-3 sm:grid-cols-4">
+        {[
+          ['멤버', `${members.filter((m) => !m.deactivated_at).length}명`, `비활성 ${members.filter((m) => m.deactivated_at).length}`],
+          ['첫 로그인 대기', `${members.filter((m) => !m.deactivated_at && m.must_change_password).length}명`, '임시 비밀번호 상태'],
+          ['최근 7일 로그인', `${recentLoginCount}명`, serviceKeyConfigured ? '' : '서버 키 필요'],
+          ['첨부 파일 용량', fmtBytes(storageBytes), `무료 한도 1GB 의 ${Math.round((storageBytes / STORAGE_LIMIT) * 100)}%`],
+        ].map(([k, v, d]) => (
+          <div key={k} className="rounded-xl border border-zinc-200 p-3">
+            <div className="text-[11px] text-zinc-500">{k}</div>
+            <div className="mt-1 text-xl font-semibold tabular-nums">{v}</div>
+            {d && <div className="text-[11px] text-zinc-400">{d}</div>}
+          </div>
+        ))}
       </div>
 
       {!serviceKeyConfigured && (
@@ -251,7 +286,7 @@ function MembersTab({
           </label>
         </div>
         <div className="mt-2 overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
-          <table className="w-full min-w-[820px] text-sm">
+          <table className="w-full min-w-[920px] text-sm">
             <thead className="bg-zinc-50 text-left text-[11px] text-zinc-500 dark:bg-zinc-900">
               <tr>
                 <th className="px-3 py-2 font-normal">이름</th>
@@ -261,6 +296,7 @@ function MembersTab({
                 <th className="px-3 py-2 font-normal">직책</th>
                 <th className="px-3 py-2 font-normal">관리자</th>
                 <th className="px-3 py-2 font-normal">상태</th>
+                <th className="px-3 py-2 font-normal">마지막 로그인</th>
                 <th className="px-3 py-2 font-normal"></th>
               </tr>
             </thead>
@@ -313,6 +349,7 @@ function MembersTab({
                         <span className="text-emerald-600">사용 중</span>
                       )}
                     </td>
+                    <td className="px-3 py-1.5 text-xs text-zinc-500">{ago(m.last_sign_in_at)}</td>
                     <td className="px-3 py-1.5">
                       <div className="flex justify-end gap-1">
                         <button
@@ -345,7 +382,7 @@ function MembersTab({
                 );
               })}
               {visible.length === 0 && (
-                <tr><td colSpan={8} className="px-3 py-8 text-center text-sm text-zinc-400">멤버가 없습니다</td></tr>
+                <tr><td colSpan={9} className="px-3 py-8 text-center text-sm text-zinc-400">멤버가 없습니다</td></tr>
               )}
             </tbody>
           </table>

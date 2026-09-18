@@ -150,7 +150,7 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
       />
 
       <div className="mt-3 -mx-12">
-        <BlockNoteEditor initialContent={page.content} meId={userId} onChange={onContentChange} />
+        <BlockNoteEditor initialContent={page.content} meId={userId} pageId={page.id} onChange={onContentChange} />
       </div>
     </div>
   );

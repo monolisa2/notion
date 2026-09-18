@@ -7,6 +7,7 @@ import type { Me, OrgUnitRow, PageTreeRow } from '@/lib/types';
 import { Sidebar } from '@/components/sidebar/sidebar';
 import { ProgressLogProvider } from '@/components/progress-log-provider';
 import { TreeContext } from '@/components/tree-context';
+import { NewPageProvider } from '@/components/new-page-provider';
 
 /**
  * 앱 공통 레이아웃: 사이드바 + 본문.
@@ -56,10 +57,12 @@ export function AppShell({
   return (
     <TreeContext.Provider value={{ rows: tree, units }}>
       <ProgressLogProvider me={me} rows={tree}>
-        <div className="flex h-dvh w-full overflow-hidden bg-white">
-          <Sidebar me={me} rows={tree} units={units} onChanged={refresh} />
-          <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
-        </div>
+        <NewPageProvider me={me} onCreated={refresh}>
+          <div className="flex h-dvh w-full overflow-hidden bg-white">
+            <Sidebar me={me} rows={tree} units={units} onChanged={refresh} />
+            <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
+          </div>
+        </NewPageProvider>
       </ProgressLogProvider>
     </TreeContext.Provider>
   );
