@@ -32,8 +32,9 @@ export default async function AdminPage() {
       : Promise.resolve(new Map<string, string | null>()),
   ]);
 
-  const weekAgo = Date.now() - 7 * 86400000;
-  const recentLoginCount = [...lastSignIn.values()].filter((t) => t && new Date(t).getTime() > weekAgo).length;
+  const weekAgo = new Date();
+  weekAgo.setDate(weekAgo.getDate() - 7);
+  const recentLoginCount = [...lastSignIn.values()].filter((t) => t && new Date(t) > weekAgo).length;
 
   return (
     <AdminPanel
