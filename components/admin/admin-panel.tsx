@@ -514,7 +514,7 @@ function OrgTab({
                   <button
                     type="button"
                     className={`${btn} text-red-600`}
-                    onClick={() => window.confirm(`"${unit.name}" 을 삭제할까요? 소속 인원·하위 조직·페이지가 없어야 합니다.`) && void run(deleteUnit(id))}
+                    onClick={() => window.confirm(`"${unit.name}" 을 삭제할까요? 활성 인원·하위 조직·페이지(보관함 포함)가 없어야 합니다. 비활성 멤버는 소속이 [미지정] 으로 바뀝니다.`) && void run(deleteUnit(id))}
                   >
                     삭제
                   </button>
