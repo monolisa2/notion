@@ -327,7 +327,7 @@ function MembersTab({
               {visible.map((m) => {
                 const inactive = !!m.deactivated_at;
                 return (
-                  <tr key={m.id} className={`border-t border-zinc-100 dark:border-zinc-800 ${inactive ? 'opacity-50' : ''}`}>
+                  <tr key={m.id} className={`border-t border-zinc-100 ${inactive ? 'bg-zinc-50 text-zinc-400' : ''}`}>
                     <td className="px-3 py-1.5">
                       <input
                         defaultValue={m.name}
@@ -390,9 +390,15 @@ function MembersTab({
                           <button
                             type="button"
                             disabled={!canAuth}
-                            className={`${btn} ${inactive ? '' : 'text-red-600'}`}
+                            className={
+                              inactive
+                                ? 'rounded-md bg-blue-600 px-2.5 py-1 text-xs font-medium text-white hover:bg-blue-700 disabled:opacity-50'
+                                : `${btn} text-red-600`
+                            }
                             onClick={() => {
-                              const msg = inactive ? `${m.name} 님을 다시 활성화할까요?` : `${m.name} 님을 비활성화할까요? 로그인이 차단되고 목록에서 숨겨집니다.`;
+                              const msg = inactive
+                                ? `${m.name} 님을 다시 활성화할까요? 로그인이 다시 열립니다.`
+                                : `${m.name} 님을 비활성화할까요? 로그인이 차단되고 목록에서 숨겨집니다.`;
                               if (window.confirm(msg)) void run(setActive(m.id, inactive));
                             }}
                           >

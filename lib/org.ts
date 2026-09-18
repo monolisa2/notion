@@ -34,3 +34,32 @@ export function chainOf(units: OrgUnitRow[], unitId: string | null): Set<string>
 export function unitLabel(units: OrgUnitRow[], id: string | null | undefined) {
   return units.find((u) => u.id === id)?.name ?? '';
 }
+
+/** 특정 조직의 후손 id (자신 포함) */
+export function subtreeOf(units: OrgUnitRow[], unitId: string): Set<string> {
+  const byParent = new Map<string | null, string[]>();
+  for (const u of units) {
+    if (!u.id) continue;
+    const k = u.parent_id ?? null;
+    byParent.set(k, [...(byParent.get(k) ?? []), u.id]);
+  }
+  const out = new Set<string>();
+  const walk = (id: string) => {
+    out.add(id);
+    (byParent.get(id) ?? []).forEach(walk);
+  };
+  walk(unitId);
+  return out;
+}
+
+/**
+ * 사이드바에 보여줄 조직: 관리자는 전부, 일반 사용자는 "내 계열"만
+ *   = 내 소속 + 조상(본부까지) + 후손. 형제 조직(다른 실·팀)은 구조 자체를 숨긴다.
+ *   소속이 없으면 최상위(본부)만. 다른 팀의 '본부 공개' 페이지는 홈·검색·모아보기로 접근한다.
+ */
+export function visibleUnitsFor(units: OrgUnitRow[], myUnitId: string | null, isAdmin: boolean): OrgUnitRow[] {
+  if (isAdmin) return units;
+  if (!myUnitId) return units.filter((u) => !u.parent_id);
+  const allowed = new Set<string>([...chainOf(units, myUnitId), ...subtreeOf(units, myUnitId)]);
+  return units.filter((u) => u.id && allowed.has(u.id));
+}

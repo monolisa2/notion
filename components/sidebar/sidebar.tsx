@@ -22,7 +22,7 @@ import {
   type TreeNode,
 } from '@/lib/tree';
 import type { Me, OrgUnitRow, PageTreeRow, PageVisibility, SidebarPageLite } from '@/lib/types';
-import { buildOrgTree, chainOf, type OrgNode } from '@/lib/org';
+import { buildOrgTree, chainOf, visibleUnitsFor, type OrgNode } from '@/lib/org';
 import { ContextMenu, type MenuItem } from './context-menu';
 import { useProgressLog } from '@/components/progress-log-provider';
 import { NotificationBell } from '@/components/notifications/notification-bell';
@@ -55,7 +55,9 @@ export function Sidebar({
 
   // 전체 트리(이동 계산용) + 공간별 루트 분리
   const tree = useMemo(() => buildTree(rows), [rows]);
-  const orgTree = useMemo(() => buildOrgTree(units), [units]);
+  // 일반 사용자는 내 계열(소속 + 조상 + 후손)만 사이드바에 보인다. 관리자는 전부 (조직 관리 필요)
+  const sidebarUnits = useMemo(() => visibleUnitsFor(units, me.unitId, me.isAdmin), [units, me.unitId, me.isAdmin]);
+  const orgTree = useMemo(() => buildOrgTree(sidebarUnits), [sidebarUnits]);
   const myChain = useMemo(() => chainOf(units, me.unitId), [units, me.unitId]);
   const rowsByUnit = useMemo(() => {
     const m = new Map<string, PageTreeRow[]>();
