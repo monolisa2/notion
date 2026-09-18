@@ -49,7 +49,7 @@ export default function BlockNoteEditor({
   }, [editor, onChange]);
 
   return (
-    <BlockNoteView editor={editor} editable={editable} className="teamhub-editor">
+    <BlockNoteView editor={editor} editable={editable} theme="light" className="teamhub-editor">
       <MentionMenu people={people} excludeId={meId} />
     </BlockNoteView>
   );

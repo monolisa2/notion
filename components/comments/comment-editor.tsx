@@ -60,6 +60,7 @@ export default function CommentEditor({
     >
       <BlockNoteView
         editor={editor}
+        theme="light"
         autoFocus={autoFocus}
         sideMenu={false}
         slashMenu={false}

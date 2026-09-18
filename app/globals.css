@@ -1,5 +1,8 @@
 @import "tailwindcss";
 
+/* 항상 밝은 테마. dark: 클래스는 <html class="dark"> 일 때만 적용 (현재 사용 안 함) */
+@custom-variant dark (&:where(.dark, .dark *));
+
 :root {
   --background: #fafafa;
   --foreground: #171717;
@@ -13,12 +16,6 @@
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #09090b;
-    --foreground: #fafafa;
-  }
-}
 
 body {
   background: var(--background);
@@ -43,12 +40,6 @@ body {
   background: rgba(59, 130, 246, 0.12);
   color: rgb(29, 78, 216);
   font-weight: 500;
-}
-@media (prefers-color-scheme: dark) {
-  .bn-mention {
-    background: rgba(96, 165, 250, 0.18);
-    color: rgb(147, 197, 253);
-  }
 }
 
 /* 댓글용 소형 에디터 */
