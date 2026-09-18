@@ -507,7 +507,6 @@ export function Sidebar({
         <NavLink href="/tasks" label="업무" icon="☑" active={pathname.startsWith('/tasks')} />
         <NavLink href="/calendar" label="캘린더" icon="📅" active={pathname.startsWith('/calendar')} />
         <NavLink href="/collections/meeting" label="모아보기" icon="≡" active={pathname.startsWith('/collections')} />
-        {me.isAdmin && <NavLink href="/admin" label="관리자 설정" icon="⚙" active={pathname.startsWith('/admin')} />}
         <button
           type="button"
           onClick={() => openLog()}
@@ -529,6 +528,7 @@ export function Sidebar({
         {renderPersonal()}
         <div className="mt-3 border-t border-zinc-200 pt-2">
           <NavLink href="/trash" label="보관함" icon="🗑" active={pathname.startsWith('/trash')} />
+          {me.isAdmin && <NavLink href="/admin" label="관리자 설정" icon="⚙" active={pathname.startsWith('/admin')} />}
         </div>
       </nav>
 
