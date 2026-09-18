@@ -364,6 +364,49 @@ export type Database = {
           },
         ]
       }
+      org_units: {
+        Row: {
+          created_at: string
+          id: string
+          level: string
+          name: string
+          parent_id: string | null
+          sort_order: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          level: string
+          name: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          level?: string
+          name?: string
+          parent_id?: string | null
+          sort_order?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_units_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_units_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "v_org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       page_updates: {
         Row: {
           author_id: string
@@ -452,6 +495,7 @@ export type Database = {
           due_date: string | null
           icon: string | null
           id: string
+          owner_id: string | null
           parent_id: string | null
           path: unknown
           priority: string | null
@@ -461,7 +505,9 @@ export type Database = {
           status: string | null
           title: string
           type: string
+          unit_id: string | null
           updated_at: string
+          visibility: string
         }
         Insert: {
           archived_at?: string | null
@@ -474,6 +520,7 @@ export type Database = {
           due_date?: string | null
           icon?: string | null
           id?: string
+          owner_id?: string | null
           parent_id?: string | null
           path?: unknown
           priority?: string | null
@@ -483,7 +530,9 @@ export type Database = {
           status?: string | null
           title?: string
           type?: string
+          unit_id?: string | null
           updated_at?: string
+          visibility?: string
         }
         Update: {
           archived_at?: string | null
@@ -496,6 +545,7 @@ export type Database = {
           due_date?: string | null
           icon?: string | null
           id?: string
+          owner_id?: string | null
           parent_id?: string | null
           path?: unknown
           priority?: string | null
@@ -505,7 +555,9 @@ export type Database = {
           status?: string | null
           title?: string
           type?: string
+          unit_id?: string | null
           updated_at?: string
+          visibility?: string
         }
         Relationships: [
           {
@@ -529,6 +581,18 @@ export type Database = {
           {
             foreignKeyName: "pages_created_by_fkey"
             columns: ["created_by"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
+          },
+          {
+            foreignKeyName: "pages_owner_id_fkey"
+            columns: ["owner_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_owner_id_fkey"
+            columns: ["owner_id"]
             referencedRelation: "v_assignee_summary"
             referencedColumns: ["assignee_id"]
           },
@@ -562,6 +626,18 @@ export type Database = {
             referencedRelation: "v_stale_tasks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pages_unit_id_fkey"
+            columns: ["unit_id"]
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_unit_id_fkey"
+            columns: ["unit_id"]
+            referencedRelation: "v_org_units"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
@@ -573,11 +649,14 @@ export type Database = {
           id: string
           is_admin: boolean
           job_title: string | null
+          must_change_password: boolean
           name: string
           naverworks_id: string | null
           notify_assign: boolean
           notify_due: boolean
           notify_mention: boolean
+          rank: string | null
+          unit_id: string | null
           updated_at: string
         }
         Insert: {
@@ -588,11 +667,14 @@ export type Database = {
           id: string
           is_admin?: boolean
           job_title?: string | null
+          must_change_password?: boolean
           name: string
           naverworks_id?: string | null
           notify_assign?: boolean
           notify_due?: boolean
           notify_mention?: boolean
+          rank?: string | null
+          unit_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -603,14 +685,30 @@ export type Database = {
           id?: string
           is_admin?: boolean
           job_title?: string | null
+          must_change_password?: boolean
           name?: string
           naverworks_id?: string | null
           notify_assign?: boolean
           notify_due?: boolean
           notify_mention?: boolean
+          rank?: string | null
+          unit_id?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_unit_id_fkey"
+            columns: ["unit_id"]
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "profiles_unit_id_fkey"
+            columns: ["unit_id"]
+            referencedRelation: "v_org_units"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
@@ -704,44 +802,105 @@ export type Database = {
         }
         Relationships: []
       }
+      v_org_units: {
+        Row: {
+          id: string | null
+          level: string | null
+          member_count: number | null
+          name: string | null
+          parent_id: string | null
+          sort_order: number | null
+        }
+        Insert: {
+          id?: string | null
+          level?: string | null
+          member_count?: never
+          name?: string | null
+          parent_id?: string | null
+          sort_order?: number | null
+        }
+        Update: {
+          id?: string | null
+          level?: string | null
+          member_count?: never
+          name?: string | null
+          parent_id?: string | null
+          sort_order?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_units_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_units_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "v_org_units"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       v_page_tree: {
         Row: {
           depth: number | null
           has_children: boolean | null
           icon: string | null
           id: string | null
+          owner_id: string | null
           parent_id: string | null
           path: unknown
           sort_order: number | null
           status: string | null
           title: string | null
           type: string | null
+          unit_id: string | null
+          visibility: string | null
         }
         Insert: {
           depth?: number | null
           has_children?: never
           icon?: string | null
           id?: string | null
+          owner_id?: string | null
           parent_id?: string | null
           path?: unknown
           sort_order?: number | null
           status?: string | null
           title?: string | null
           type?: string | null
+          unit_id?: string | null
+          visibility?: string | null
         }
         Update: {
           depth?: number | null
           has_children?: never
           icon?: string | null
           id?: string | null
+          owner_id?: string | null
           parent_id?: string | null
           path?: unknown
           sort_order?: number | null
           status?: string | null
           title?: string | null
           type?: string | null
+          unit_id?: string | null
+          visibility?: string | null
         }
         Relationships: [
+          {
+            foreignKeyName: "pages_owner_id_fkey"
+            columns: ["owner_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_owner_id_fkey"
+            columns: ["owner_id"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
+          },
           {
             foreignKeyName: "pages_parent_id_fkey"
             columns: ["parent_id"]
@@ -772,6 +931,18 @@ export type Database = {
             referencedRelation: "v_stale_tasks"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pages_unit_id_fkey"
+            columns: ["unit_id"]
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "pages_unit_id_fkey"
+            columns: ["unit_id"]
+            referencedRelation: "v_org_units"
+            referencedColumns: ["id"]
+          },
         ]
       }
       v_stale_tasks: {
@@ -791,6 +962,7 @@ export type Database = {
       }
     }
     Functions: {
+      can_view_unit: { Args: { p_unit: string }; Returns: boolean }
       dearmor: { Args: { "": string }; Returns: string }
       enqueue_daily_reminders: { Args: { p_today?: string }; Returns: number }
       enqueue_notification: {
@@ -813,6 +985,7 @@ export type Database = {
         Args: { p_after_id?: string; p_page_id: string; p_parent_id: string }
         Returns: number
       }
+      my_unit_id: { Args: Record<PropertyKey, never>; Returns: string }
       page_label: { Args: { p_id: string }; Returns: string }
       pgp_armor_headers: {
         Args: { "": string }
