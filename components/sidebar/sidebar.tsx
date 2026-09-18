@@ -24,6 +24,7 @@ import {
 } from '@/lib/tree';
 import type { Me, PageTreeRow } from '@/lib/types';
 import { ContextMenu, type MenuItem } from './context-menu';
+import { useProgressLog } from '@/components/progress-log-provider';
 
 type DropPos = 'before' | 'after' | 'inside';
 type DropTarget = { id: string; pos: DropPos } | { id: null; pos: 'root' };
@@ -38,6 +39,7 @@ export function Sidebar({
   onChanged: () => Promise<void>;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const { open: openLog } = useProgressLog();
   const router = useRouter();
   const pathname = usePathname();
   const currentId = pathname.startsWith('/p/') ? pathname.slice(3).split('/')[0] : null;
@@ -347,6 +349,14 @@ export function Sidebar({
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           <span className="text-base leading-none">＋</span> 새 페이지
+        </button>
+        <button
+          type="button"
+          onClick={() => openLog()}
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-sm text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+        >
+          <span className="text-base leading-none">✎</span> 진행 로그 남기기
+          <kbd className="ml-auto text-[10px] text-zinc-400">⌃⇧L</kbd>
         </button>
       </div>
 

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { fetchTree } from '@/lib/pages';
 import type { Me, PageTreeRow } from '@/lib/types';
 import { Sidebar } from '@/components/sidebar/sidebar';
+import { ProgressLogProvider } from '@/components/progress-log-provider';
 
 /**
  * 앱 공통 레이아웃: 사이드바 + 본문.
@@ -50,9 +51,11 @@ export function AppShell({
   }, [scheduleRefresh]);
 
   return (
-    <div className="flex h-dvh w-full overflow-hidden">
-      <Sidebar me={me} rows={tree} onChanged={refresh} />
-      <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
-    </div>
+    <ProgressLogProvider me={me} rows={tree}>
+      <div className="flex h-dvh w-full overflow-hidden">
+        <Sidebar me={me} rows={tree} onChanged={refresh} />
+        <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
+      </div>
+    </ProgressLogProvider>
   );
 }
