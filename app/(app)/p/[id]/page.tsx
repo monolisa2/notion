@@ -31,7 +31,7 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
   if (!page) notFound();
 
   const isTask = page.type === 'task';
-  const [assignees, updates, comments, profile, units, fav, statuses, peopleIds] = await Promise.all([
+  const [assignees, updates, comments, profile, units, fav, statuses, peopleIds, progressAuto] = await Promise.all([
     isTask
       ? supabase
           .from('profiles')
@@ -49,6 +49,16 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
     isTask
       ? supabase.from('page_people').select('user_id').eq('page_id', id).then((r) => (r.data ?? []).map((x) => x.user_id))
       : Promise.resolve([] as string[]),
+    // 하위 업무가 있으면 진행률은 평균 자동 계산 (0014) — 손 편집을 잠근다
+    isTask
+      ? supabase
+          .from('pages')
+          .select('id', { count: 'exact', head: true })
+          .eq('parent_id', id)
+          .eq('type', 'task')
+          .is('archived_at', null)
+          .then((r) => (r.count ?? 0) > 0)
+      : Promise.resolve(false),
   ]);
   const me: Me = {
     id: user.id,
@@ -74,9 +84,18 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
           meId={user.id}
           statuses={statuses}
           initialPeople={peopleIds}
+          progressAuto={progressAuto}
         />
       )}
-      {isTask && <ProgressPanel key={`progress-${page.id}`} page={page} initialUpdates={updates} statuses={statuses} />}
+      {isTask && (
+        <ProgressPanel
+          key={`progress-${page.id}`}
+          page={page}
+          initialUpdates={updates}
+          statuses={statuses}
+          autoFromChildren={progressAuto}
+        />
+      )}
 
       {/* 하위 페이지를 본문 위에 — 들어오자마자 구조가 보이게 */}
       <SubpageList key={`sub-${page.id}`} page={page} statuses={statuses} />
@@ -84,7 +103,9 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
       {/* key 로 페이지 이동 시 에디터를 새로 마운트 */}
       <PageEditor key={page.id} page={page} userId={user.id} />
 
-      {isTask && <UpdateTimeline key={`updates-${page.id}`} pageId={page.id} meId={user.id} initial={updates} />}
+      {isTask && (
+        <UpdateTimeline key={`updates-${page.id}`} pageId={page.id} meId={user.id} initial={updates} progressAuto={progressAuto} />
+      )}
 
       <CommentThread key={`comments-${page.id}`} pageId={page.id} me={me} initial={comments} />
     </article>

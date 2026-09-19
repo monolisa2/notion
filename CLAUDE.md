@@ -112,4 +112,5 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0011_write_permissions.sql           공간별 페이지 작성 권한 (전원/리더/지정)
 0012_custom_statuses.sql             업무 상태 커스터마이징 (page_statuses, kind 기반 집계)
 0013_people_log_comments.sql         업무 참여자(page_people) + 진행 로그 답글(comments.update_id)
+0014_progress_rollup.sql             부모 업무 진행률 = 하위 업무 평균 (트리거 자동 전파)
 ```

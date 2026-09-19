@@ -36,7 +36,7 @@ export function SubpageList({ page, statuses = DEFAULT_STATUSES }: { page: PageR
   };
 
   return (
-    <section className="mx-auto w-full max-w-[900px] px-6 pb-8 sm:px-12">
+    <section className="mx-auto w-full max-w-[900px] px-6 pb-2 sm:px-12">
       <div className="flex items-center gap-2">
         <h2 className="text-sm font-medium text-zinc-500">하위 페이지 {children.length > 0 && `· ${children.length}`}</h2>
         {tasks.length > 0 && (
@@ -113,7 +113,7 @@ function SubpageBoard({
 
   return (
     <>
-      <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
+      <div className="mt-2 flex gap-2 overflow-x-auto pb-2 [scrollbar-width:thin]">
         {statuses.map((s) => {
           const st = s.name;
           const col = tasks.filter((t) => t.status === st);

@@ -25,10 +25,13 @@ export function ProgressPanel({
   page,
   initialUpdates,
   statuses = DEFAULT_STATUSES,
+  autoFromChildren = false,
 }: {
   page: PageRow;
   initialUpdates: UpdateWithAuthor[];
   statuses?: StatusRow[];
+  /** 하위 업무 평균으로 자동 계산 중 (0014) */
+  autoFromChildren?: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const [progress, setProgress] = useState(page.progress ?? 0);
@@ -86,6 +89,11 @@ export function ProgressPanel({
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold tabular-nums text-zinc-900">{progress}%</span>
           <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${statusClass(status, statuses)}`}>{status}</span>
+          {autoFromChildren && (
+            <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500" title="하위 업무 진행률의 평균입니다">
+              하위 업무 평균 (자동)
+            </span>
+          )}
           {due && (
             <span className={`ml-auto text-xs tabular-nums ${due.tone}`} title={`기한 ${dueDate}`}>
               기한 {dueDate} · {due.label}

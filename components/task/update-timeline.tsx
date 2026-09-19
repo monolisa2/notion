@@ -20,7 +20,18 @@ function formatWhen(iso: string) {
  * 페이지 하단 진행 로그 타임라인 (최신순) + 바로 쓰는 한 줄 입력.
  * 수정/삭제 버튼은 없다 — append-only. 오기재는 새 로그로 정정한다.
  */
-export function UpdateTimeline({ pageId, meId, initial }: { pageId: string; meId?: string; initial: UpdateWithAuthor[] }) {
+export function UpdateTimeline({
+  pageId,
+  meId,
+  initial,
+  progressAuto = false,
+}: {
+  pageId: string;
+  meId?: string;
+  initial: UpdateWithAuthor[];
+  /** 하위 업무 평균으로 진행률이 자동 계산되는 업무 — % 입력 숨김 (0014) */
+  progressAuto?: boolean;
+}) {
   const supabase = useMemo(() => createClient(), []);
   const { open: openLog } = useProgressLog();
   const [items, setItems] = useState<UpdateWithAuthor[]>(initial);
@@ -122,6 +133,7 @@ export function UpdateTimeline({ pageId, meId, initial }: { pageId: string; meId
             className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
             disabled={saving}
           />
+          {!progressAuto && (
           <label className="flex shrink-0 items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs text-zinc-500" title="비우면 진행률 유지, 숫자를 넣으면 진행률도 함께 갱신">
             <input
               value={pct}
@@ -134,6 +146,7 @@ export function UpdateTimeline({ pageId, meId, initial }: { pageId: string; meId
             />
             %
           </label>
+          )}
           <button
             type="submit"
             disabled={saving || !text.trim()}

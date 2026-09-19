@@ -31,6 +31,7 @@ export function PropertyBar({
   meId,
   statuses = DEFAULT_STATUSES,
   initialPeople = [],
+  progressAuto = false,
 }: {
   page: PageRow;
   assignees: AssigneeOption[];
@@ -38,6 +39,8 @@ export function PropertyBar({
   statuses?: StatusRow[];
   /** 참여자(다중) user id 목록 — page_people (0013) */
   initialPeople?: string[];
+  /** 하위 업무가 있어 진행률이 자동 계산되는 업무 (0014) — 슬라이더 잠금 */
+  progressAuto?: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const { open: openLog } = useProgressLog();
@@ -142,7 +145,7 @@ export function PropertyBar({
   const progress = fields.progress ?? 0;
 
   return (
-    <div className="mx-auto flex w-full max-w-[900px] flex-nowrap items-center gap-2 overflow-x-auto px-6 pt-4 text-sm sm:px-12 [scrollbar-width:thin]">
+    <div className="mx-auto flex w-full max-w-[900px] flex-wrap items-center gap-x-2 gap-y-1.5 px-6 pt-4 text-sm sm:px-12">
       {/* 상태 */}
       <label className="relative shrink-0">
         <span className="sr-only">상태</span>
@@ -250,20 +253,24 @@ export function PropertyBar({
         )}
       </div>
 
-      {/* 진행률 */}
-      <label className="flex shrink-0 items-center gap-2 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700">
-        <span className="text-xs text-zinc-500">진행률</span>
+      {/* 진행률 — 하위 업무가 있으면 평균 자동 계산이라 잠근다 (0014) */}
+      <label
+        className="flex shrink-0 items-center gap-2 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700"
+        title={progressAuto ? '하위 업무 진행률의 평균으로 자동 계산됩니다' : undefined}
+      >
+        <span className="text-xs text-zinc-500">진행률{progressAuto && ' 🔒'}</span>
         <input
           type="range"
           min={0}
           max={100}
           step={5}
           value={progress}
+          disabled={progressAuto}
           onChange={(e) => setFields((f) => ({ ...f, progress: Number(e.target.value) }))}
           onMouseUp={(e) => update({ progress: Number((e.target as HTMLInputElement).value) })}
           onTouchEnd={(e) => update({ progress: Number((e.target as HTMLInputElement).value) })}
           onKeyUp={(e) => update({ progress: Number((e.target as HTMLInputElement).value) })}
-          className="h-1 w-24 accent-blue-600"
+          className="h-1 w-24 accent-blue-600 disabled:opacity-40"
           aria-label="진행률"
         />
         <span className="w-8 text-right text-xs tabular-nums">{progress}%</span>

@@ -91,7 +91,7 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
   }, [flush]);
 
   return (
-    <div className="relative mx-auto w-full max-w-[900px] px-6 pb-32 pt-8 sm:px-12">
+    <div className="relative mx-auto w-full max-w-[900px] px-6 pb-12 pt-4 sm:px-12">
       <div
         className={[
           'pointer-events-none absolute right-6 top-2 text-xs transition-opacity sm:right-12',
@@ -103,15 +103,16 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
         {STATUS_LABEL[status]}
       </div>
 
-      {/* 페이지 아이콘 (노션처럼 제목 위) */}
-      <div className="group relative mb-2 h-14">
+      {/* 페이지 아이콘 (노션처럼 제목 위) — 없을 때는 자리를 줄인다 */}
+      <div className={`group relative ${icon ? 'mb-2 h-14' : 'h-7'}`}>
         <button
           type="button"
           onClick={() => setIconOpen((v) => !v)}
           aria-label="페이지 아이콘"
           className={[
-            'flex h-14 w-14 items-center justify-center rounded-lg text-[44px] leading-none hover:bg-zinc-100',
-            icon ? '' : 'invisible text-sm text-zinc-400 group-hover:visible',
+            icon
+              ? 'flex h-14 w-14 items-center justify-center rounded-lg text-[44px] leading-none hover:bg-zinc-100'
+              : 'invisible rounded px-1.5 py-0.5 text-xs text-zinc-400 hover:bg-zinc-100 group-hover:visible',
           ].join(' ')}
         >
           {icon ?? <span className="text-xs">아이콘 추가</span>}
