@@ -1,7 +1,16 @@
 import type { Metadata } from 'next';
+import { Noto_Sans_KR } from 'next/font/google';
 import { cookies } from 'next/headers';
 import './globals.css';
 import { Providers } from '@/components/providers';
+
+// Noto Sans KR — 빌드 시 받아 자체 호스팅한다 (구글 CDN 런타임 의존 없음)
+const notoSansKr = Noto_Sans_KR({
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+  variable: '--font-noto-sans-kr',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'TeamHub',
@@ -12,16 +21,8 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // 테마는 쿠키로 — 서버 렌더 때부터 적용돼 깜빡임이 없다
   const theme = (await cookies()).get('theme')?.value === 'dark' ? 'dark' : '';
   return (
-    <html lang="ko" className={`h-full antialiased ${theme}`} suppressHydrationWarning>
+    <html lang="ko" className={`h-full antialiased ${notoSansKr.variable} ${theme}`} suppressHydrationWarning>
       <head>
-        {/* Freesentation 폰트 프리로드 (본문 기본 굵기) */}
-        <link
-          rel="preload"
-          href="/fonts/freesentation/Freesentation-Regular.woff2"
-          as="font"
-          type="font/woff2"
-          crossOrigin="anonymous"
-        />
       </head>
       <body className="flex min-h-full flex-col bg-white text-zinc-900 dark:bg-[#191919] dark:text-zinc-200">
         <Providers>{children}</Providers>

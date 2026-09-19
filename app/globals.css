@@ -1,42 +1,5 @@
 @import "tailwindcss";
 
-/* Freesentation 폰트 (SIL OFL, public/fonts/freesentation/LICENSE.txt) */
-@font-face {
-  font-family: "Freesentation";
-  src: url("/fonts/freesentation/Freesentation-Regular.woff2") format("woff2");
-  font-weight: 400;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Freesentation";
-  src: url("/fonts/freesentation/Freesentation-Medium.woff2") format("woff2");
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Freesentation";
-  src: url("/fonts/freesentation/Freesentation-SemiBold.woff2") format("woff2");
-  font-weight: 600;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Freesentation";
-  src: url("/fonts/freesentation/Freesentation-Bold.woff2") format("woff2");
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: "Freesentation";
-  src: url("/fonts/freesentation/Freesentation-ExtraBold.woff2") format("woff2");
-  font-weight: 800;
-  font-style: normal;
-  font-display: swap;
-}
-
 /* 항상 밝은 테마. dark: 클래스는 <html class="dark"> 일 때만 적용 (현재 사용 안 함) */
 @custom-variant dark (&:where(.dark, .dark *));
 
@@ -49,8 +12,8 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "Freesentation", -apple-system, BlinkMacSystemFont,
-    "Apple SD Gothic Neo", "Segoe UI", Roboto, "Noto Sans KR", "Malgun Gothic", sans-serif;
+  --font-sans: var(--font-noto-sans-kr), "Noto Sans KR", -apple-system, BlinkMacSystemFont,
+    "Apple SD Gothic Neo", "Segoe UI", Roboto, "Malgun Gothic", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
@@ -60,7 +23,7 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   /* 한글 자간을 전체적으로 살짝 좁힌다 */
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 
 /* BlockNote 를 페이지 배경에 녹인다 */
@@ -96,13 +59,33 @@ body {
 /* 노션에 가까운 본문 타이포 — 줄 간격은 타이트하게 */
 .teamhub-editor .bn-editor {
   font-size: 16px;
-  line-height: 1.45;
+  line-height: 1.35;
 }
 /* 블록(문단) 사이 세로 간격 축소 */
 .teamhub-editor .bn-block-content,
 .teamhub-comment-editor .bn-block-content {
-  padding-top: 2px;
-  padding-bottom: 2px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+/* 블록 사이 여백 자체를 줄인다 (노션보다 조금 더 촘촘하게) */
+.teamhub-editor .bn-block-outer,
+.teamhub-comment-editor .bn-block-outer {
+  margin-top: 0;
+}
+.teamhub-editor .bn-block-group .bn-block-outer:not(:first-child) {
+  margin-top: 1px;
+}
+/* 제목 위 여백 축소 */
+.teamhub-editor .bn-block-content[data-content-type="heading"] {
+  padding-top: 6px;
+  padding-bottom: 0;
+}
+/* 목록 항목 간격 */
+.teamhub-editor .bn-block-content[data-content-type="bulletListItem"],
+.teamhub-editor .bn-block-content[data-content-type="numberedListItem"],
+.teamhub-editor .bn-block-content[data-content-type="checkListItem"] {
+  padding-top: 0;
+  padding-bottom: 0;
 }
 /* 멘션(@)·슬래시(/) 추천 메뉴의 행 높이 축소 */
 .bn-suggestion-menu-item {
@@ -119,10 +102,10 @@ body {
 .teamhub-comment-editor .bn-editor,
 .bn-container {
   font-family: var(--font-sans);
-  letter-spacing: -0.03em;
+  letter-spacing: -0.02em;
 }
 .teamhub-editor .bn-block-content[data-content-type="heading"][data-level="2"] {
-  margin-top: 0.9em;
+  margin-top: 0.5em;
 }
 
 /* =============================================================
