@@ -73,6 +73,7 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 - 본문은 `savePage()`, 댓글은 `saveComment()` 로만 저장 (내부에서 `sync_*_mentions` diff 동기화)
 - 알림 생성은 `enqueue_notification` 만 (자기 멘션 제외 · 5분 묶음 · 수신 설정 존중). 직접 INSERT 금지
 - 미입력 리마인드(0007)는 **권장만** 으로 결정 → 스케줄 등록하지 않음. 켤 때는 요구사항 문서 먼저 갱신
+- 기한 임박 알림(0015)은 **켜져 있음** — 평일 09:00 KST, 기한 당일·3일 전 담당자에게 due_soon
 
 ---
 
@@ -113,4 +114,5 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0012_custom_statuses.sql             업무 상태 커스터마이징 (page_statuses, kind 기반 집계)
 0013_people_log_comments.sql         업무 참여자(page_people) + 진행 로그 답글(comments.update_id)
 0014_progress_rollup.sql             부모 업무 진행률 = 하위 업무 평균 (트리거 자동 전파)
+0015_notice_reads_due_reminders.sql  공지 읽음 현황(notice_readers) + 기한 임박 알림(cron 켬)
 ```

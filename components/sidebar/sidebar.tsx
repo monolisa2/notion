@@ -525,6 +525,8 @@ export function Sidebar({
         <NavLink href="/tasks" label="업무" icon="✅" active={pathname.startsWith('/tasks')} />
         <NavLink href="/calendar" label="캘린더" icon="📅" active={pathname.startsWith('/calendar')} />
         <NavLink href="/collections/meeting" label="모아보기" icon="🗂️" active={pathname.startsWith('/collections')} />
+        <NavLink href="/weekly" label="주간 모아보기" icon="📊" active={pathname.startsWith('/weekly')} />
+        <NavLink href="/files" label="파일" icon="📎" active={pathname.startsWith('/files')} />
         <button
           type="button"
           onClick={() => openLog()}

@@ -18,7 +18,7 @@ import { useProgressLog } from '@/components/progress-log-provider';
 
 export type AssigneeOption = { id: string; name: string; avatar_url: string | null };
 
-type TaskFields = Pick<PageRow, 'status' | 'assignee_id' | 'progress' | 'due_date' | 'priority'>;
+type TaskFields = Pick<PageRow, 'status' | 'assignee_id' | 'progress' | 'start_date' | 'due_date' | 'priority'>;
 
 /**
  * type='task' 페이지 상단 속성 바 (한 줄).
@@ -45,6 +45,7 @@ export function PropertyBar({
     status: page.status,
     assignee_id: page.assignee_id,
     progress: page.progress,
+    start_date: page.start_date,
     due_date: page.due_date,
     priority: page.priority,
   });
@@ -72,6 +73,7 @@ export function PropertyBar({
             status: row.status,
             assignee_id: row.assignee_id,
             progress: row.progress,
+            start_date: row.start_date,
             due_date: row.due_date,
             priority: row.priority,
           });
@@ -248,6 +250,18 @@ export function PropertyBar({
       </div>
 
       {/* 진행률은 아래 진행률 패널에서 보여주고, 변경도 거기서 (로그와 함께만) */}
+
+      {/* 시작일 (타임라인 막대의 왼쪽 끝) */}
+      <label className="flex shrink-0 items-center gap-1.5 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700" title="타임라인 뷰에서 막대의 시작점이 됩니다">
+        <span className="text-xs text-zinc-500">시작</span>
+        <input
+          type="date"
+          value={fields.start_date ?? ''}
+          onChange={(e) => update({ start_date: e.target.value || null })}
+          className="bg-transparent text-xs outline-none"
+          aria-label="시작일"
+        />
+      </label>
 
       {/* 기한 */}
       <label className="flex shrink-0 items-center gap-1.5 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700">

@@ -17,6 +17,8 @@ import {
 } from '@/components/task/progress-panel';
 import { SubpageList } from '@/components/subpage-list';
 import { VisitTracker } from '@/components/visit-tracker';
+import { NoticeReadStatus } from '@/components/notice-read-status';
+import { ActionItemPromoter } from '@/components/task/action-item-promoter';
 
 export default async function PageView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
@@ -38,7 +40,7 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
 
   const isTask = page.type === 'task';
   const [assignees, updates, comments, profile, units, fav, statuses, peopleIds, childTasks, childUpdates] = await Promise.all([
-    isTask
+    isTask || page.template === 'meeting'
       ? supabase
           .from('profiles')
           .select('id, name, avatar_url')
@@ -94,6 +96,9 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
       <PageHeader key={`hdr-${page.id}`} page={page} units={units} isAdmin={me.isAdmin} meId={user.id} meUnitId={me.unitId} isFavorite={fav} />
       <VisitTracker pageId={page.id} />
 
+      {/* 공지면 읽음 현황 (작성자·관리자에게만 서버가 응답) */}
+      {page.pinned && (me.isAdmin || page.created_by === user.id) && <NoticeReadStatus pageId={page.id} />}
+
       {isTask && (
         <PropertyBar
           key={`props-${page.id}`}
@@ -114,6 +119,11 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
           initialChildren={childTasks}
           initialChildUpdates={childUpdates}
         />
+      )}
+
+      {/* 회의록: 액션 아이템을 하위 업무로 승격 */}
+      {page.template === 'meeting' && (
+        <ActionItemPromoter key={`actions-${page.id}`} page={page} meId={user.id} people={assignees} />
       )}
 
       {/* 하위 페이지를 본문 위에 — 들어오자마자 구조가 보이게 */}

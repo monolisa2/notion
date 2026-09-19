@@ -1618,6 +1618,7 @@ export type Database = {
       can_write_unit: { Args: { p_unit: string }; Returns: boolean }
       dearmor: { Args: { "": string }; Returns: string }
       enqueue_daily_reminders: { Args: { p_today?: string }; Returns: number }
+      enqueue_due_reminders: { Args: { p_today?: string }; Returns: number }
       enqueue_notification: {
         Args: {
           p_actor: string
@@ -1639,6 +1640,14 @@ export type Database = {
         Returns: number
       }
       my_unit_id: { Args: Record<PropertyKey, never>; Returns: string }
+      notice_readers: {
+        Args: { p_page: string }
+        Returns: {
+          name: string
+          read_at: string
+          user_id: string
+        }[]
+      }
       page_label: { Args: { p_id: string }; Returns: string }
       pgp_armor_headers: {
         Args: { "": string }

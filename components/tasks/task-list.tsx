@@ -11,12 +11,13 @@ import { unitLabel } from '@/lib/org';
 import { PRIORITY_COLOR, RISK_COLOR, statusClass, statusKind } from '@/lib/status-style';
 import { insertAutoLog } from '@/lib/updates';
 import { StatusManager } from '@/components/tasks/status-manager';
+import { TaskTimeline } from '@/components/tasks/task-timeline';
 import type { TaskRow } from '@/lib/tasks';
 import { Avatar } from '@/components/avatar';
 import { BoardDragGhost, useBoardDrag } from '@/components/board-dnd';
 import type { Person } from '@/hooks/use-people';
 
-type View = 'table' | 'kanban';
+type View = 'table' | 'kanban' | 'timeline';
 type GroupBy = 'status' | 'assignee' | 'unit';
 type DueFilter = 'all' | 'overdue' | 'today' | 'week' | 'none';
 
@@ -162,7 +163,7 @@ export function TaskList({
           </select>
         )}
         <div className={`${view === 'kanban' ? '' : 'ml-auto'} flex items-center gap-1 rounded-md border border-zinc-200 p-0.5`}>
-          {(['table', 'kanban'] as View[]).map((v) => (
+          {(['table', 'kanban', 'timeline'] as View[]).map((v) => (
             <button
               key={v}
               type="button"
@@ -171,7 +172,7 @@ export function TaskList({
                 view === v ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
               }`}
             >
-              {v === 'table' ? '테이블' : '칸반'}
+              {v === 'table' ? '테이블' : v === 'kanban' ? '칸반' : '타임라인'}
             </button>
           ))}
         </div>
@@ -223,6 +224,8 @@ export function TaskList({
       <div className="mt-4">
         {view === 'table' ? (
           <TaskTable rows={filtered} today={today} statuses={statuses} onStatus={changeStatus} />
+        ) : view === 'timeline' ? (
+          <TaskTimeline rows={filtered} today={today} units={units} statuses={statuses} />
         ) : (
           <Kanban rows={filtered} today={today} groupBy={groupBy} people={people} units={units} statuses={statuses} onStatus={changeStatus} onAssignee={changeAssignee} />
         )}
