@@ -28,6 +28,13 @@ export async function markRead(sb: Db, ids?: string[]) {
   if (error) throw error;
 }
 
+/** 읽음 되돌리기 — 본인 알림만 (RLS notifications_update) */
+export async function markUnread(sb: Db, ids: string[]) {
+  if (ids.length === 0) return;
+  const { error } = await sb.from('notifications').update({ read_at: null }).in('id', ids);
+  if (error) throw error;
+}
+
 export function timeAgo(iso: string): string {
   const diff = (Date.now() - new Date(iso).getTime()) / 1000;
   if (diff < 60) return '방금';

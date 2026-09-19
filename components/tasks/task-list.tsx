@@ -179,6 +179,20 @@ export function TaskList({
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">
+        {meId && (
+          <button
+            type="button"
+            onClick={() => setParam({ assignee: assignee === meId ? null : meId })}
+            className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
+              assignee === meId
+                ? 'border-zinc-900 bg-zinc-900 text-white'
+                : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'
+            }`}
+            title="내가 담당인 업무만 보기"
+          >
+            내 업무만
+          </button>
+        )}
         <select value={assignee} onChange={(e) => setParam({ assignee: e.target.value })} className={select} aria-label="담당자 필터">
           <option value="">담당자 전체</option>
           <option value="none">미지정</option>

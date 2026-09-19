@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
-import { TEMPLATES, type Template } from '@/lib/templates';
+import { NEW_PAGE_TEMPLATES, type Template } from '@/lib/templates';
 
 export function NewPageDialog({
   spaceLabel,
@@ -30,7 +30,7 @@ export function NewPageDialog({
         </div>
         <p className="mt-1 text-xs text-zinc-500">양식을 고르면 틀이 채워진 페이지가 바로 열립니다. 내용은 자유롭게 고쳐 쓰세요.</p>
         <ul className="mt-4 grid gap-2 sm:grid-cols-2">
-          {TEMPLATES.map((t) => (
+          {NEW_PAGE_TEMPLATES.map((t) => (
             <li key={t.key}>
               <button
                 type="button"

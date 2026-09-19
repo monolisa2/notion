@@ -9,6 +9,7 @@ import {
   fetchNotifications,
   KIND_META,
   markRead,
+  markUnread,
   timeAgo,
   type NotificationKind,
   type NotificationRow,
@@ -75,10 +76,23 @@ export function NotificationBell({ meId }: { meId: string }) {
   };
 
   const readAll = async () => {
+    // 되돌리기용으로 "방금 읽음 처리된" 알림 id 를 기억해 둔다
+    const justRead = items.filter((x) => !x.read_at).map((x) => x.id);
+    if (justRead.length === 0) return;
     try {
       setItems((prev) => prev.map((x) => (x.read_at ? x : { ...x, read_at: new Date().toISOString() })));
       await markRead(supabase);
       await reload();
+      toast.success(`${justRead.length}건을 읽음 처리했습니다`, {
+        action: {
+          label: '되돌리기',
+          onClick: () => {
+            void markUnread(supabase, justRead)
+              .then(reload)
+              .catch((e) => toast.error(`되돌리기 실패: ${errorMessage(e)}`));
+          },
+        },
+      });
     } catch (e) {
       toast.error(`읽음 처리 실패: ${errorMessage(e)}`);
     }
