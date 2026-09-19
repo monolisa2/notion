@@ -79,6 +79,7 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 ## 6. 화면 원칙
 
 - 한국어 UI, 날짜 `YYYY-MM-DD`, 상태 값은 DB 의 한글 문자열 그대로
+- 업무 상태 목록은 `page_statuses` (0012, 본부 공통). 화면은 이 목록으로 그리고, 집계·완료 판정은 `kind`(`status_kind()`) 로. 이름 리터럴 비교 금지. 편집은 관리자+조직장(RLS)
 - 에러는 삼키지 말고 토스트(`sonner`)로. 메시지는 `errorMessage()` 로 뽑는다
 - 서버 컴포넌트 기본, 상호작용 필요한 곳만 `'use client'`
 - 대시보드 위젯은 5개 고정 (`v_stale_tasks` `v_blocked_tasks` `v_due_risk` `v_assignee_summary` `v_activity_feed`). 집계는 뷰에서
@@ -109,4 +110,5 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0009_collections_search_storage.sql  양식·행사일·고정, 검색, 보관함 복구, 첨부 버킷
 0010_favorites_visits.sql            즐겨찾기, 최근 방문
 0011_write_permissions.sql           공간별 페이지 작성 권한 (전원/리더/지정)
+0012_custom_statuses.sql             업무 상태 커스터마이징 (page_statuses, kind 기반 집계)
 ```

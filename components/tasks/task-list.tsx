@@ -6,9 +6,11 @@ import { useCallback, useEffect, useMemo } from 'react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
-import { PAGE_STATUSES, type OrgUnitRow, type PageStatus } from '@/lib/types';
+import { DEFAULT_STATUSES, type OrgUnitRow, type StatusRow } from '@/lib/types';
 import { unitLabel } from '@/lib/org';
-import { PRIORITY_COLOR, RISK_COLOR, STATUS_COLOR, statusClass } from '@/lib/status-style';
+import { PRIORITY_COLOR, RISK_COLOR, statusClass, statusKind } from '@/lib/status-style';
+import { insertAutoLog } from '@/lib/updates';
+import { StatusManager } from '@/components/tasks/status-manager';
 import type { TaskRow } from '@/lib/tasks';
 import { Avatar } from '@/components/avatar';
 import { BoardDragGhost, useBoardDrag } from '@/components/board-dnd';
@@ -49,7 +51,21 @@ function riskOf(due: string | null, today: string): string | null {
  * 업무 목록: 테이블 / 칸반(status) 토글, 필터는 URL 쿼리로 유지.
  * (라벨 필터는 0006 마이그레이션을 실행하지 않았으므로 없음)
  */
-export function TaskList({ tasks, people, units }: { tasks: TaskRow[]; people: Person[]; units: OrgUnitRow[] }) {
+export function TaskList({
+  tasks,
+  people,
+  units,
+  statuses = DEFAULT_STATUSES,
+  meId,
+  canManageStatuses = false,
+}: {
+  tasks: TaskRow[];
+  people: Person[];
+  units: OrgUnitRow[];
+  statuses?: StatusRow[];
+  meId?: string;
+  canManageStatuses?: boolean;
+}) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const pathname = usePathname();
@@ -89,7 +105,7 @@ export function TaskList({ tasks, people, units }: { tasks: TaskRow[]; people: P
   const today = todayStr();
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
-      if (!showClosed && !status && (t.status === '완료' || t.status === '드롭')) return false;
+      if (!showClosed && !status && ['완료', '드롭'].includes(statusKind(t.status, statuses) ?? '')) return false;
       if (assignee === 'none' ? t.assignee_id !== null : assignee && t.assignee_id !== assignee) return false;
       if (status && t.status !== status) return false;
       if (due === 'none' && t.due_date) return false;
@@ -98,12 +114,30 @@ export function TaskList({ tasks, people, units }: { tasks: TaskRow[]; people: P
       if (due === 'week' && !(t.due_date && t.due_date >= today && t.due_date <= addDays(today, 7))) return false;
       return true;
     });
-  }, [tasks, assignee, status, due, showClosed, today]);
+  }, [tasks, assignee, status, due, showClosed, today, statuses]);
 
-  const changeStatus = async (id: string, next: PageStatus) => {
+  const changeStatus = async (id: string, next: string) => {
+    const before = tasks.find((t) => t.id === id);
     const { error } = await supabase.from('pages').update({ status: next }).eq('id', id);
-    if (error) toast.error(`상태 변경 실패: ${errorMessage(error)}`);
-    else router.refresh();
+    if (error) {
+      toast.error(`상태 변경 실패: ${errorMessage(error)}`);
+      return;
+    }
+    if (meId && before && before.status !== next) {
+      // 누가 바꿨는지 진행 로그에 자동 기록
+      try {
+        await insertAutoLog(supabase, {
+          pageId: id,
+          authorId: meId,
+          content: `상태 변경: ${before.status ?? '없음'} → ${next}`,
+          progress: before.progress,
+          status: next,
+        });
+      } catch {
+        /* 자동 기록 실패는 무시 */
+      }
+    }
+    router.refresh();
   };
   const changeAssignee = async (id: string, next: string | null) => {
     const { error } = await supabase.from('pages').update({ assignee_id: next }).eq('id', id);
@@ -155,9 +189,9 @@ export function TaskList({ tasks, people, units }: { tasks: TaskRow[]; people: P
         </select>
         <select value={status} onChange={(e) => setParam({ status: e.target.value })} className={select} aria-label="상태 필터">
           <option value="">상태 전체</option>
-          {PAGE_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
+          {statuses.map((s) => (
+            <option key={s.id} value={s.name}>
+              {s.name}
             </option>
           ))}
         </select>
@@ -174,6 +208,7 @@ export function TaskList({ tasks, people, units }: { tasks: TaskRow[]; people: P
             완료·드롭 포함
           </label>
         )}
+        {canManageStatuses && <StatusManager statuses={statuses} />}
         {(assignee || status || due !== 'all' || showClosed) && (
           <button
             type="button"
@@ -187,9 +222,9 @@ export function TaskList({ tasks, people, units }: { tasks: TaskRow[]; people: P
 
       <div className="mt-4">
         {view === 'table' ? (
-          <TaskTable rows={filtered} today={today} onStatus={changeStatus} />
+          <TaskTable rows={filtered} today={today} statuses={statuses} onStatus={changeStatus} />
         ) : (
-          <Kanban rows={filtered} today={today} groupBy={groupBy} people={people} units={units} onStatus={changeStatus} onAssignee={changeAssignee} />
+          <Kanban rows={filtered} today={today} groupBy={groupBy} people={people} units={units} statuses={statuses} onStatus={changeStatus} onAssignee={changeAssignee} />
         )}
       </div>
     </div>
@@ -209,11 +244,13 @@ function DueCell({ due, today }: { due: string | null; today: string }) {
 function TaskTable({
   rows,
   today,
+  statuses,
   onStatus,
 }: {
   rows: TaskRow[];
   today: string;
-  onStatus: (id: string, s: PageStatus) => void;
+  statuses: StatusRow[];
+  onStatus: (id: string, s: string) => void;
 }) {
   if (rows.length === 0) {
     return <p className="py-16 text-center text-sm text-zinc-400">조건에 맞는 업무가 없습니다.</p>;
@@ -242,16 +279,17 @@ function TaskTable({
               </td>
               <td className="px-3 py-2">
                 <select
-                  value={t.status ?? '대기'}
-                  onChange={(e) => onStatus(t.id, e.target.value as PageStatus)}
-                  className={`rounded px-1.5 py-0.5 text-[11px] font-medium outline-none ${statusClass(t.status)}`}
+                  value={t.status ?? ''}
+                  onChange={(e) => onStatus(t.id, e.target.value)}
+                  className={`rounded px-1.5 py-0.5 text-[11px] font-medium outline-none ${statusClass(t.status, statuses)}`}
                   aria-label="상태"
                 >
-                  {PAGE_STATUSES.map((s) => (
-                    <option key={s} value={s}>
-                      {s}
+                  {statuses.map((s) => (
+                    <option key={s.id} value={s.name}>
+                      {s.name}
                     </option>
                   ))}
+                  {!statuses.some((s) => s.name === t.status) && t.status && <option value={t.status}>{t.status}</option>}
                 </select>
               </td>
               <td className="px-3 py-2">
@@ -293,6 +331,7 @@ function Kanban({
   groupBy,
   people,
   units,
+  statuses,
   onStatus,
   onAssignee,
 }: {
@@ -301,13 +340,14 @@ function Kanban({
   groupBy: GroupBy;
   people: Person[];
   units: OrgUnitRow[];
-  onStatus: (id: string, s: PageStatus) => void;
+  statuses: StatusRow[];
+  onStatus: (id: string, s: string) => void;
   onAssignee: (id: string, a: string | null) => void;
 }) {
   const { drag, over, registerColumn, startDrag, suppressClickCapture } = useBoardDrag((id, key) => {
     const task = rows.find((t) => t.id === id);
     if (groupBy === 'status') {
-      if (task?.status !== key) onStatus(id, key as PageStatus);
+      if (task?.status !== key) onStatus(id, key);
     } else if (groupBy === 'assignee') {
       if ((task?.assignee_id ?? '') !== key) onAssignee(id, key || null);
     }
@@ -316,10 +356,10 @@ function Kanban({
 
   const columns: { key: string; head: React.ReactNode; match: (t: TaskRow) => boolean }[] =
     groupBy === 'status'
-      ? PAGE_STATUSES.map((s) => ({
-          key: s,
-          head: <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${STATUS_COLOR[s]}`}>{s}</span>,
-          match: (t) => t.status === s,
+      ? statuses.map((s) => ({
+          key: s.name,
+          head: <span className={`rounded px-1.5 py-0.5 text-[11px] font-medium ${statusClass(s.name, statuses)}`}>{s.name}</span>,
+          match: (t: TaskRow) => t.status === s.name,
         }))
       : groupBy === 'assignee'
         ? [
@@ -379,7 +419,7 @@ function Kanban({
                   </Link>
                   <div className="mt-2 flex items-center gap-2 text-xs text-zinc-500">
                     {groupBy !== 'status' && t.status && (
-                      <span className={`rounded px-1 py-0.5 text-[10px] ${statusClass(t.status)}`}>{t.status}</span>
+                      <span className={`rounded px-1 py-0.5 text-[10px] ${statusClass(t.status, statuses)}`}>{t.status}</span>
                     )}
                     {groupBy !== 'assignee' &&
                       (t.assignee ? (

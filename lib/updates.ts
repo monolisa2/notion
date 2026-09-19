@@ -26,12 +26,20 @@ export async function fetchUpdates(sb: Db, pageId: string, limit = 50): Promise<
 
 /**
  * 상태는 모달에 필드로 노출하지 않는다 (입력 3개 원칙).
- * 진행률로부터 자연스럽게 유도한다: 100 → 완료, 대기 상태에서 0 초과 → 진행.
+ * 진행률로부터 의미(kind) 기준으로 유도한다: 100 → 완료 계열의 첫 상태,
+ * 대기 계열에서 0 초과(또는 완료 계열에서 100 미만) → 진행 계열의 첫 상태. (0012)
  */
-export function deriveStatus(progress: number, currentStatus: string | null): string | null {
-  if (progress >= 100) return '완료';
-  if (currentStatus === '대기' && progress > 0) return '진행';
-  if (currentStatus === '완료' && progress < 100) return '진행';
+export function deriveStatus(
+  progress: number,
+  currentStatus: string | null,
+  statuses: { name: string; kind: string; sort_order: number }[],
+): string | null {
+  const sorted = [...statuses].sort((a, b) => a.sort_order - b.sort_order);
+  const firstOf = (kind: string) => sorted.find((s) => s.kind === kind)?.name ?? null;
+  const curKind = sorted.find((s) => s.name === currentStatus)?.kind ?? null;
+  if (progress >= 100) return curKind === '완료' ? null : firstOf('완료');
+  if (curKind === '대기' && progress > 0) return firstOf('진행');
+  if (curKind === '완료' && progress < 100) return firstOf('진행');
   return null; // 변경 없음 → coalesce 로 기존 값 유지
 }
 
@@ -46,6 +54,7 @@ export async function insertProgressLog(
     blocker: string | null;
   },
 ): Promise<PageUpdateRow> {
+  const { data: statusRows } = await sb.from('page_statuses').select('name, kind, sort_order');
   const { data, error } = await sb
     .from('page_updates')
     .insert({
@@ -53,13 +62,38 @@ export async function insertProgressLog(
       author_id: params.authorId,
       content: params.content.trim(),
       progress_snapshot: params.progress,
-      status_snapshot: deriveStatus(params.progress, params.currentStatus),
+      status_snapshot: deriveStatus(params.progress, params.currentStatus, statusRows ?? []),
       blocker: params.blocker?.trim() || null,
     })
     .select('*')
     .single();
   if (error) throw error;
   return data;
+}
+
+/**
+ * 속성 바에서 진행률·상태를 바꿀 때 남기는 자동 기록.
+ * 누가 언제 숫자를 조정했는지 타임라인에 그대로 남는다.
+ */
+export async function insertAutoLog(
+  sb: Db,
+  params: {
+    pageId: string;
+    authorId: string;
+    content: string;
+    progress: number | null;
+    status: string | null;
+  },
+): Promise<void> {
+  const { error } = await sb.from('page_updates').insert({
+    page_id: params.pageId,
+    author_id: params.authorId,
+    content: params.content,
+    progress_snapshot: params.progress,
+    status_snapshot: params.status,
+    blocker: null,
+  });
+  if (error) throw error;
 }
 
 /**

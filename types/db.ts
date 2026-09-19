@@ -583,6 +583,33 @@ export type Database = {
           },
         ]
       }
+      page_statuses: {
+        Row: {
+          color: string
+          created_at: string
+          id: string
+          kind: string
+          name: string
+          sort_order: number
+        }
+        Insert: {
+          color?: string
+          created_at?: string
+          id?: string
+          kind: string
+          name: string
+          sort_order?: number
+        }
+        Update: {
+          color?: string
+          created_at?: string
+          id?: string
+          kind?: string
+          name?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
       page_updates: {
         Row: {
           author_id: string
@@ -930,6 +957,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pages_status_fk"
+            columns: ["status"]
+            referencedRelation: "page_statuses"
+            referencedColumns: ["name"]
+          },
+          {
             foreignKeyName: "pages_unit_id_fkey"
             columns: ["unit_id"]
             referencedRelation: "org_units"
@@ -1078,6 +1111,12 @@ export type Database = {
             referencedRelation: "v_trash"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "pages_status_fk"
+            columns: ["status"]
+            referencedRelation: "page_statuses"
+            referencedColumns: ["name"]
+          },
         ]
       }
       v_assignee_summary: {
@@ -1105,7 +1144,14 @@ export type Database = {
           status: string | null
           title: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pages_status_fk"
+            columns: ["status"]
+            referencedRelation: "page_statuses"
+            referencedColumns: ["name"]
+          },
+        ]
       }
       v_due_risk: {
         Row: {
@@ -1121,7 +1167,14 @@ export type Database = {
           status: string | null
           title: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pages_status_fk"
+            columns: ["status"]
+            referencedRelation: "page_statuses"
+            referencedColumns: ["name"]
+          },
+        ]
       }
       v_favorite_pages: {
         Row: {
@@ -1145,6 +1198,12 @@ export type Database = {
             columns: ["user_id"]
             referencedRelation: "v_assignee_summary"
             referencedColumns: ["assignee_id"]
+          },
+          {
+            foreignKeyName: "pages_status_fk"
+            columns: ["status"]
+            referencedRelation: "page_statuses"
+            referencedColumns: ["name"]
           },
         ]
       }
@@ -1314,6 +1373,12 @@ export type Database = {
             referencedColumns: ["id"]
           },
           {
+            foreignKeyName: "pages_status_fk"
+            columns: ["status"]
+            referencedRelation: "page_statuses"
+            referencedColumns: ["name"]
+          },
+          {
             foreignKeyName: "pages_unit_id_fkey"
             columns: ["unit_id"]
             referencedRelation: "org_units"
@@ -1350,6 +1415,12 @@ export type Database = {
             referencedRelation: "v_assignee_summary"
             referencedColumns: ["assignee_id"]
           },
+          {
+            foreignKeyName: "pages_status_fk"
+            columns: ["status"]
+            referencedRelation: "page_statuses"
+            referencedColumns: ["name"]
+          },
         ]
       }
       v_stale_tasks: {
@@ -1365,7 +1436,14 @@ export type Database = {
           status: string | null
           title: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "pages_status_fk"
+            columns: ["status"]
+            referencedRelation: "page_statuses"
+            referencedColumns: ["name"]
+          },
+        ]
       }
       v_trash: {
         Row: {
@@ -1484,6 +1562,7 @@ export type Database = {
           profile_id: string
         }[]
       }
+      status_kind: { Args: { p_status: string }; Returns: string }
       storage_usage_bytes: { Args: Record<PropertyKey, never>; Returns: number }
       sync_comment_mentions: {
         Args: { p_comment_id: string; p_mentioned: string[] }

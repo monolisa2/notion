@@ -61,5 +61,14 @@ export default async function CalendarPage({ searchParams }: { searchParams: Pro
     })),
   ];
 
-  return <MonthCalendar month={month} items={items} units={(units ?? []) as OrgUnitRow[]} initialUnit={unit ?? ''} />;
+  const { data: statusRows } = await supabase.from('page_statuses').select('*').order('sort_order');
+  return (
+    <MonthCalendar
+      month={month}
+      items={items}
+      units={(units ?? []) as OrgUnitRow[]}
+      initialUnit={unit ?? ''}
+      statuses={statusRows ?? undefined}
+    />
+  );
 }

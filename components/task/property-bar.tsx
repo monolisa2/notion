@@ -5,14 +5,15 @@ import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
 import {
+  DEFAULT_STATUSES,
   PAGE_PRIORITIES,
-  PAGE_STATUSES,
   type PagePriority,
   type PageRow,
-  type PageStatus,
+  type StatusRow,
 } from '@/lib/types';
 import { Avatar } from '@/components/avatar';
-import { PRIORITY_COLOR, STATUS_COLOR } from '@/lib/status-style';
+import { PRIORITY_COLOR, statusClass } from '@/lib/status-style';
+import { insertAutoLog } from '@/lib/updates';
 import { useProgressLog } from '@/components/progress-log-provider';
 
 export type AssigneeOption = { id: string; name: string; avatar_url: string | null };
@@ -24,7 +25,17 @@ type TaskFields = Pick<PageRow, 'status' | 'assignee_id' | 'progress' | 'due_dat
  * 각 필드는 변경 즉시 optimistic 반영 → 저장 실패 시 되돌리고 토스트.
  * 다른 사람이 바꾸거나 진행 로그 트리거가 갱신하면 Realtime 으로 따라온다.
  */
-export function PropertyBar({ page, assignees, meId }: { page: PageRow; assignees: AssigneeOption[]; meId?: string }) {
+export function PropertyBar({
+  page,
+  assignees,
+  meId,
+  statuses = DEFAULT_STATUSES,
+}: {
+  page: PageRow;
+  assignees: AssigneeOption[];
+  meId?: string;
+  statuses?: StatusRow[];
+}) {
   const supabase = useMemo(() => createClient(), []);
   const { open: openLog } = useProgressLog();
   const [fields, setFields] = useState<TaskFields>({
@@ -70,11 +81,36 @@ export function PropertyBar({ page, assignees, meId }: { page: PageRow; assignee
     if (error) {
       setFields(prev);
       toast.error(`저장 실패: ${errorMessage(error)}`);
+      return;
+    }
+    // 진행률·상태 변경은 "누가 바꿨는지" 타임라인에 자동 기록
+    if (meId) {
+      try {
+        if (patch.progress !== undefined && patch.progress !== prev.progress) {
+          await insertAutoLog(supabase, {
+            pageId: page.id,
+            authorId: meId,
+            content: `진행률 ${prev.progress ?? 0}% → ${patch.progress}%`,
+            progress: patch.progress,
+            status: null,
+          });
+        } else if (patch.status !== undefined && patch.status !== prev.status) {
+          await insertAutoLog(supabase, {
+            pageId: page.id,
+            authorId: meId,
+            content: `상태 변경: ${prev.status ?? '없음'} → ${patch.status}`,
+            progress: prev.progress,
+            status: patch.status,
+          });
+        }
+      } catch {
+        // 자동 기록 실패는 조용히 넘어간다 (본 저장은 이미 성공)
+      }
     }
   };
 
   const assignee = assignees.find((a) => a.id === fields.assignee_id) ?? null;
-  const status = (fields.status ?? '대기') as PageStatus;
+  const status = fields.status ?? '대기';
   const progress = fields.progress ?? 0;
 
   return (
@@ -84,14 +120,15 @@ export function PropertyBar({ page, assignees, meId }: { page: PageRow; assignee
         <span className="sr-only">상태</span>
         <select
           value={status}
-          onChange={(e) => update({ status: e.target.value as PageStatus })}
-          className={`appearance-none rounded-md px-2.5 py-1 pr-6 text-xs font-medium outline-none ${STATUS_COLOR[status]}`}
+          onChange={(e) => update({ status: e.target.value })}
+          className={`appearance-none rounded-md px-2.5 py-1 pr-6 text-xs font-medium outline-none ${statusClass(status, statuses)}`}
         >
-          {PAGE_STATUSES.map((s) => (
-            <option key={s} value={s}>
-              {s}
+          {statuses.map((s) => (
+            <option key={s.id} value={s.name}>
+              {s.name}
             </option>
           ))}
+          {!statuses.some((s) => s.name === status) && <option value={status}>{status}</option>}
         </select>
         <Chevron />
       </label>

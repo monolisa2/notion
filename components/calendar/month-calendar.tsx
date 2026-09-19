@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { buildOrgTree, type OrgNode } from '@/lib/org';
 import { statusClass } from '@/lib/status-style';
+import type { StatusRow } from '@/lib/types';
 import type { OrgUnitRow } from '@/lib/types';
 
 export type CalendarItem = {
@@ -52,11 +53,13 @@ export function MonthCalendar({
   items,
   units,
   initialUnit,
+  statuses,
 }: {
   month: string;
   items: CalendarItem[];
   units: OrgUnitRow[];
   initialUnit: string;
+  statuses?: StatusRow[];
 }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -157,7 +160,7 @@ export function MonthCalendar({
                           className={`block truncate rounded-r px-1.5 py-0.5 text-[11px] leading-snug hover:opacity-80 ${KIND_STYLE[it.kind] ?? KIND_STYLE.doc}`}
                         >
                           {it.kind === 'task' && it.status && (
-                            <span className={`mr-1 rounded px-1 text-[9px] ${statusClass(it.status)}`}>{it.status}</span>
+                            <span className={`mr-1 rounded px-1 text-[9px] ${statusClass(it.status, statuses)}`}>{it.status}</span>
                           )}
                           {it.title}
                         </Link>

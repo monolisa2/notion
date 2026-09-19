@@ -1,16 +1,35 @@
 import { createClient } from '@/lib/supabase/server';
 import { fetchTasks } from '@/lib/tasks';
 import { TaskList } from '@/components/tasks/task-list';
-import type { OrgUnitRow } from '@/lib/types';
+import { LEADER_TITLES } from '@/lib/org';
+import { DEFAULT_STATUSES, type OrgUnitRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TasksPage() {
   const supabase = await createClient();
-  const [tasks, { data: people }, { data: units }] = await Promise.all([
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  const [tasks, { data: people }, { data: units }, statuses, { data: me }] = await Promise.all([
     fetchTasks(supabase),
     supabase.from('profiles').select('id, name, avatar_url').is('deactivated_at', null).order('name'),
     supabase.from('v_org_units').select('*'),
+    supabase.from('page_statuses').select('*').order('sort_order').then((r) => (r.data && r.data.length > 0 ? r.data : DEFAULT_STATUSES)),
+    user
+      ? supabase.from('profiles').select('is_admin, job_title').eq('id', user.id).maybeSingle()
+      : Promise.resolve({ data: null }),
   ]);
-  return <TaskList tasks={tasks} people={people ?? []} units={(units ?? []) as OrgUnitRow[]} />;
+  const canManageStatuses =
+    !!me && (me.is_admin || (LEADER_TITLES as readonly string[]).includes(me.job_title ?? ''));
+  return (
+    <TaskList
+      tasks={tasks}
+      people={people ?? []}
+      units={(units ?? []) as OrgUnitRow[]}
+      statuses={statuses}
+      meId={user?.id}
+      canManageStatuses={canManageStatuses}
+    />
+  );
 }

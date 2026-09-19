@@ -5,6 +5,7 @@ import { Widget } from '@/components/dashboard/widget';
 import { ActivityFeed } from '@/components/dashboard/activity-feed';
 import { AssigneeSummary, BlockedTasks, DueRisk, StaleTasks } from '@/components/dashboard/widgets';
 import { statusClass } from '@/lib/status-style';
+import { DEFAULT_STATUSES } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -21,6 +22,11 @@ export default async function Home() {
     data: { user },
   } = await supabase.auth.getUser();
 
+  // 상태 목록(0012) — "진행 중" 판정은 이름이 아니라 kind 로
+  const { data: statusRows } = await supabase.from('page_statuses').select('*').order('sort_order');
+  const statuses = statusRows && statusRows.length > 0 ? statusRows : DEFAULT_STATUSES;
+  const openNames = statuses.filter((s) => s.kind === '대기' || s.kind === '진행').map((s) => s.name);
+
   const [{ data: profile }, dash, { data: myTasks }, { data: recent }, { data: pinned }] = await Promise.all([
     supabase.from('profiles').select('name, is_admin, job_title').eq('id', user!.id).maybeSingle(),
     fetchDashboard(supabase),
@@ -29,7 +35,7 @@ export default async function Home() {
       .select('id, title, icon, status, progress, due_date')
       .eq('type', 'task')
       .eq('assignee_id', user!.id)
-      .in('status', ['대기', '진행', '검토'])
+      .in('status', openNames)
       .is('archived_at', null)
       .order('due_date', { ascending: true, nullsFirst: false })
       .limit(8),
@@ -113,7 +119,7 @@ export default async function Home() {
                 <Link href={`/p/${t.id}`} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-zinc-50">
                   <span className="w-5 text-center">{t.icon ?? '☑'}</span>
                   <span className="min-w-0 flex-1 truncate">{t.title}</span>
-                  <span className={`rounded px-1.5 py-0.5 text-[11px] ${statusClass(t.status)}`}>{t.status}</span>
+                  <span className={`rounded px-1.5 py-0.5 text-[11px] ${statusClass(t.status, statuses)}`}>{t.status}</span>
                   <span className="w-9 text-right text-xs tabular-nums text-zinc-500">{t.progress ?? 0}%</span>
                   <span className={`w-20 text-right text-xs tabular-nums ${t.due_date && t.due_date < today ? 'text-red-600' : 'text-zinc-400'}`}>
                     {t.due_date ?? ''}
@@ -172,7 +178,7 @@ export default async function Home() {
       <div className="mt-3 grid gap-4 lg:grid-cols-5">
         <div className="space-y-4 lg:col-span-3">
           <Widget title="정체 업무" hint="3일 이상 진행 기록 없음" count={stale.length} accent>
-            <StaleTasks rows={stale} />
+            <StaleTasks rows={stale} statuses={statuses} />
           </Widget>
           <Widget title="막힌 업무" hint="최신 기록에 막힘 표시" count={blocked.length} accent>
             <BlockedTasks rows={blocked} />

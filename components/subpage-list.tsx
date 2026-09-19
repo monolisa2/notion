@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
-import { PAGE_STATUSES, type PageStatus } from '@/lib/types';
+import { DEFAULT_STATUSES, type StatusRow } from '@/lib/types';
 import { BoardDragGhost, useBoardDrag } from '@/components/board-dnd';
 import { useTree } from '@/components/tree-context';
 import { useNewPage } from '@/components/new-page-provider';
@@ -14,7 +14,7 @@ import { statusClass } from '@/lib/status-style';
 import type { PageRow, PageVisibility } from '@/lib/types';
 
 /** 노션처럼 페이지 본문 아래에 하위 페이지를 카드로 보여준다 */
-export function SubpageList({ page }: { page: PageRow }) {
+export function SubpageList({ page, statuses = DEFAULT_STATUSES }: { page: PageRow; statuses?: StatusRow[] }) {
   const { rows } = useTree();
   const { open } = useNewPage();
   const router = useRouter();
@@ -29,7 +29,7 @@ export function SubpageList({ page }: { page: PageRow }) {
   );
 
   const tasks = children.filter((c) => c.type === 'task');
-  const moveStatus = async (id: string, status: PageStatus) => {
+  const moveStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('pages').update({ status }).eq('id', id);
     if (error) toast.error(`상태 변경 실패: ${errorMessage(error)}`);
     else router.refresh();
@@ -69,7 +69,7 @@ export function SubpageList({ page }: { page: PageRow }) {
         </button>
       </div>
       {view === 'board' && tasks.length > 0 && (
-        <SubpageBoard tasks={tasks} onStatus={moveStatus} />
+        <SubpageBoard tasks={tasks} statuses={statuses} onStatus={moveStatus} />
       )}
 
       {view === 'list' && children.length > 0 && (
@@ -87,7 +87,7 @@ export function SubpageList({ page }: { page: PageRow }) {
                     {c.event_date ?? c.due_date ?? c.updated_at?.slice(0, 10)}
                   </span>
                 </span>
-                {c.status && <span className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] ${statusClass(c.status)}`}>{c.status}</span>}
+                {c.status && <span className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] ${statusClass(c.status, statuses)}`}>{c.status}</span>}
               </Link>
             </li>
           ))}
@@ -99,31 +99,34 @@ export function SubpageList({ page }: { page: PageRow }) {
 
 function SubpageBoard({
   tasks,
+  statuses,
   onStatus,
 }: {
   tasks: ReturnType<typeof useTree>['rows'];
-  onStatus: (id: string, status: PageStatus) => Promise<void>;
+  statuses: StatusRow[];
+  onStatus: (id: string, status: string) => Promise<void>;
 }) {
   const { drag, over, registerColumn, startDrag, suppressClickCapture } = useBoardDrag((id, key) => {
     const t = tasks.find((x) => x.id === id);
-    if (t?.status !== key) void onStatus(id, key as PageStatus);
+    if (t?.status !== key) void onStatus(id, key);
   });
 
   return (
     <>
       <div className="mt-2 flex gap-2 overflow-x-auto pb-2">
-        {PAGE_STATUSES.map((st) => {
+        {statuses.map((s) => {
+          const st = s.name;
           const col = tasks.filter((t) => t.status === st);
           return (
             <div
-              key={st}
+              key={s.id}
               ref={registerColumn(st)}
               className={`w-44 shrink-0 rounded-lg border p-1.5 transition-colors ${
                 over === st ? 'border-blue-400 bg-blue-50/60' : 'border-zinc-200 bg-zinc-50/60'
               }`}
             >
               <div className="flex items-center gap-1.5 px-1 py-0.5">
-                <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${statusClass(st)}`}>{st}</span>
+                <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${statusClass(st, statuses)}`}>{st}</span>
                 <span className="text-[10px] text-zinc-400">{col.length}</span>
               </div>
               <ul className="mt-1 space-y-1.5">

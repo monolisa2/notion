@@ -63,13 +63,19 @@ export function ProgressLogModal({
           setTaskLoading(false);
         }
       }
-      // 선택 후보: 내 진행 중 업무 (최근 수정순)
+      // 선택 후보: 내 진행 중 업무 (최근 수정순) — 진행 중 판정은 kind 로 (0012)
+      const { data: statusRows } = await supabase
+        .from('page_statuses')
+        .select('name, kind')
+        .in('kind', ['대기', '진행']);
+      const openNames =
+        statusRows && statusRows.length > 0 ? statusRows.map((s) => s.name) : ['대기', '진행', '검토'];
       const { data: mine } = await supabase
         .from('pages')
         .select('id, title, status, progress')
         .eq('type', 'task')
         .eq('assignee_id', me.id)
-        .in('status', ['대기', '진행', '검토'])
+        .in('status', openNames)
         .is('archived_at', null)
         .order('updated_at', { ascending: false })
         .limit(20);

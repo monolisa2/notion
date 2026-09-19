@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { Avatar } from '@/components/avatar';
 import { RISK_COLOR, statusClass } from '@/lib/status-style';
+import type { StatusRow } from '@/lib/types';
 import type { AssigneeSummaryRow, BlockedTaskRow, DueRiskRow, StaleTaskRow } from '@/lib/dashboard';
 import { timeAgo } from '@/lib/notifications';
 import { Empty } from './widget';
@@ -76,7 +77,7 @@ export function DueRisk({ rows }: { rows: DueRiskRow[] }) {
   );
 }
 
-export function StaleTasks({ rows }: { rows: StaleTaskRow[] }) {
+export function StaleTasks({ rows, statuses }: { rows: StaleTaskRow[]; statuses?: StatusRow[] }) {
   if (rows.length === 0) return <Empty>3일 이상 멈춘 업무가 없습니다. 👍</Empty>;
   return (
     <ul className="space-y-1">
@@ -90,7 +91,7 @@ export function StaleTasks({ rows }: { rows: StaleTaskRow[] }) {
               {r.stale_days}일
             </span>
             <span className="min-w-0 flex-1 truncate">{r.icon ?? '☑'} {r.title}</span>
-            <span className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] ${statusClass(r.status)}`}>{r.status}</span>
+            <span className={`shrink-0 rounded px-1.5 py-0.5 text-[11px] ${statusClass(r.status, statuses)}`}>{r.status}</span>
             <span className="flex shrink-0 items-center gap-1 text-xs text-zinc-500">
               {r.assignee_name ? (
                 <>

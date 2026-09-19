@@ -14,6 +14,19 @@ export const RANKS = ['사원', '주임', '대리', '과장', '차장', '부장'
 export const JOB_TITLES = ['팀원', '팀장', '실장', '본부장'] as const;
 
 export type PageType = 'doc' | 'task';
+/** 업무 상태 (0012: page_statuses 테이블에서 관리, 본부 공통) */
+export type StatusRow = Tables['page_statuses']['Row'];
+export type StatusKind = '대기' | '진행' | '완료' | '보류' | '드롭';
+/** page_statuses 를 아직 못 받았을 때의 기본 목록 (0012 시드와 동일) */
+export const DEFAULT_STATUSES: StatusRow[] = [
+  { id: 'd1', name: '대기', kind: '대기', color: 'zinc', sort_order: 100, created_at: '' },
+  { id: 'd2', name: '진행', kind: '진행', color: 'blue', sort_order: 200, created_at: '' },
+  { id: 'd3', name: '검토', kind: '진행', color: 'violet', sort_order: 300, created_at: '' },
+  { id: 'd4', name: '완료', kind: '완료', color: 'emerald', sort_order: 400, created_at: '' },
+  { id: 'd5', name: '보류', kind: '보류', color: 'amber', sort_order: 500, created_at: '' },
+  { id: 'd6', name: '드롭', kind: '드롭', color: 'zinc', sort_order: 600, created_at: '' },
+];
+/** @deprecated 0012 이후 화면은 page_statuses 목록을 쓴다 */
 export const PAGE_STATUSES = ['대기', '진행', '검토', '완료', '보류', '드롭'] as const;
 export type PageStatus = (typeof PAGE_STATUSES)[number];
 export const PAGE_PRIORITIES = ['긴급', '높음', '보통', '낮음'] as const;

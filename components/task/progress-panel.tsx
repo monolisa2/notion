@@ -3,8 +3,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { fetchUpdates, type UpdateWithAuthor } from '@/lib/updates';
-import { statusClass } from '@/lib/status-style';
-import type { PageRow } from '@/lib/types';
+import { statusClass, statusKind } from '@/lib/status-style';
+import { DEFAULT_STATUSES, type PageRow, type StatusRow } from '@/lib/types';
 
 function dday(due: string | null): { label: string; tone: string } | null {
   if (!due) return null;
@@ -21,7 +21,15 @@ function dday(due: string | null): { label: string; tone: string } | null {
  * 업무 페이지 상단의 진행률 패널: 큰 진행 바 + 기한 D-day + 진행 추이(로그 스냅샷) 차트.
  * 값 편집은 속성 바(슬라이더)와 진행 로그가 담당하고, 여기는 "보여주는" 곳.
  */
-export function ProgressPanel({ page, initialUpdates }: { page: PageRow; initialUpdates: UpdateWithAuthor[] }) {
+export function ProgressPanel({
+  page,
+  initialUpdates,
+  statuses = DEFAULT_STATUSES,
+}: {
+  page: PageRow;
+  initialUpdates: UpdateWithAuthor[];
+  statuses?: StatusRow[];
+}) {
   const supabase = useMemo(() => createClient(), []);
   const [progress, setProgress] = useState(page.progress ?? 0);
   const [status, setStatus] = useState(page.status ?? '대기');
@@ -59,8 +67,9 @@ export function ProgressPanel({ page, initialUpdates }: { page: PageRow; initial
   }, [supabase, page.id]);
 
   const due = dday(dueDate);
-  const done = status === '완료' || progress >= 100;
-  const barColor = done ? 'bg-emerald-500' : status === '보류' ? 'bg-amber-400' : 'bg-blue-600';
+  const kind = statusKind(status, statuses);
+  const done = kind === '완료' || progress >= 100;
+  const barColor = done ? 'bg-emerald-500' : kind === '보류' ? 'bg-amber-400' : 'bg-blue-600';
 
   // 진행 추이: 로그의 진행률 스냅샷(시간순) + 현재값
   const points = useMemo(() => {
@@ -76,7 +85,7 @@ export function ProgressPanel({ page, initialUpdates }: { page: PageRow; initial
       <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 px-4 py-3">
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold tabular-nums text-zinc-900">{progress}%</span>
-          <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${statusClass(status)}`}>{status}</span>
+          <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${statusClass(status, statuses)}`}>{status}</span>
           {due && (
             <span className={`ml-auto text-xs tabular-nums ${due.tone}`} title={`기한 ${dueDate}`}>
               기한 {dueDate} · {due.label}
