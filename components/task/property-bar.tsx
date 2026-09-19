@@ -56,6 +56,11 @@ export function PropertyBar({
     fieldsRef.current = fields;
   }, [fields]);
 
+  // 마지막으로 "저장된" 값 — 자동 기록의 비교 기준.
+  // (fields 는 조작 중에 먼저 바뀌므로 비교 기준으로 쓰면 안 된다.
+  //  서버 값 변경은 아래 Realtime 핸들러가 갱신한다)
+  const committedRef = useRef({ status: page.status, progress: page.progress });
+
   // 이 페이지 행의 변경을 구독 (진행 로그 INSERT 트리거 / 다른 사용자 편집)
   useEffect(() => {
     const channel = supabase
@@ -65,6 +70,7 @@ export function PropertyBar({
         { event: 'UPDATE', schema: 'public', table: 'pages', filter: `id=eq.${page.id}` },
         (payload) => {
           const row = payload.new as PageRow;
+          committedRef.current = { status: row.status, progress: row.progress };
           setFields({
             status: row.status,
             assignee_id: row.assignee_id,
@@ -82,6 +88,7 @@ export function PropertyBar({
 
   const update = async (patch: Partial<TaskFields>) => {
     const prev = fieldsRef.current;
+    const committed = { ...committedRef.current };
     setFields({ ...prev, ...patch });
     const { error } = await supabase.from('pages').update(patch).eq('id', page.id);
     if (error) {
@@ -89,26 +96,17 @@ export function PropertyBar({
       toast.error(`저장 실패: ${errorMessage(error)}`);
       return;
     }
-    // 진행률·상태 변경은 "누가 바꿨는지" 타임라인에 자동 기록
-    if (meId) {
+    // 상태 변경은 "누가 바꿨는지" 타임라인에 자동 기록
+    if (meId && patch.status !== undefined && patch.status !== committed.status) {
+      committedRef.current = { ...committedRef.current, status: patch.status };
       try {
-        if (patch.progress !== undefined && patch.progress !== prev.progress) {
-          await insertAutoLog(supabase, {
-            pageId: page.id,
-            authorId: meId,
-            content: `진행률 ${prev.progress ?? 0}% → ${patch.progress}%`,
-            progress: patch.progress,
-            status: null,
-          });
-        } else if (patch.status !== undefined && patch.status !== prev.status) {
-          await insertAutoLog(supabase, {
-            pageId: page.id,
-            authorId: meId,
-            content: `상태 변경: ${prev.status ?? '없음'} → ${patch.status}`,
-            progress: prev.progress,
-            status: patch.status,
-          });
-        }
+        await insertAutoLog(supabase, {
+          pageId: page.id,
+          authorId: meId,
+          content: `상태 변경: ${committed.status ?? '없음'} → ${patch.status}`,
+          progress: committed.progress,
+          status: patch.status,
+        });
       } catch {
         // 자동 기록 실패는 조용히 넘어간다 (본 저장은 이미 성공)
       }
@@ -253,28 +251,30 @@ export function PropertyBar({
         )}
       </div>
 
-      {/* 진행률 — 하위 업무가 있으면 평균 자동 계산이라 잠근다 (0014) */}
-      <label
-        className="flex shrink-0 items-center gap-2 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700"
-        title={progressAuto ? '하위 업무 진행률의 평균으로 자동 계산됩니다' : undefined}
+      {/* 진행률 — 표시만. 변경은 반드시 진행 로그를 남기면서 (기록 없는 숫자 변경 방지) */}
+      <div
+        className="flex shrink-0 items-center gap-2 rounded-md border border-zinc-200 px-2 py-1 dark:border-zinc-700"
+        title={
+          progressAuto
+            ? '하위 업무 진행률의 평균으로 자동 계산됩니다'
+            : '진행률은 진행 로그를 남기면서 바꿉니다 (누가 언제 왜 바꿨는지 남도록)'
+        }
       >
         <span className="text-xs text-zinc-500">진행률{progressAuto && ' 🔒'}</span>
-        <input
-          type="range"
-          min={0}
-          max={100}
-          step={5}
-          value={progress}
-          disabled={progressAuto}
-          onChange={(e) => setFields((f) => ({ ...f, progress: Number(e.target.value) }))}
-          onMouseUp={(e) => update({ progress: Number((e.target as HTMLInputElement).value) })}
-          onTouchEnd={(e) => update({ progress: Number((e.target as HTMLInputElement).value) })}
-          onKeyUp={(e) => update({ progress: Number((e.target as HTMLInputElement).value) })}
-          className="h-1 w-24 accent-blue-600 disabled:opacity-40"
-          aria-label="진행률"
-        />
+        <span className="h-1.5 w-20 overflow-hidden rounded-full bg-zinc-200" aria-hidden="true">
+          <span className="block h-full rounded-full bg-blue-600" style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
+        </span>
         <span className="w-8 text-right text-xs tabular-nums">{progress}%</span>
-      </label>
+        {!progressAuto && (
+          <button
+            type="button"
+            onClick={() => openLog(page.id)}
+            className="rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] text-zinc-500 hover:bg-zinc-50"
+          >
+            변경
+          </button>
+        )}
+      </div>
 
       {/* 기한 */}
       <label className="flex shrink-0 items-center gap-1.5 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700">

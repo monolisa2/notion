@@ -117,57 +117,71 @@ export function UpdateTimeline({
     <section className="mx-auto w-full max-w-3xl px-6 pb-24 sm:px-10">
       <h2 className="text-sm font-medium text-zinc-500">진행 로그 {items.length > 0 && `· ${items.length}`}</h2>
 
-      {/* 바로 쓰는 한 줄 입력 */}
+      {/* 바로 쓰는 입력 — 양식은 placeholder 로 안내, 여러 줄 가능 */}
       {meId && (
         <form
-          className="mt-2 flex items-center gap-2"
+          className="mt-2 rounded-xl border border-zinc-200 focus-within:border-zinc-400"
           onSubmit={(e) => {
             e.preventDefault();
             void quickAdd();
           }}
         >
-          <input
+          <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
-            placeholder="오늘 한 일, 다음 할 일을 한 줄로…"
-            className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
+            onKeyDown={(e) => {
+              if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+                e.preventDefault();
+                void quickAdd();
+              }
+            }}
+            rows={text.includes('\n') || text.length > 60 ? 4 : 2}
+            placeholder={'한 일: \n다음 할 일: '}
+            className="w-full resize-none rounded-t-xl bg-transparent px-3 py-2 text-sm outline-none placeholder:text-zinc-400"
             disabled={saving}
           />
-          {!progressAuto && (
-          <label className="flex shrink-0 items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs text-zinc-500" title="비우면 진행률 유지, 숫자를 넣으면 진행률도 함께 갱신">
-            <input
-              value={pct}
-              onChange={(e) => setPct(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
-              placeholder="––"
-              inputMode="numeric"
-              className="w-7 bg-transparent text-right text-sm tabular-nums outline-none placeholder:text-zinc-300"
-              disabled={saving}
-              aria-label="진행률"
-            />
-            %
-          </label>
-          )}
-          <button
-            type="submit"
-            disabled={saving || !text.trim()}
-            className="shrink-0 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40"
-          >
-            남기기
-          </button>
-          <button
-            type="button"
-            onClick={() => openLog(pageId)}
-            className="shrink-0 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs text-zinc-500 hover:bg-zinc-50"
-            title="진행률·막힘까지 함께 기록"
-          >
-            자세히
-          </button>
+          <div className="flex items-center gap-2 border-t border-zinc-100 px-2 py-1.5">
+            {!progressAuto && (
+              <label
+                className="flex shrink-0 items-center gap-1 rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-500"
+                title="비우면 진행률 유지, 숫자를 넣으면 진행률도 함께 갱신"
+              >
+                진행률
+                <input
+                  value={pct}
+                  onChange={(e) => setPct(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
+                  placeholder="––"
+                  inputMode="numeric"
+                  className="w-7 bg-transparent text-right text-sm tabular-nums outline-none placeholder:text-zinc-300"
+                  disabled={saving}
+                  aria-label="진행률"
+                />
+                %
+              </label>
+            )}
+            <button
+              type="button"
+              onClick={() => openLog(pageId)}
+              className="shrink-0 rounded-md border border-zinc-200 px-2 py-1 text-xs text-zinc-500 hover:bg-zinc-50"
+              title="멘션·막힘까지 함께 기록하는 자세한 양식"
+            >
+              ⛔ 막힘 기록
+            </button>
+            <span className="ml-auto hidden text-[10px] text-zinc-300 sm:inline">⌃Enter</span>
+            <button
+              type="submit"
+              disabled={saving || !text.trim()}
+              className="shrink-0 rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40"
+            >
+              남기기
+            </button>
+          </div>
         </form>
       )}
 
       {items.length === 0 ? (
         <p className="mt-3 text-sm text-zinc-400">
-          아직 진행 로그가 없습니다. 위 입력창에 한 줄 남겨보세요 — 진행률까지 바꾸려면 &ldquo;자세히&rdquo;.
+          아직 진행 로그가 없습니다. 위 입력창에 남겨보세요 — 진행률 숫자는 로그와 함께만 바뀝니다.
         </p>
       ) : (
         <ol className="mt-3 space-y-3">
