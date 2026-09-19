@@ -161,8 +161,16 @@ export function Sidebar({
     { label: '하위 페이지 추가', onClick: () => addChild(node.id) },
     {
       label: node.type === 'task' ? '문서로 전환' : '업무로 전환',
-      onClick: () =>
-        run('전환', () => convertPageType(supabase, node.id, node.type === 'task' ? 'doc' : 'task')),
+      onClick: () => {
+        // 문서를 업무로 바꾸면 담당자·진행률·진행 로그가 붙는다 — 실수 방지
+        if (
+          node.type !== 'task' &&
+          !window.confirm('이 문서를 업무로 바꾸면 담당자·진행률·진행 로그가 붙습니다. 계속할까요?')
+        ) {
+          return;
+        }
+        void run('전환', () => convertPageType(supabase, node.id, node.type === 'task' ? 'doc' : 'task'));
+      },
     },
     { label: '이름 변경', onClick: () => setRenaming(node.id) },
     {
