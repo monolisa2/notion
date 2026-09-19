@@ -8,7 +8,13 @@ import { fetchComments } from '@/lib/comments';
 import { CommentThread } from '@/components/comments/comment-thread';
 import { DEFAULT_STATUSES, type Me, type OrgUnitRow } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
-import { ProgressPanel } from '@/components/task/progress-panel';
+import {
+  CHILD_TASK_SELECT,
+  CHILD_UPDATE_SELECT,
+  ProgressPanel,
+  type ChildTaskLite,
+  type ChildUpdateLite,
+} from '@/components/task/progress-panel';
 import { SubpageList } from '@/components/subpage-list';
 import { VisitTracker } from '@/components/visit-tracker';
 
@@ -31,7 +37,7 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
   if (!page) notFound();
 
   const isTask = page.type === 'task';
-  const [assignees, updates, comments, profile, units, fav, statuses, peopleIds, progressAuto] = await Promise.all([
+  const [assignees, updates, comments, profile, units, fav, statuses, peopleIds, childTasks, childUpdates] = await Promise.all([
     isTask
       ? supabase
           .from('profiles')
@@ -49,17 +55,29 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
     isTask
       ? supabase.from('page_people').select('user_id').eq('page_id', id).then((r) => (r.data ?? []).map((x) => x.user_id))
       : Promise.resolve([] as string[]),
-    // 하위 업무가 있으면 진행률은 평균 자동 계산 (0014) — 손 편집을 잠근다
+    // 하위 업무 목록 (0014: 있으면 진행률은 평균 자동 계산 — 구성을 그대로 보여준다)
     isTask
       ? supabase
           .from('pages')
-          .select('id', { count: 'exact', head: true })
+          .select(CHILD_TASK_SELECT)
           .eq('parent_id', id)
           .eq('type', 'task')
           .is('archived_at', null)
-          .then((r) => (r.count ?? 0) > 0)
-      : Promise.resolve(false),
+          .order('sort_order')
+          .then((r) => (r.data ?? []) as unknown as ChildTaskLite[])
+      : Promise.resolve([] as ChildTaskLite[]),
+    // 하위 업무의 최근 진행 기록 (부모 페이지에서 한눈에)
+    isTask
+      ? supabase
+          .from('page_updates')
+          .select(CHILD_UPDATE_SELECT)
+          .eq('page.parent_id', id)
+          .order('created_at', { ascending: false })
+          .limit(6)
+          .then((r) => (r.data ?? []) as unknown as ChildUpdateLite[])
+      : Promise.resolve([] as ChildUpdateLite[]),
   ]);
+  const progressAuto = childTasks.length > 0;
   const me: Me = {
     id: user.id,
     name: profile?.name ?? '나',
@@ -93,6 +111,8 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
           initialUpdates={updates}
           statuses={statuses}
           autoFromChildren={progressAuto}
+          initialChildren={childTasks}
+          initialChildUpdates={childUpdates}
         />
       )}
 

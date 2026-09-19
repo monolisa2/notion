@@ -1,11 +1,35 @@
 'use client';
 
+import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { fetchUpdates, type UpdateWithAuthor } from '@/lib/updates';
 import { statusClass, statusKind } from '@/lib/status-style';
 import { DEFAULT_STATUSES, type PageRow, type StatusRow } from '@/lib/types';
+import { Avatar } from '@/components/avatar';
 import { useProgressLog } from '@/components/progress-log-provider';
+
+export type ChildTaskLite = {
+  id: string;
+  title: string;
+  icon: string | null;
+  status: string | null;
+  progress: number | null;
+  assignee: { name: string; avatar_url: string | null } | null;
+};
+
+export type ChildUpdateLite = {
+  id: string;
+  content: string;
+  progress_snapshot: number | null;
+  created_at: string;
+  author: { name: string; avatar_url: string | null } | null;
+  page: { id: string; title: string } | null;
+};
+
+export const CHILD_TASK_SELECT = 'id, title, icon, status, progress, assignee:profiles!pages_assignee_id_fkey(name, avatar_url)';
+export const CHILD_UPDATE_SELECT =
+  'id, content, progress_snapshot, created_at, author:profiles!page_updates_author_id_fkey(name, avatar_url), page:pages!inner(id, title, parent_id)';
 
 function dday(due: string | null): { label: string; tone: string } | null {
   if (!due) return null;
@@ -18,21 +42,31 @@ function dday(due: string | null): { label: string; tone: string } | null {
   return { label: `${-diff}일 지남`, tone: 'text-red-600 font-semibold' };
 }
 
+function when(iso: string) {
+  return iso.slice(5, 16).replace('T', ' ');
+}
+
 /**
- * 업무 페이지 상단의 진행률 패널: 큰 진행 바 + 기한 D-day + 진행 추이(로그 스냅샷) 차트.
- * 값 편집은 속성 바(슬라이더)와 진행 로그가 담당하고, 여기는 "보여주는" 곳.
+ * 업무 페이지 상단의 진행률 패널.
+ * - 하위 업무가 있으면(자동 평균): 어떤 업무들의 평균인지 구성 목록 + 하위 업무 최근 기록
+ * - 하위가 없으면: 진행 추이 그래프 + 최근 기록 목록
+ * 숫자가 "어디서 왔는지"가 항상 눈에 보이게 한다.
  */
 export function ProgressPanel({
   page,
   initialUpdates,
   statuses = DEFAULT_STATUSES,
   autoFromChildren = false,
+  initialChildren = [],
+  initialChildUpdates = [],
 }: {
   page: PageRow;
   initialUpdates: UpdateWithAuthor[];
   statuses?: StatusRow[];
   /** 하위 업무 평균으로 자동 계산 중 (0014) */
   autoFromChildren?: boolean;
+  initialChildren?: ChildTaskLite[];
+  initialChildUpdates?: ChildUpdateLite[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   const { open: openLog } = useProgressLog();
@@ -40,8 +74,29 @@ export function ProgressPanel({
   const [status, setStatus] = useState(page.status ?? '대기');
   const [dueDate, setDueDate] = useState(page.due_date);
   const [updates, setUpdates] = useState(initialUpdates);
+  const [children, setChildren] = useState<ChildTaskLite[]>(initialChildren);
+  const [childUpdates, setChildUpdates] = useState<ChildUpdateLite[]>(initialChildUpdates);
 
   useEffect(() => {
+    const refetchChildren = async () => {
+      const [{ data: kids }, { data: feed }] = await Promise.all([
+        supabase
+          .from('pages')
+          .select(CHILD_TASK_SELECT)
+          .eq('parent_id', page.id)
+          .eq('type', 'task')
+          .is('archived_at', null)
+          .order('sort_order'),
+        supabase
+          .from('page_updates')
+          .select(CHILD_UPDATE_SELECT)
+          .eq('page.parent_id', page.id)
+          .order('created_at', { ascending: false })
+          .limit(6),
+      ]);
+      if (kids) setChildren(kids as unknown as ChildTaskLite[]);
+      if (feed) setChildUpdates(feed as unknown as ChildUpdateLite[]);
+    };
     const channel = supabase
       .channel(`progress-${page.id}`)
       .on(
@@ -65,6 +120,12 @@ export function ProgressPanel({
           }
         },
       )
+      // 하위 업무의 진행률·로그가 바뀌면 구성 목록과 기록을 다시 받는다
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'pages', filter: `parent_id=eq.${page.id}` },
+        () => void refetchChildren().catch(() => {}),
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
@@ -72,20 +133,21 @@ export function ProgressPanel({
   }, [supabase, page.id]);
 
   const due = dday(dueDate);
-  // updates 는 최신순으로 온다 (fetchUpdates)
-  const latest = updates[0] ?? null;
   const kind = statusKind(status, statuses);
   const done = kind === '완료' || progress >= 100;
   const barColor = done ? 'bg-emerald-500' : kind === '보류' ? 'bg-amber-400' : 'bg-blue-600';
 
-  // 진행 추이: 로그의 진행률 스냅샷(시간순) + 현재값
-  const points = useMemo(() => {
-    const logs = [...updates]
-      .filter((u) => u.progress_snapshot !== null)
-      .sort((a, b) => a.created_at.localeCompare(b.created_at))
-      .map((u) => ({ t: new Date(u.created_at).getTime(), v: u.progress_snapshot as number, when: u.created_at }));
-    return logs;
-  }, [updates]);
+  // 진행 추이: 로그의 진행률 스냅샷(시간순)
+  const points = useMemo(
+    () =>
+      [...updates]
+        .filter((u) => u.progress_snapshot !== null)
+        .sort((a, b) => a.created_at.localeCompare(b.created_at))
+        .map((u) => ({ t: new Date(u.created_at).getTime(), v: u.progress_snapshot as number, when: u.created_at })),
+    [updates],
+  );
+
+  const recentOwn = updates.slice(0, 4);
 
   return (
     <section className="mx-auto w-full max-w-[900px] px-6 pt-3 sm:px-12">
@@ -95,7 +157,7 @@ export function ProgressPanel({
           <span className={`rounded px-1.5 py-0.5 text-xs font-medium ${statusClass(status, statuses)}`}>{status}</span>
           {autoFromChildren && (
             <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500" title="하위 업무 진행률의 평균입니다">
-              하위 업무 평균 (자동)
+              하위 업무 {children.length}건 평균
             </span>
           )}
           {!autoFromChildren && (
@@ -117,25 +179,90 @@ export function ProgressPanel({
         <div className="mt-2 h-2.5 w-full overflow-hidden rounded-full bg-zinc-200/80" role="progressbar" aria-valuenow={progress} aria-valuemin={0} aria-valuemax={100}>
           <div className={`h-full rounded-full transition-[width] duration-300 ${barColor}`} style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
         </div>
-        {points.length >= 2 && <ProgressSpark points={points} />}
 
-        {/* 이 숫자가 어디서 왔는지 — 마지막 기록 */}
-        {latest ? (
-          <p className="mt-2 truncate text-[11px] text-zinc-500">
-            마지막 기록 — <span className="font-medium text-zinc-600">{latest.author?.name ?? '알 수 없음'}</span>
-            {' · '}
-            {latest.created_at.slice(0, 16).replace('T', ' ')}
-            {' · '}
-            {latest.content}
-          </p>
-        ) : autoFromChildren ? (
-          <p className="mt-2 text-[11px] text-zinc-400">하위 업무들의 진행률 평균입니다. 기록은 각 하위 업무에 남습니다.</p>
-        ) : progress > 0 ? (
-          <p className="mt-2 text-[11px] text-zinc-400">
-            이 진행률은 기록 없이 설정된 값입니다 (예전 방식). 다음 변경부터는 누가·언제·왜가 함께 남습니다.
-          </p>
+        {autoFromChildren ? (
+          <>
+            {/* 이 % 가 어떤 업무들의 평균인지 */}
+            <ul className="mt-3 space-y-1">
+              {children.map((c) => (
+                <li key={c.id}>
+                  <Link
+                    href={`/p/${c.id}`}
+                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-white"
+                  >
+                    <span className="w-5 shrink-0 text-center">{c.icon ?? '☑'}</span>
+                    <span className="min-w-0 flex-1 truncate">{c.title}</span>
+                    {c.assignee && (
+                      <span className="flex shrink-0 items-center gap-1 text-xs text-zinc-500">
+                        <Avatar name={c.assignee.name} src={c.assignee.avatar_url} size={16} />
+                        {c.assignee.name}
+                      </span>
+                    )}
+                    <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] ${statusClass(c.status, statuses)}`}>{c.status}</span>
+                    <span className="h-1.5 w-16 shrink-0 overflow-hidden rounded-full bg-zinc-200">
+                      <span className="block h-full rounded-full bg-blue-500" style={{ width: `${c.progress ?? 0}%` }} />
+                    </span>
+                    <span className="w-9 shrink-0 text-right text-xs tabular-nums text-zinc-600">{c.progress ?? 0}%</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+
+            {/* 하위 업무에서 올라온 최근 기록 */}
+            {childUpdates.length > 0 && (
+              <div className="mt-3 border-t border-zinc-200/70 pt-2">
+                <p className="px-2 text-[11px] font-medium text-zinc-400">최근 기록 (하위 업무)</p>
+                <ul className="mt-1 space-y-0.5">
+                  {childUpdates.map((u) => (
+                    <li key={u.id} className="flex items-center gap-2 px-2 py-1 text-xs text-zinc-600">
+                      <Avatar name={u.author?.name ?? '?'} src={u.author?.avatar_url} size={16} />
+                      <span className="shrink-0 font-medium text-zinc-700">{u.author?.name ?? '알 수 없음'}</span>
+                      {u.page && (
+                        <Link href={`/p/${u.page.id}`} className="max-w-[10rem] shrink-0 truncate text-zinc-400 hover:underline">
+                          {u.page.title}
+                        </Link>
+                      )}
+                      <span className="min-w-0 flex-1 truncate">{u.content}</span>
+                      {u.progress_snapshot !== null && (
+                        <span className="shrink-0 rounded bg-zinc-100 px-1 py-0.5 tabular-nums">{u.progress_snapshot}%</span>
+                      )}
+                      <span className="shrink-0 tabular-nums text-zinc-400">{when(u.created_at)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </>
         ) : (
-          <p className="mt-2 text-[11px] text-zinc-400">진행 로그를 남길 때마다 여기에 추이 그래프와 마지막 기록이 표시됩니다.</p>
+          <>
+            {points.length >= 2 && <ProgressSpark points={points} />}
+
+            {/* 이 숫자가 어디서 왔는지 — 최근 기록 목록 */}
+            {recentOwn.length > 0 ? (
+              <div className="mt-3 border-t border-zinc-200/70 pt-2">
+                <p className="px-2 text-[11px] font-medium text-zinc-400">최근 기록</p>
+                <ul className="mt-1 space-y-0.5">
+                  {recentOwn.map((u) => (
+                    <li key={u.id} className="flex items-center gap-2 px-2 py-1 text-xs text-zinc-600">
+                      <Avatar name={u.author?.name ?? '?'} src={u.author?.avatar_url} size={16} />
+                      <span className="shrink-0 font-medium text-zinc-700">{u.author?.name ?? '알 수 없음'}</span>
+                      <span className="min-w-0 flex-1 truncate">{u.content}</span>
+                      {u.progress_snapshot !== null && (
+                        <span className="shrink-0 rounded bg-zinc-100 px-1 py-0.5 tabular-nums">{u.progress_snapshot}%</span>
+                      )}
+                      <span className="shrink-0 tabular-nums text-zinc-400">{when(u.created_at)}</span>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ) : progress > 0 ? (
+              <p className="mt-2 text-[11px] text-zinc-400">
+                이 진행률은 기록 없이 설정된 값입니다 (예전 방식). 다음 변경부터는 누가·언제·왜가 함께 남습니다.
+              </p>
+            ) : (
+              <p className="mt-2 text-[11px] text-zinc-400">진행 로그를 남길 때마다 여기에 추이 그래프와 기록이 표시됩니다.</p>
+            )}
+          </>
         )}
       </div>
     </section>
@@ -162,7 +289,6 @@ function ProgressSpark({ points }: { points: { t: number; v: number; when: strin
 
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="mt-3 h-14 w-full" aria-label="진행률 추이" role="img">
-      {/* 눈금 (25/50/75%) */}
       {[25, 50, 75].map((g) => (
         <line key={g} x1={PAD} x2={W - PAD} y1={y(g)} y2={y(g)} stroke="#e4e4e7" strokeWidth="1" strokeDasharray="2 4" />
       ))}
@@ -171,7 +297,6 @@ function ProgressSpark({ points }: { points: { t: number; v: number; when: strin
       {points.map((p, i) => (
         <g key={i}>
           <circle cx={x(p.t)} cy={y(p.v)} r="3" fill="#2563eb" stroke="#ffffff" strokeWidth="1.5" />
-          {/* 넉넉한 히트 영역 + 브라우저 툴팁 */}
           <circle cx={x(p.t)} cy={y(p.v)} r="9" fill="transparent">
             <title>{`${p.when.slice(0, 10)} · ${p.v}%`}</title>
           </circle>
