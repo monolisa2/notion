@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
 import { archivePages, convertPageType, setPageSpace, setPinned, toggleFavorite } from '@/lib/pages';
 import { ancestorIds, buildTree, collectSubtreeIds, findNode } from '@/lib/tree';
-import { unitLabel } from '@/lib/org';
+import { changeableUnitsFor, unitLabel } from '@/lib/org';
 import type { OrgUnitRow, PageRow, PageVisibility } from '@/lib/types';
 import { useTree } from '@/components/tree-context';
 
@@ -22,12 +22,14 @@ export function PageHeader({
   units,
   isAdmin = false,
   meId,
+  meUnitId = null,
   isFavorite = false,
 }: {
   page: PageRow;
   units: OrgUnitRow[];
   isAdmin?: boolean;
   meId?: string;
+  meUnitId?: string | null;
   isFavorite?: boolean;
 }) {
   const [fav, setFav] = useState(isFavorite);
@@ -46,6 +48,16 @@ export function PageHeader({
   const isPersonal = page.visibility === '개인';
   const isTask = page.type === 'task';
   const spaceName = isPersonal ? '개인 메모' : unitLabel(units, page.unit_id) || '공간 미지정';
+  // 옮긴 뒤에도 내가 볼 수 있는 공간만 선택지로 (RLS 가 그 밖의 이동을 거부한다)
+  const spaceOptions = useMemo(() => {
+    const list = changeableUnitsFor(units, meUnitId, isAdmin);
+    // 현재 공간이 목록에 없으면(예: 다른 실 페이지) 표시용으로만 포함
+    if (page.unit_id && !list.some((u) => u.id === page.unit_id)) {
+      const cur = units.find((u) => u.id === page.unit_id);
+      if (cur) return [cur, ...list];
+    }
+    return list;
+  }, [units, meUnitId, isAdmin, page.unit_id]);
 
   const apply = async (label: string, fn: () => Promise<void>, after?: () => void) => {
     setBusy(true);
@@ -55,7 +67,12 @@ export function PageHeader({
       after?.();
       router.refresh();
     } catch (e) {
-      toast.error(`${label} 실패: ${errorMessage(e)}`);
+      const msg = errorMessage(e);
+      toast.error(
+        msg.includes('row-level security')
+          ? `${label} 실패: 이 공간·공개 범위로 바꿀 권한이 없습니다 (바꾼 뒤 내가 볼 수 없게 되는 설정)`
+          : `${label} 실패: ${msg}`,
+      );
     } finally {
       setBusy(false);
     }
@@ -109,7 +126,7 @@ export function PageHeader({
             aria-label="공간"
             title="이 페이지가 속한 공간"
           >
-            {units.map((u) => (
+            {spaceOptions.map((u) => (
               <option key={u.id} value={u.id ?? ''}>{u.name}</option>
             ))}
           </select>

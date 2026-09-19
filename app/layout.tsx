@@ -13,10 +13,10 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="ko" className="h-full antialiased" suppressHydrationWarning>
       <head>
-        {/* SUITE 폰트 프리로드 (본문 기본 굵기) */}
+        {/* Freesentation 폰트 프리로드 (본문 기본 굵기) */}
         <link
           rel="preload"
-          href="/fonts/suite/SUITE-Regular.woff2"
+          href="/fonts/freesentation/Freesentation-Regular.woff2"
           as="font"
           type="font/woff2"
           crossOrigin="anonymous"

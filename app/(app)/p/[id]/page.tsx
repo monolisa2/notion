@@ -58,7 +58,7 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
 
   return (
     <article className="min-h-full">
-      <PageHeader key={`hdr-${page.id}`} page={page} units={units} isAdmin={me.isAdmin} meId={user.id} isFavorite={fav} />
+      <PageHeader key={`hdr-${page.id}`} page={page} units={units} isAdmin={me.isAdmin} meId={user.id} meUnitId={me.unitId} isFavorite={fav} />
       <VisitTracker pageId={page.id} />
 
       {isTask && <PropertyBar key={`props-${page.id}`} page={page} assignees={assignees} meId={user.id} />}

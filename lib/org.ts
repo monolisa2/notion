@@ -53,13 +53,26 @@ export function subtreeOf(units: OrgUnitRow[], unitId: string): Set<string> {
 }
 
 /**
- * 사이드바에 보여줄 조직: 관리자는 전부, 일반 사용자는 "내 계열"만
- *   = 내 소속 + 조상(본부까지) + 후손. 형제 조직(다른 실·팀)은 구조 자체를 숨긴다.
- *   소속이 없으면 최상위(본부)만. 다른 팀의 '본부 공개' 페이지는 홈·검색·모아보기로 접근한다.
+ * 사이드바에 보여줄 조직: 관리자는 전부, 일반 사용자는 "본부 공용 + 내 소속(과 그 하위)"만.
+ *   중간 조상(예: 팀원에게 실 공간)은 사이드바에서 숨긴다 — 페이지 접근 권한(RLS)은 그대로이며
+ *   숨긴 공간의 페이지는 홈·검색·모아보기로 접근한다. 소속이 없으면 최상위(본부)만.
  */
-export function visibleUnitsFor(units: OrgUnitRow[], myUnitId: string | null, isAdmin: boolean): OrgUnitRow[] {
+/**
+ * 페이지를 옮길 수 있는 공간: RLS 가 "옮긴 뒤에도 내가 볼 수 있는 공간"만 허용하므로
+ * 선택지도 내 계열(소속 + 조상 + 후손)로 제한한다. 관리자는 전부.
+ */
+export function changeableUnitsFor(units: OrgUnitRow[], myUnitId: string | null, isAdmin: boolean): OrgUnitRow[] {
   if (isAdmin) return units;
   if (!myUnitId) return units.filter((u) => !u.parent_id);
   const allowed = new Set<string>([...chainOf(units, myUnitId), ...subtreeOf(units, myUnitId)]);
+  return units.filter((u) => u.id && allowed.has(u.id));
+}
+
+export function visibleUnitsFor(units: OrgUnitRow[], myUnitId: string | null, isAdmin: boolean): OrgUnitRow[] {
+  if (isAdmin) return units;
+  const roots = new Set(units.filter((u) => !u.parent_id).map((u) => u.id));
+  if (!myUnitId) return units.filter((u) => u.id && roots.has(u.id));
+  const allowed = new Set<string>([...roots].filter((id): id is string => !!id));
+  for (const id of subtreeOf(units, myUnitId)) allowed.add(id);
   return units.filter((u) => u.id && allowed.has(u.id));
 }

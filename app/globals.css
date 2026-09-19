@@ -1,37 +1,37 @@
 @import "tailwindcss";
 
-/* SUITE 폰트 (SIL OFL, public/fonts/suite/LICENSE.txt) */
+/* Freesentation 폰트 (SIL OFL, public/fonts/freesentation/LICENSE.txt) */
 @font-face {
-  font-family: "SUITE";
-  src: url("/fonts/suite/SUITE-Regular.woff2") format("woff2");
+  font-family: "Freesentation";
+  src: url("/fonts/freesentation/Freesentation-Regular.woff2") format("woff2");
   font-weight: 400;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "SUITE";
-  src: url("/fonts/suite/SUITE-Medium.woff2") format("woff2");
+  font-family: "Freesentation";
+  src: url("/fonts/freesentation/Freesentation-Medium.woff2") format("woff2");
   font-weight: 500;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "SUITE";
-  src: url("/fonts/suite/SUITE-SemiBold.woff2") format("woff2");
+  font-family: "Freesentation";
+  src: url("/fonts/freesentation/Freesentation-SemiBold.woff2") format("woff2");
   font-weight: 600;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "SUITE";
-  src: url("/fonts/suite/SUITE-Bold.woff2") format("woff2");
+  font-family: "Freesentation";
+  src: url("/fonts/freesentation/Freesentation-Bold.woff2") format("woff2");
   font-weight: 700;
   font-style: normal;
   font-display: swap;
 }
 @font-face {
-  font-family: "SUITE";
-  src: url("/fonts/suite/SUITE-ExtraBold.woff2") format("woff2");
+  font-family: "Freesentation";
+  src: url("/fonts/freesentation/Freesentation-ExtraBold.woff2") format("woff2");
   font-weight: 800;
   font-style: normal;
   font-display: swap;
@@ -49,7 +49,7 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: "SUITE", -apple-system, BlinkMacSystemFont,
+  --font-sans: "Freesentation", -apple-system, BlinkMacSystemFont,
     "Apple SD Gothic Neo", "Segoe UI", Roboto, "Noto Sans KR", "Malgun Gothic", sans-serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
@@ -59,6 +59,8 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-sans);
+  /* 한글 자간을 전체적으로 살짝 좁힌다 */
+  letter-spacing: -0.03em;
 }
 
 /* BlockNote 를 페이지 배경에 녹인다 */
@@ -97,11 +99,12 @@ body {
   line-height: 1.6;
 }
 
-/* BlockNote 기본 폰트(Inter) 대신 SUITE 사용 */
+/* BlockNote 기본 폰트(Inter) 대신 사이트 공통 폰트 사용 */
 .teamhub-editor .bn-editor,
 .teamhub-comment-editor .bn-editor,
 .bn-container {
   font-family: var(--font-sans);
+  letter-spacing: -0.03em;
 }
 .teamhub-editor .bn-block-content[data-content-type="heading"][data-level="2"] {
   margin-top: 0.9em;
