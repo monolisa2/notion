@@ -36,6 +36,9 @@ export function ProgressLogModal({
 
   const [content, setContent] = useState('');
   const [progress, setProgress] = useState(0);
+  // 하위 업무가 있으면 진행률은 평균 자동 계산 (0014) — 이 모달에서도 % 를 잠근다
+  const [childCheck, setChildCheck] = useState<{ id: string; has: boolean } | null>(null);
+  const hasChildren = !!task && childCheck?.id === task.id && childCheck.has;
   const [blockerOpen, setBlockerOpen] = useState(false);
   const [blocker, setBlocker] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -92,6 +95,25 @@ export function ProgressLogModal({
       cancelled = true;
     };
   }, [supabase, initialPageId, me.id]);
+
+  // 선택된 업무에 하위 업무가 있는지 (있으면 % 잠금)
+  useEffect(() => {
+    if (!task) return;
+    const id = task.id;
+    let cancelled = false;
+    void supabase
+      .from('pages')
+      .select('id', { count: 'exact', head: true })
+      .eq('parent_id', id)
+      .eq('type', 'task')
+      .is('archived_at', null)
+      .then((r) => {
+        if (!cancelled) setChildCheck({ id, has: (r.count ?? 0) > 0 });
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [supabase, task]);
 
   // 업무 검색 (후보에 없을 때)
   useEffect(() => {
@@ -163,7 +185,8 @@ export function ProgressLogModal({
         pageId: task.id,
         authorId: me.id,
         content,
-        progress,
+        // 하위 업무가 있으면 % 는 손대지 않는다 (하위 평균이 진실)
+        progress: hasChildren ? (task.progress ?? 0) : progress,
         currentStatus: task.status,
         blocker: blockerOpen ? blocker : null,
       });
@@ -323,20 +346,27 @@ export function ProgressLogModal({
               )}
             </div>
 
-            {/* 2) 진행률 슬라이더 */}
-            <label className="mt-3 flex items-center gap-3 text-sm">
-              <span className="w-12 shrink-0 text-zinc-500">진행률</span>
-              <input
-                type="range"
-                min={0}
-                max={100}
-                step={5}
-                value={progress}
-                onChange={(e) => setProgress(Number(e.target.value))}
-                className="flex-1 accent-blue-600"
-              />
-              <span className="w-10 text-right tabular-nums">{progress}%</span>
-            </label>
+            {/* 2) 진행률 슬라이더 — 하위 업무가 있으면 평균 자동이라 잠금 */}
+            {hasChildren ? (
+              <p className="mt-3 rounded-md bg-zinc-50 px-3 py-2 text-xs text-zinc-500">
+                이 업무의 진행률은 <b>하위 업무들의 평균</b>으로 자동 계산됩니다. 여기서는 메모만 남고,
+                % 는 각 하위 업무에서 기록하세요.
+              </p>
+            ) : (
+              <label className="mt-3 flex items-center gap-3 text-sm">
+                <span className="w-12 shrink-0 text-zinc-500">진행률</span>
+                <input
+                  type="range"
+                  min={0}
+                  max={100}
+                  step={5}
+                  value={progress}
+                  onChange={(e) => setProgress(Number(e.target.value))}
+                  className="flex-1 accent-blue-600"
+                />
+                <span className="w-10 text-right tabular-nums">{progress}%</span>
+              </label>
+            )}
 
             {/* 3) 막힘 토글 */}
             <div className="mt-3">
