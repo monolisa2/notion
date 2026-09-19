@@ -179,13 +179,14 @@ export async function savePage(
 /** 댓글 저장 + 멘션 */
 export async function saveComment(
   supabase: SupabaseClient,
-  params: { pageId: string; authorId: string; body: unknown; parentId?: string },
+  params: { pageId: string; authorId: string; body: unknown; parentId?: string; updateId?: string | null },
 ): Promise<string> {
   const { data: comment, error } = await supabase
     .from('comments')
     .insert({
       page_id: params.pageId,
       parent_id: params.parentId ?? null,
+      update_id: params.updateId ?? null,
       author_id: params.authorId,
       body: params.body,
       body_text: docToPlainText(params.body),

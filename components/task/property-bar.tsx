@@ -30,11 +30,14 @@ export function PropertyBar({
   assignees,
   meId,
   statuses = DEFAULT_STATUSES,
+  initialPeople = [],
 }: {
   page: PageRow;
   assignees: AssigneeOption[];
   meId?: string;
   statuses?: StatusRow[];
+  /** 참여자(다중) user id 목록 — page_people (0013) */
+  initialPeople?: string[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   const { open: openLog } = useProgressLog();
@@ -109,6 +112,30 @@ export function PropertyBar({
     }
   };
 
+  // 참여자(다중) — 담당자와 별개로 함께 하는 사람들
+  const [people, setPeople] = useState<Set<string>>(new Set(initialPeople));
+  const [peopleOpen, setPeopleOpen] = useState(false);
+  const togglePerson = async (userId: string, add: boolean) => {
+    setPeople((prev) => {
+      const next = new Set(prev);
+      if (add) next.add(userId);
+      else next.delete(userId);
+      return next;
+    });
+    const q = add
+      ? await supabase.from('page_people').insert({ page_id: page.id, user_id: userId, added_by: meId ?? null })
+      : await supabase.from('page_people').delete().eq('page_id', page.id).eq('user_id', userId);
+    if (q.error) {
+      setPeople((prev) => {
+        const next = new Set(prev);
+        if (add) next.delete(userId);
+        else next.add(userId);
+        return next;
+      });
+      toast.error(`참여자 변경 실패: ${errorMessage(q.error)}`);
+    }
+  };
+
   const assignee = assignees.find((a) => a.id === fields.assignee_id) ?? null;
   const status = fields.status ?? '대기';
   const progress = fields.progress ?? 0;
@@ -165,6 +192,52 @@ export function PropertyBar({
           나에게
         </button>
       )}
+
+      {/* 참여자 (여러 명) */}
+      <div className="relative shrink-0">
+        <button
+          type="button"
+          onClick={() => setPeopleOpen((v) => !v)}
+          className="flex items-center gap-1 rounded-md border border-zinc-200 py-0.5 pl-1.5 pr-2 hover:bg-zinc-50"
+          title="이 업무에 함께 하는 사람들"
+        >
+          {people.size > 0 ? (
+            <span className="flex -space-x-1.5">
+              {assignees
+                .filter((a) => people.has(a.id))
+                .slice(0, 4)
+                .map((a) => (
+                  <span key={a.id} className="rounded-full ring-2 ring-white">
+                    <Avatar name={a.name} src={a.avatar_url} size={18} />
+                  </span>
+                ))}
+            </span>
+          ) : (
+            <span className="text-xs text-zinc-400">참여자</span>
+          )}
+          {people.size > 4 && <span className="text-[10px] text-zinc-500">+{people.size - 4}</span>}
+          <span className="text-xs text-zinc-400">＋</span>
+        </button>
+        {peopleOpen && (
+          <>
+            <div className="fixed inset-0 z-10" onMouseDown={() => setPeopleOpen(false)} />
+            <div className="absolute left-0 top-full z-20 mt-1 max-h-64 w-52 overflow-y-auto rounded-lg border border-zinc-200 bg-white p-1 shadow-lg">
+              <p className="px-2 py-1 text-[11px] text-zinc-400">함께 하는 사람 (담당자와 별개)</p>
+              {assignees.map((a) => (
+                <label key={a.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-zinc-50">
+                  <input
+                    type="checkbox"
+                    checked={people.has(a.id)}
+                    onChange={(e) => void togglePerson(a.id, e.target.checked)}
+                  />
+                  <Avatar name={a.name} src={a.avatar_url} size={18} />
+                  <span className="truncate">{a.name}</span>
+                </label>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
 
       {/* 진행률 */}
       <label className="flex shrink-0 items-center gap-2 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700">

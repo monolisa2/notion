@@ -5,6 +5,8 @@ import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
 import { fetchUpdates, insertProgressLog, type UpdateWithAuthor } from '@/lib/updates';
+import { fetchLogReplies, type CommentWithAuthor } from '@/lib/comments';
+import { saveComment } from '@/lib/mentions';
 import { Avatar } from '@/components/avatar';
 import { useProgressLog } from '@/components/progress-log-provider';
 
@@ -24,8 +26,13 @@ export function UpdateTimeline({ pageId, meId, initial }: { pageId: string; meId
   const [items, setItems] = useState<UpdateWithAuthor[]>(initial);
   const [text, setText] = useState('');
   const [saving, setSaving] = useState(false);
+  // 로그별 답글 (comments.update_id, 0013)
+  const [replies, setReplies] = useState<Map<string, CommentWithAuthor[]>>(new Map());
+  const [replyOpen, setReplyOpen] = useState<string | null>(null);
 
   useEffect(() => {
+    // 답글은 클라이언트에서 받는다 (0013 이전 DB 면 조용히 빈 목록)
+    fetchLogReplies(supabase, pageId).then(setReplies).catch(() => {});
     const channel = supabase
       .channel(`updates-${pageId}`)
       .on(
@@ -40,11 +47,32 @@ export function UpdateTimeline({ pageId, meId, initial }: { pageId: string; meId
           }
         },
       )
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'comments', filter: `page_id=eq.${pageId}` },
+        () => {
+          fetchLogReplies(supabase, pageId).then(setReplies).catch(() => {});
+        },
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
   }, [supabase, pageId]);
+
+  const addReply = async (updateId: string, replyText: string) => {
+    const content = replyText.trim();
+    if (!content || !meId) return;
+    // 답글은 한 문단짜리 본문으로 저장 (댓글과 같은 테이블)
+    const body = [{ type: 'paragraph', content: [{ type: 'text', text: content, styles: {} }] }];
+    try {
+      await saveComment(supabase, { pageId, authorId: meId, body, updateId });
+      setReplies(await fetchLogReplies(supabase, pageId));
+      setReplyOpen(null);
+    } catch (e) {
+      toast.error(`답글 저장 실패: ${errorMessage(e)}`);
+    }
+  };
 
   const quickAdd = async () => {
     const content = text.trim();
@@ -146,10 +174,62 @@ export function UpdateTimeline({ pageId, meId, initial }: { pageId: string; meId
                   </span>
                 </p>
               )}
+
+              {/* 로그 답글 */}
+              {(replies.get(u.id) ?? []).map((c) => (
+                <div key={c.id} className="mt-2 flex items-start gap-2 border-l-2 border-zinc-100 pl-3 text-sm">
+                  <Avatar name={c.author?.name ?? '?'} src={c.author?.avatar_url} size={16} />
+                  <div className="min-w-0">
+                    <span className="mr-1.5 text-xs font-medium text-zinc-600">{c.author?.name ?? '알 수 없음'}</span>
+                    <span className="mr-1.5 text-[10px] text-zinc-400">{formatWhen(c.created_at)}</span>
+                    <span className="whitespace-pre-wrap text-zinc-700">{c.body_text}</span>
+                  </div>
+                </div>
+              ))}
+              {meId &&
+                (replyOpen === u.id ? (
+                  <ReplyInput onSubmit={(v) => void addReply(u.id, v)} onCancel={() => setReplyOpen(null)} />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setReplyOpen(u.id)}
+                    className="mt-1.5 text-[11px] text-zinc-400 hover:text-zinc-700 hover:underline"
+                  >
+                    답글 달기
+                  </button>
+                ))}
             </li>
           ))}
         </ol>
       )}
     </section>
+  );
+}
+
+function ReplyInput({ onSubmit, onCancel }: { onSubmit: (v: string) => void; onCancel: () => void }) {
+  const [v, setV] = useState('');
+  return (
+    <form
+      className="mt-2 flex items-center gap-1.5"
+      onSubmit={(e) => {
+        e.preventDefault();
+        onSubmit(v);
+      }}
+    >
+      <input
+        autoFocus
+        value={v}
+        onChange={(e) => setV(e.target.value)}
+        onKeyDown={(e) => e.key === 'Escape' && onCancel()}
+        placeholder="답글…"
+        className="min-w-0 flex-1 rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
+      />
+      <button type="submit" disabled={!v.trim()} className="rounded-md bg-zinc-900 px-2 py-1 text-[11px] font-medium text-white disabled:opacity-40">
+        답글
+      </button>
+      <button type="button" onClick={onCancel} className="rounded-md px-1.5 py-1 text-[11px] text-zinc-400 hover:bg-zinc-100">
+        취소
+      </button>
+    </form>
   );
 }

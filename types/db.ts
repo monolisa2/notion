@@ -20,6 +20,7 @@ export type Database = {
           parent_id: string | null
           resolved_at: string | null
           resolved_by: string | null
+          update_id: string | null
           updated_at: string
         }
         Insert: {
@@ -32,6 +33,7 @@ export type Database = {
           parent_id?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          update_id?: string | null
           updated_at?: string
         }
         Update: {
@@ -44,6 +46,7 @@ export type Database = {
           parent_id?: string | null
           resolved_at?: string | null
           resolved_by?: string | null
+          update_id?: string | null
           updated_at?: string
         }
         Relationships: [
@@ -124,6 +127,18 @@ export type Database = {
             columns: ["resolved_by"]
             referencedRelation: "v_assignee_summary"
             referencedColumns: ["assignee_id"]
+          },
+          {
+            foreignKeyName: "comments_update_id_fkey"
+            columns: ["update_id"]
+            referencedRelation: "page_updates"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "comments_update_id_fkey"
+            columns: ["update_id"]
+            referencedRelation: "v_activity_feed"
+            referencedColumns: ["id"]
           },
         ]
       }
@@ -577,6 +592,97 @@ export type Database = {
           },
           {
             foreignKeyName: "page_favorites_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
+          },
+        ]
+      }
+      page_people: {
+        Row: {
+          added_by: string | null
+          page_id: string
+          user_id: string
+        }
+        Insert: {
+          added_by?: string | null
+          page_id: string
+          user_id: string
+        }
+        Update: {
+          added_by?: string | null
+          page_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_people_added_by_fkey"
+            columns: ["added_by"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_people_added_by_fkey"
+            columns: ["added_by"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
+          },
+          {
+            foreignKeyName: "page_people_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_people_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_blocked_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_people_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_due_risk"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_people_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_people_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_people_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_recent_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_people_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_stale_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_people_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_trash"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_people_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_people_user_id_fkey"
             columns: ["user_id"]
             referencedRelation: "v_assignee_summary"
             referencedColumns: ["assignee_id"]

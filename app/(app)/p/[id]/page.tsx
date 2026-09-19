@@ -31,7 +31,7 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
   if (!page) notFound();
 
   const isTask = page.type === 'task';
-  const [assignees, updates, comments, profile, units, fav, statuses] = await Promise.all([
+  const [assignees, updates, comments, profile, units, fav, statuses, peopleIds] = await Promise.all([
     isTask
       ? supabase
           .from('profiles')
@@ -46,6 +46,9 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
     supabase.from('v_org_units').select('*').then((r) => (r.data ?? []) as OrgUnitRow[]),
     supabase.from('page_favorites').select('page_id').eq('user_id', user.id).eq('page_id', page.id).maybeSingle().then((r) => !!r.data),
     supabase.from('page_statuses').select('*').order('sort_order').then((r) => (r.data && r.data.length > 0 ? r.data : DEFAULT_STATUSES)),
+    isTask
+      ? supabase.from('page_people').select('user_id').eq('page_id', id).then((r) => (r.data ?? []).map((x) => x.user_id))
+      : Promise.resolve([] as string[]),
   ]);
   const me: Me = {
     id: user.id,
@@ -63,7 +66,16 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
       <PageHeader key={`hdr-${page.id}`} page={page} units={units} isAdmin={me.isAdmin} meId={user.id} meUnitId={me.unitId} isFavorite={fav} />
       <VisitTracker pageId={page.id} />
 
-      {isTask && <PropertyBar key={`props-${page.id}`} page={page} assignees={assignees} meId={user.id} statuses={statuses} />}
+      {isTask && (
+        <PropertyBar
+          key={`props-${page.id}`}
+          page={page}
+          assignees={assignees}
+          meId={user.id}
+          statuses={statuses}
+          initialPeople={peopleIds}
+        />
+      )}
       {isTask && <ProgressPanel key={`progress-${page.id}`} page={page} initialUpdates={updates} statuses={statuses} />}
 
       {/* 하위 페이지를 본문 위에 — 들어오자마자 구조가 보이게 */}

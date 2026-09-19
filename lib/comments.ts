@@ -14,9 +14,27 @@ export async function fetchComments(sb: Db, pageId: string): Promise<CommentWith
     .from('comments')
     .select(SELECT)
     .eq('page_id', pageId)
+    .is('update_id', null) // 진행 로그 답글은 타임라인에서 보여준다
     .order('created_at', { ascending: true });
   if (error) throw error;
   return (data ?? []) as unknown as CommentWithAuthor[];
+}
+
+/** 진행 로그 답글 (update_id 별로 묶어서 반환) */
+export async function fetchLogReplies(sb: Db, pageId: string): Promise<Map<string, CommentWithAuthor[]>> {
+  const { data, error } = await sb
+    .from('comments')
+    .select(SELECT)
+    .eq('page_id', pageId)
+    .not('update_id', 'is', null)
+    .order('created_at', { ascending: true });
+  if (error) throw error;
+  const map = new Map<string, CommentWithAuthor[]>();
+  for (const c of (data ?? []) as unknown as CommentWithAuthor[]) {
+    const k = c.update_id as string;
+    map.set(k, [...(map.get(k) ?? []), c]);
+  }
+  return map;
 }
 
 export async function setCommentResolved(sb: Db, id: string, resolved: boolean, byId: string) {
