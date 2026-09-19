@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { fetchUpdates, type UpdateWithAuthor } from '@/lib/updates';
 import { statusClass, statusKind } from '@/lib/status-style';
 import { DEFAULT_STATUSES, type PageRow, type StatusRow } from '@/lib/types';
+import { useProgressLog } from '@/components/progress-log-provider';
 
 function dday(due: string | null): { label: string; tone: string } | null {
   if (!due) return null;
@@ -34,6 +35,7 @@ export function ProgressPanel({
   autoFromChildren?: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
+  const { open: openLog } = useProgressLog();
   const [progress, setProgress] = useState(page.progress ?? 0);
   const [status, setStatus] = useState(page.status ?? '대기');
   const [dueDate, setDueDate] = useState(page.due_date);
@@ -70,6 +72,8 @@ export function ProgressPanel({
   }, [supabase, page.id]);
 
   const due = dday(dueDate);
+  // updates 는 최신순으로 온다 (fetchUpdates)
+  const latest = updates[0] ?? null;
   const kind = statusKind(status, statuses);
   const done = kind === '완료' || progress >= 100;
   const barColor = done ? 'bg-emerald-500' : kind === '보류' ? 'bg-amber-400' : 'bg-blue-600';
@@ -94,6 +98,16 @@ export function ProgressPanel({
               하위 업무 평균 (자동)
             </span>
           )}
+          {!autoFromChildren && (
+            <button
+              type="button"
+              onClick={() => openLog(page.id)}
+              className="rounded-md border border-zinc-300 bg-white px-2 py-0.5 text-[11px] text-zinc-600 hover:bg-zinc-50"
+              title="진행률 변경은 항상 기록과 함께 남습니다"
+            >
+              ✏️ 기록하고 변경
+            </button>
+          )}
           {due && (
             <span className={`ml-auto text-xs tabular-nums ${due.tone}`} title={`기한 ${dueDate}`}>
               기한 {dueDate} · {due.label}
@@ -104,8 +118,24 @@ export function ProgressPanel({
           <div className={`h-full rounded-full transition-[width] duration-300 ${barColor}`} style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
         </div>
         {points.length >= 2 && <ProgressSpark points={points} />}
-        {points.length < 2 && (
-          <p className="mt-2 text-[11px] text-zinc-400">진행 로그를 남길 때마다 여기에 진행 추이 그래프가 그려집니다.</p>
+
+        {/* 이 숫자가 어디서 왔는지 — 마지막 기록 */}
+        {latest ? (
+          <p className="mt-2 truncate text-[11px] text-zinc-500">
+            마지막 기록 — <span className="font-medium text-zinc-600">{latest.author?.name ?? '알 수 없음'}</span>
+            {' · '}
+            {latest.created_at.slice(0, 16).replace('T', ' ')}
+            {' · '}
+            {latest.content}
+          </p>
+        ) : autoFromChildren ? (
+          <p className="mt-2 text-[11px] text-zinc-400">하위 업무들의 진행률 평균입니다. 기록은 각 하위 업무에 남습니다.</p>
+        ) : progress > 0 ? (
+          <p className="mt-2 text-[11px] text-zinc-400">
+            이 진행률은 기록 없이 설정된 값입니다 (예전 방식). 다음 변경부터는 누가·언제·왜가 함께 남습니다.
+          </p>
+        ) : (
+          <p className="mt-2 text-[11px] text-zinc-400">진행 로그를 남길 때마다 여기에 추이 그래프와 마지막 기록이 표시됩니다.</p>
         )}
       </div>
     </section>

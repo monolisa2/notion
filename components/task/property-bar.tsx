@@ -31,7 +31,6 @@ export function PropertyBar({
   meId,
   statuses = DEFAULT_STATUSES,
   initialPeople = [],
-  progressAuto = false,
 }: {
   page: PageRow;
   assignees: AssigneeOption[];
@@ -39,8 +38,6 @@ export function PropertyBar({
   statuses?: StatusRow[];
   /** 참여자(다중) user id 목록 — page_people (0013) */
   initialPeople?: string[];
-  /** 하위 업무가 있어 진행률이 자동 계산되는 업무 (0014) — 슬라이더 잠금 */
-  progressAuto?: boolean;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const { open: openLog } = useProgressLog();
@@ -140,7 +137,6 @@ export function PropertyBar({
 
   const assignee = assignees.find((a) => a.id === fields.assignee_id) ?? null;
   const status = fields.status ?? '대기';
-  const progress = fields.progress ?? 0;
 
   return (
     <div className="mx-auto flex w-full max-w-[900px] flex-wrap items-center gap-x-2 gap-y-1.5 px-6 pt-4 text-sm sm:px-12">
@@ -251,30 +247,7 @@ export function PropertyBar({
         )}
       </div>
 
-      {/* 진행률 — 표시만. 변경은 반드시 진행 로그를 남기면서 (기록 없는 숫자 변경 방지) */}
-      <div
-        className="flex shrink-0 items-center gap-2 rounded-md border border-zinc-200 px-2 py-1 dark:border-zinc-700"
-        title={
-          progressAuto
-            ? '하위 업무 진행률의 평균으로 자동 계산됩니다'
-            : '진행률은 진행 로그를 남기면서 바꿉니다 (누가 언제 왜 바꿨는지 남도록)'
-        }
-      >
-        <span className="text-xs text-zinc-500">진행률{progressAuto && ' 🔒'}</span>
-        <span className="h-1.5 w-20 overflow-hidden rounded-full bg-zinc-200" aria-hidden="true">
-          <span className="block h-full rounded-full bg-blue-600" style={{ width: `${Math.min(100, Math.max(0, progress))}%` }} />
-        </span>
-        <span className="w-8 text-right text-xs tabular-nums">{progress}%</span>
-        {!progressAuto && (
-          <button
-            type="button"
-            onClick={() => openLog(page.id)}
-            className="rounded border border-zinc-200 px-1.5 py-0.5 text-[10px] text-zinc-500 hover:bg-zinc-50"
-          >
-            변경
-          </button>
-        )}
-      </div>
+      {/* 진행률은 아래 진행률 패널에서 보여주고, 변경도 거기서 (로그와 함께만) */}
 
       {/* 기한 */}
       <label className="flex shrink-0 items-center gap-1.5 rounded-md border border-zinc-200 px-2 py-0.5 dark:border-zinc-700">

@@ -84,7 +84,6 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
           meId={user.id}
           statuses={statuses}
           initialPeople={peopleIds}
-          progressAuto={progressAuto}
         />
       )}
       {isTask && (
