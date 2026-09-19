@@ -114,7 +114,8 @@ export function PropertyBar({
 
   // 참여자(다중) — 담당자와 별개로 함께 하는 사람들
   const [people, setPeople] = useState<Set<string>>(new Set(initialPeople));
-  const [peopleOpen, setPeopleOpen] = useState(false);
+  // 속성 바가 overflow-x 스크롤 영역이라, 목록창은 fixed 로 화면 좌표에 띄운다 (잘림 방지)
+  const [peopleOpen, setPeopleOpen] = useState<{ x: number; y: number } | null>(null);
   const togglePerson = async (userId: string, add: boolean) => {
     setPeople((prev) => {
       const next = new Set(prev);
@@ -194,10 +195,17 @@ export function PropertyBar({
       )}
 
       {/* 참여자 (여러 명) */}
-      <div className="relative shrink-0">
+      <div className="shrink-0">
         <button
           type="button"
-          onClick={() => setPeopleOpen((v) => !v)}
+          onClick={(e) => {
+            if (peopleOpen) {
+              setPeopleOpen(null);
+              return;
+            }
+            const r = e.currentTarget.getBoundingClientRect();
+            setPeopleOpen({ x: Math.max(8, Math.min(r.left, window.innerWidth - 216)), y: r.bottom + 4 });
+          }}
           className="flex items-center gap-1 rounded-md border border-zinc-200 py-0.5 pl-1.5 pr-2 hover:bg-zinc-50"
           title="이 업무에 함께 하는 사람들"
         >
@@ -220,8 +228,11 @@ export function PropertyBar({
         </button>
         {peopleOpen && (
           <>
-            <div className="fixed inset-0 z-10" onMouseDown={() => setPeopleOpen(false)} />
-            <div className="absolute left-0 top-full z-20 mt-1 max-h-64 w-52 overflow-y-auto rounded-lg border border-zinc-200 bg-white p-1 shadow-lg">
+            <div className="fixed inset-0 z-40" onMouseDown={() => setPeopleOpen(null)} />
+            <div
+              className="fixed z-50 max-h-64 w-52 overflow-y-auto rounded-lg border border-zinc-200 bg-white p-1 shadow-lg"
+              style={{ left: peopleOpen.x, top: peopleOpen.y }}
+            >
               <p className="px-2 py-1 text-[11px] text-zinc-400">함께 하는 사람 (담당자와 별개)</p>
               {assignees.map((a) => (
                 <label key={a.id} className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-zinc-50">

@@ -25,6 +25,7 @@ export function UpdateTimeline({ pageId, meId, initial }: { pageId: string; meId
   const { open: openLog } = useProgressLog();
   const [items, setItems] = useState<UpdateWithAuthor[]>(initial);
   const [text, setText] = useState('');
+  const [pct, setPct] = useState(''); // 비우면 현재 진행률 유지
   const [saving, setSaving] = useState(false);
   // 로그별 답글 (comments.update_id, 0013)
   const [replies, setReplies] = useState<Map<string, CommentWithAuthor[]>>(new Map());
@@ -79,17 +80,20 @@ export function UpdateTimeline({ pageId, meId, initial }: { pageId: string; meId
     if (!content || !meId || saving) return;
     setSaving(true);
     try {
-      // 진행률·상태는 현재 값 그대로 (바꾸려면 "자세히" 모달)
+      // % 칸을 채우면 진행률도 함께 갱신 (상태도 의미에 따라 자동 전환), 비우면 현재 값 유지
       const { data: cur } = await supabase.from('pages').select('progress, status').eq('id', pageId).single();
+      const nextProgress =
+        pct.trim() !== '' ? Math.min(100, Math.max(0, Number(pct))) : (cur?.progress ?? 0);
       await insertProgressLog(supabase, {
         pageId,
         authorId: meId,
         content,
-        progress: cur?.progress ?? 0,
+        progress: Number.isFinite(nextProgress) ? nextProgress : (cur?.progress ?? 0),
         currentStatus: cur?.status ?? null,
         blocker: null,
       });
       setText('');
+      setPct('');
       setItems(await fetchUpdates(supabase, pageId));
     } catch (e) {
       toast.error(`진행 로그 저장 실패: ${errorMessage(e)}`);
@@ -118,6 +122,18 @@ export function UpdateTimeline({ pageId, meId, initial }: { pageId: string; meId
             className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
             disabled={saving}
           />
+          <label className="flex shrink-0 items-center gap-1 rounded-lg border border-zinc-200 px-2 py-1.5 text-xs text-zinc-500" title="비우면 진행률 유지, 숫자를 넣으면 진행률도 함께 갱신">
+            <input
+              value={pct}
+              onChange={(e) => setPct(e.target.value.replace(/[^0-9]/g, '').slice(0, 3))}
+              placeholder="––"
+              inputMode="numeric"
+              className="w-7 bg-transparent text-right text-sm tabular-nums outline-none placeholder:text-zinc-300"
+              disabled={saving}
+              aria-label="진행률"
+            />
+            %
+          </label>
           <button
             type="submit"
             disabled={saving || !text.trim()}
