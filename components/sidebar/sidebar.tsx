@@ -301,7 +301,7 @@ export function Sidebar({
             aria-label={isOpen ? '접기' : '펼치기'}
             onClick={() => toggle(node.id)}
             className={[
-              'flex h-6 w-5 shrink-0 items-center justify-center rounded text-zinc-400 hover:bg-zinc-300/60 hover:text-zinc-700 dark:hover:bg-zinc-700 dark:hover:text-zinc-200',
+              'flex h-5 w-5 shrink-0 items-center justify-center rounded text-zinc-400 hover:bg-zinc-300/60 hover:text-zinc-700 dark:hover:bg-zinc-700 dark:hover:text-zinc-200',
               node.children.length === 0 ? 'invisible' : '',
             ].join(' ')}
           >
@@ -339,7 +339,7 @@ export function Sidebar({
           ) : (
             <Link
               href={`/p/${node.id}`}
-              className="min-w-0 flex-1 truncate py-1"
+              className="min-w-0 flex-1 truncate py-0.5"
               onDoubleClick={(e) => {
                 e.preventDefault();
                 setRenaming(node.id);
@@ -362,7 +362,7 @@ export function Sidebar({
               const r = e.currentTarget.getBoundingClientRect();
               setMenu({ x: r.left, y: r.bottom, node });
             }}
-            className="invisible h-6 w-6 shrink-0 rounded text-zinc-500 hover:bg-zinc-300/60 group-hover:visible dark:hover:bg-zinc-700"
+            className="invisible h-5 w-6 shrink-0 rounded text-zinc-500 hover:bg-zinc-300/60 group-hover:visible dark:hover:bg-zinc-700"
           >
             ⋯
           </button>
@@ -382,7 +382,7 @@ export function Sidebar({
       className="group flex items-center gap-1 rounded-md pr-1 font-medium text-zinc-500 hover:bg-zinc-200/40 dark:text-zinc-400 dark:hover:bg-zinc-800/60"
       style={{ paddingLeft: 4 + level * 10 }}
     >
-      <button type="button" onClick={() => toggleSpace(key)} className="flex h-6 w-5 shrink-0 items-center justify-center text-zinc-400" aria-label="접기/펼치기">
+      <button type="button" onClick={() => toggleSpace(key)} className="flex h-5 w-5 shrink-0 items-center justify-center text-zinc-400" aria-label="접기/펼치기">
         <svg width="10" height="10" viewBox="0 0 10 10" className={`transition-transform ${closedSpaces.has(key) ? '' : 'rotate-90'}`} aria-hidden="true">
           <path d="M3 1.5 7 5 3 8.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
         </svg>
@@ -390,7 +390,7 @@ export function Sidebar({
       <span className="w-5 shrink-0 text-center text-[14px] leading-none" aria-hidden="true">
         {emoji}
       </span>
-      <button type="button" onClick={() => toggleSpace(key)} className="min-w-0 flex-1 truncate py-1 text-left">
+      <button type="button" onClick={() => toggleSpace(key)} className="min-w-0 flex-1 truncate py-0.5 text-left">
         {label}
         {mine && <span className="ml-1 rounded bg-blue-100 px-1 text-[9px] font-medium text-blue-700 dark:bg-blue-900/60 dark:text-blue-200">내 소속</span>}
       </button>
@@ -400,7 +400,7 @@ export function Sidebar({
           type="button"
           aria-label="이 공간에 새 페이지"
           onClick={onAdd}
-          className="invisible h-6 w-6 rounded text-zinc-500 hover:bg-zinc-300/60 group-hover:visible dark:hover:bg-zinc-700"
+          className="invisible h-5 w-6 rounded text-zinc-500 hover:bg-zinc-300/60 group-hover:visible dark:hover:bg-zinc-700"
         >
           ＋
         </button>
@@ -417,7 +417,7 @@ export function Sidebar({
     const open = !closedSpaces.has(key);
     const writable = canWriteUnit(unit, me, writerSet);
     return (
-      <div key={key} className="mt-1">
+      <div key={key} className="mt-0.5">
         {spaceHeader(
           key,
           isRoot ? '🏢' : unit.level === '실' ? '📁' : '👥',
@@ -435,7 +435,7 @@ export function Sidebar({
               </ul>
             ) : (
               unit.children.length === 0 && (
-                <p className="py-1 text-[11px] text-zinc-400" style={{ paddingLeft: 28 + level * 10 }}>
+                <p className="py-0.5 text-[11px] text-zinc-400" style={{ paddingLeft: 28 + level * 10 }}>
                   페이지 없음
                 </p>
               )
@@ -451,13 +451,13 @@ export function Sidebar({
     const key = 'personal';
     const pageTree = buildTree(rowsByUnit.personal);
     return (
-      <div key={key} className="mt-4">
+      <div key={key} className="mt-3">
         {spaceHeader(key, '📝', '개인 메모', '나만 봄', 0, () => addChild(null, { unitId: null, visibility: '개인' }), false)}
         {!closedSpaces.has(key) &&
           (pageTree.length > 0 ? (
             <ul className="space-y-px">{pageTree.map((n) => renderNode(n, 1))}</ul>
           ) : (
-            <p className="py-1 pl-7 text-[11px] text-zinc-400">메모 없음</p>
+            <p className="py-0.5 pl-7 text-[11px] text-zinc-400">메모 없음</p>
           ))}
       </div>
     );
@@ -533,7 +533,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={() => openLog()}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
+          className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
           <span className="w-5 text-center text-[14px] leading-none">✏️</span> 진행 로그 남기기
           <kbd className="ml-auto text-[10px] text-zinc-400">⌃⇧L</kbd>
@@ -549,7 +549,7 @@ export function Sidebar({
       >
         {favorites.length > 0 && (
           <div className="mb-1">
-            <div className="px-2 pb-0.5 pt-4 text-[11px] font-medium text-zinc-400">즐겨찾기</div>
+            <div className="px-2 pb-0.5 pt-3 text-[11px] font-medium text-zinc-400">즐겨찾기</div>
             <ul className="space-y-px">
               {favorites.map((f) => (
                 <li key={f.id}>
@@ -561,7 +561,7 @@ export function Sidebar({
         )}
         {recents.length > 0 && (
           <div className="mb-1">
-            <div className="px-2 pb-0.5 pt-4 text-[11px] font-medium text-zinc-400">최근 항목</div>
+            <div className="px-2 pb-0.5 pt-3 text-[11px] font-medium text-zinc-400">최근 항목</div>
             <ul className="space-y-px">
               {recents.slice(0, 5).map((f) => (
                 <li key={f.id}>
@@ -571,10 +571,10 @@ export function Sidebar({
             </ul>
           </div>
         )}
-        <div className="px-2 pb-0.5 pt-4 text-[11px] font-medium text-zinc-400">공간</div>
+        <div className="px-2 pb-0.5 pt-3 text-[11px] font-medium text-zinc-400">공간</div>
         {orgTree.map((root) => renderSpace(root, 0))}
         {renderPersonal()}
-        <div className="mt-5 border-t border-zinc-200/70 pt-2">
+        <div className="mt-4 border-t border-zinc-200/70 pt-1.5">
           <NavLink href="/trash" label="보관함" icon="🗑️" active={pathname.startsWith('/trash')} />
           {me.isAdmin && <NavLink href="/admin" label="관리자 설정" icon="⚙️" active={pathname.startsWith('/admin')} />}
         </div>
@@ -592,7 +592,7 @@ function LitePageLink({ p, active }: { p: SidebarPageLite; active: boolean }) {
   return (
     <Link
       href={`/p/${p.id}`}
-      className={`flex items-center gap-1.5 rounded-md px-1 py-1 ${
+      className={`flex items-center gap-1.5 rounded-md px-1 py-0.5 ${
         active ? 'bg-zinc-200/80 font-medium text-zinc-900' : 'text-zinc-700 hover:bg-zinc-200/60'
       }`}
     >
@@ -609,7 +609,7 @@ function NavLink({ href, label, icon, active }: { href: string; label: string; i
   return (
     <Link
       href={href}
-      className={`flex items-center gap-2 rounded-md px-2 py-1.5 ${
+      className={`flex items-center gap-2 rounded-md px-2 py-1 ${
         active
           ? 'bg-zinc-200/70 font-medium dark:bg-zinc-800'
           : 'text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800'

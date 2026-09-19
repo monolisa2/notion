@@ -187,7 +187,12 @@ export function PageHeader({
               <button
                 type="button"
                 role="menuitem"
-                onClick={() => void apply('전환', () => convertPageType(supabase, page.id, isTask ? 'doc' : 'task'))}
+                onClick={() => {
+                  // 회의록·공지·주간 정리를 업무로 바꾸면 진행 로그·진행률이 붙는다 — 실수 방지
+                  const formDoc = ['meeting', 'notice', 'weekly', 'guide'].includes(page.template ?? '');
+                  if (!isTask && formDoc && !window.confirm('이 문서를 업무로 바꾸면 담당자·진행률·진행 로그가 붙습니다. 계속할까요?')) return;
+                  void apply('전환', () => convertPageType(supabase, page.id, isTask ? 'doc' : 'task'));
+                }}
                 className="block w-full rounded-md px-3 py-1.5 text-left hover:bg-zinc-100"
               >
                 {isTask ? '문서로 전환' : '업무로 전환'}
