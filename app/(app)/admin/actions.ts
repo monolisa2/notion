@@ -176,7 +176,10 @@ export async function createUnit(input: { parentId: string | null; name: string;
   });
 }
 
-export async function updateUnit(id: string, patch: { name?: string; parentId?: string | null; sortOrder?: number }) {
+export async function updateUnit(
+  id: string,
+  patch: { name?: string; parentId?: string | null; sortOrder?: number; writeScope?: '전원' | '리더' | '지정' },
+) {
   return wrap(async () => {
     const { supabase } = await requireAdmin();
     if (patch.parentId === id) throw new Error('자기 자신을 상위 조직으로 지정할 수 없습니다');
@@ -184,8 +187,24 @@ export async function updateUnit(id: string, patch: { name?: string; parentId?: 
     if (patch.name !== undefined) row.name = patch.name.trim();
     if ('parentId' in patch) row.parent_id = patch.parentId;
     if (patch.sortOrder !== undefined) row.sort_order = patch.sortOrder;
+    if (patch.writeScope !== undefined) row.write_scope = patch.writeScope;
     const { error } = await supabase.from('org_units').update(row).eq('id', id);
     if (error) throw new Error(error.message);
+  });
+}
+
+/** '지정' 공간의 작성 가능 인원 교체 (전체 교체 방식) */
+export async function setUnitWriters(unitId: string, userIds: string[]) {
+  return wrap(async () => {
+    const { supabase } = await requireAdmin();
+    const { error: delErr } = await supabase.from('org_unit_writers').delete().eq('unit_id', unitId);
+    if (delErr) throw new Error(delErr.message);
+    if (userIds.length > 0) {
+      const { error } = await supabase
+        .from('org_unit_writers')
+        .insert(userIds.map((user_id) => ({ unit_id: unitId, user_id })));
+      if (error) throw new Error(error.message);
+    }
   });
 }
 

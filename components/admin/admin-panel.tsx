@@ -11,6 +11,7 @@ import {
   deleteUnit,
   resetPassword,
   setActive,
+  setUnitWriters,
   updateMember,
   updateUnit,
 } from '@/app/(app)/admin/actions';
@@ -71,6 +72,7 @@ export function AdminPanel({
   meId,
   members,
   units,
+  writers = [],
   serviceKeyConfigured,
   storageBytes = 0,
   recentLoginCount = 0,
@@ -78,6 +80,7 @@ export function AdminPanel({
   meId: string;
   members: Member[];
   units: OrgUnitRow[];
+  writers?: { unit_id: string; user_id: string }[];
   serviceKeyConfigured: boolean;
   storageBytes?: number;
   recentLoginCount?: number;
@@ -153,7 +156,7 @@ export function AdminPanel({
           run={run}
         />
       ) : (
-        <OrgTab options={options} run={run} />
+        <OrgTab options={options} members={members} writers={writers} run={run} />
       )}
     </div>
   );
@@ -448,12 +451,25 @@ function IssuedPasswords({ items, onClose }: { items: Issued[]; onClose: () => v
 // ---------------- 조직도 ----------------
 function OrgTab({
   options,
+  members,
+  writers,
   run,
 }: {
   options: ReturnType<typeof unitOptions>;
+  members: Member[];
+  writers: { unit_id: string; user_id: string }[];
   run: <T>(p: Promise<{ ok: true; data: T } | { ok: false; error: string }>, done?: (d: T) => void) => Promise<void>;
 }) {
   const [form, setForm] = useState<{ parentId: string; name: string; level: '본부' | '실' | '팀' }>({ parentId: '', name: '', level: '팀' });
+  // '지정' 인원 편집 중인 조직
+  const [editingWriters, setEditingWriters] = useState<string | null>(null);
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  const activeMembers = members.filter((m) => !m.deactivated_at);
+  const writersOf = (unitId: string) => writers.filter((w) => w.unit_id === unitId).map((w) => w.user_id);
+  const openWriters = (unitId: string) => {
+    setEditingWriters(unitId);
+    setPicked(new Set(writersOf(unitId)));
+  };
 
   return (
     <>
@@ -487,6 +503,7 @@ function OrgTab({
               <th className="px-3 py-2 font-normal">상위 조직</th>
               <th className="px-3 py-2 font-normal">순서</th>
               <th className="px-3 py-2 font-normal">인원</th>
+              <th className="px-3 py-2 font-normal">작성 권한</th>
               <th className="px-3 py-2 font-normal"></th>
             </tr>
           </thead>
@@ -516,6 +533,25 @@ function OrgTab({
                   />
                 </td>
                 <td className="px-3 py-1.5 text-xs tabular-nums">{unit.member_count ?? 0}</td>
+                <td className="px-3 py-1.5">
+                  <div className="flex items-center gap-1">
+                    <select
+                      value={unit.write_scope ?? '전원'}
+                      onChange={(e) => void run(updateUnit(id, { writeScope: e.target.value as '전원' | '리더' | '지정' }))}
+                      className={select}
+                      title="이 공간에 새 페이지를 만들 수 있는 사람"
+                    >
+                      <option value="전원">전원</option>
+                      <option value="리더">팀장·실장 이상</option>
+                      <option value="지정">지정 인원</option>
+                    </select>
+                    {(unit.write_scope ?? '전원') === '지정' && (
+                      <button type="button" className={btn} onClick={() => openWriters(id)}>
+                        인원 {writersOf(id).length}명
+                      </button>
+                    )}
+                  </div>
+                </td>
                 <td className="px-3 py-1.5 text-right">
                   <button
                     type="button"
@@ -529,8 +565,63 @@ function OrgTab({
             ))}
           </tbody>
         </table>
-        <p className="px-3 py-2 text-xs text-zinc-400">이름·순서는 칸을 고친 뒤 바깥을 클릭하면 저장됩니다. 합병으로 조직이 바뀌면 여기서 이름을 바꾸거나 상위 조직을 옮기세요. 기존 페이지·인원은 그대로 따라갑니다.</p>
+        <p className="px-3 py-2 text-xs text-zinc-400">
+          이름·순서는 칸을 고친 뒤 바깥을 클릭하면 저장됩니다. 합병으로 조직이 바뀌면 여기서 이름을 바꾸거나 상위 조직을 옮기세요. 기존 페이지·인원은 그대로 따라갑니다.
+          <br />
+          작성 권한은 &ldquo;그 공간에 새 페이지를 만들 수 있는 사람&rdquo; 입니다 (보기는 공개 범위를 따릅니다). 관리자는 항상 만들 수 있습니다.
+        </p>
       </section>
+
+      {/* 지정 인원 선택 */}
+      {editingWriters && (
+        <>
+          <div className="fixed inset-0 z-30 bg-black/30" onMouseDown={() => setEditingWriters(null)} />
+          <div className="fixed left-1/2 top-1/2 z-40 max-h-[70vh] w-[min(420px,90vw)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
+            <h3 className="text-sm font-semibold">
+              작성 가능 인원 — {options.find((o) => o.id === editingWriters)?.unit.name}
+            </h3>
+            <p className="mt-1 text-xs text-zinc-500">체크한 사람(과 관리자)만 이 공간에 새 페이지를 만들 수 있습니다.</p>
+            <ul className="mt-3 space-y-1">
+              {activeMembers.map((m) => (
+                <li key={m.id}>
+                  <label className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-1 text-sm hover:bg-zinc-50">
+                    <input
+                      type="checkbox"
+                      checked={picked.has(m.id)}
+                      onChange={(e) =>
+                        setPicked((prev) => {
+                          const next = new Set(prev);
+                          if (e.target.checked) next.add(m.id);
+                          else next.delete(m.id);
+                          return next;
+                        })
+                      }
+                    />
+                    <span>{m.name}</span>
+                    <span className="text-xs text-zinc-400">{[m.rank, m.job_title].filter(Boolean).join(' · ')}</span>
+                  </label>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-4 flex justify-end gap-2">
+              <button type="button" className={btn} onClick={() => setEditingWriters(null)}>
+                취소
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700"
+                onClick={() => {
+                  const unitId = editingWriters;
+                  setEditingWriters(null);
+                  void run(setUnitWriters(unitId, [...picked]));
+                }}
+              >
+                저장
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

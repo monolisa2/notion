@@ -418,6 +418,46 @@ export type Database = {
           },
         ]
       }
+      org_unit_writers: {
+        Row: {
+          unit_id: string
+          user_id: string
+        }
+        Insert: {
+          unit_id: string
+          user_id: string
+        }
+        Update: {
+          unit_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_unit_writers_unit_id_fkey"
+            columns: ["unit_id"]
+            referencedRelation: "org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_unit_writers_unit_id_fkey"
+            columns: ["unit_id"]
+            referencedRelation: "v_org_units"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_unit_writers_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "org_unit_writers_user_id_fkey"
+            columns: ["user_id"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
+          },
+        ]
+      }
       org_units: {
         Row: {
           created_at: string
@@ -427,6 +467,7 @@ export type Database = {
           parent_id: string | null
           sort_order: number
           updated_at: string
+          write_scope: string
         }
         Insert: {
           created_at?: string
@@ -436,6 +477,7 @@ export type Database = {
           parent_id?: string | null
           sort_order?: number
           updated_at?: string
+          write_scope?: string
         }
         Update: {
           created_at?: string
@@ -445,6 +487,7 @@ export type Database = {
           parent_id?: string | null
           sort_order?: number
           updated_at?: string
+          write_scope?: string
         }
         Relationships: [
           {
@@ -1113,6 +1156,7 @@ export type Database = {
           name: string | null
           parent_id: string | null
           sort_order: number | null
+          write_scope: string | null
         }
         Insert: {
           id?: string | null
@@ -1121,6 +1165,7 @@ export type Database = {
           name?: string | null
           parent_id?: string | null
           sort_order?: number | null
+          write_scope?: string | null
         }
         Update: {
           id?: string | null
@@ -1129,6 +1174,7 @@ export type Database = {
           name?: string | null
           parent_id?: string | null
           sort_order?: number | null
+          write_scope?: string | null
         }
         Relationships: [
           {
@@ -1385,6 +1431,7 @@ export type Database = {
     }
     Functions: {
       can_view_unit: { Args: { p_unit: string }; Returns: boolean }
+      can_write_unit: { Args: { p_unit: string }; Returns: boolean }
       dearmor: { Args: { "": string }; Returns: string }
       enqueue_daily_reminders: { Args: { p_today?: string }; Returns: number }
       enqueue_notification: {

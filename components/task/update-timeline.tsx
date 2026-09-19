@@ -1,9 +1,12 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
-import { fetchUpdates, type UpdateWithAuthor } from '@/lib/updates';
+import { errorMessage } from '@/lib/errors';
+import { fetchUpdates, insertProgressLog, type UpdateWithAuthor } from '@/lib/updates';
 import { Avatar } from '@/components/avatar';
+import { useProgressLog } from '@/components/progress-log-provider';
 
 function formatWhen(iso: string) {
   const d = new Date(iso);
@@ -12,12 +15,15 @@ function formatWhen(iso: string) {
 }
 
 /**
- * 페이지 하단 진행 로그 타임라인 (최신순).
+ * 페이지 하단 진행 로그 타임라인 (최신순) + 바로 쓰는 한 줄 입력.
  * 수정/삭제 버튼은 없다 — append-only. 오기재는 새 로그로 정정한다.
  */
-export function UpdateTimeline({ pageId, initial }: { pageId: string; initial: UpdateWithAuthor[] }) {
+export function UpdateTimeline({ pageId, meId, initial }: { pageId: string; meId?: string; initial: UpdateWithAuthor[] }) {
   const supabase = useMemo(() => createClient(), []);
+  const { open: openLog } = useProgressLog();
   const [items, setItems] = useState<UpdateWithAuthor[]>(initial);
+  const [text, setText] = useState('');
+  const [saving, setSaving] = useState(false);
 
   useEffect(() => {
     const channel = supabase
@@ -40,12 +46,71 @@ export function UpdateTimeline({ pageId, initial }: { pageId: string; initial: U
     };
   }, [supabase, pageId]);
 
+  const quickAdd = async () => {
+    const content = text.trim();
+    if (!content || !meId || saving) return;
+    setSaving(true);
+    try {
+      // 진행률·상태는 현재 값 그대로 (바꾸려면 "자세히" 모달)
+      const { data: cur } = await supabase.from('pages').select('progress, status').eq('id', pageId).single();
+      await insertProgressLog(supabase, {
+        pageId,
+        authorId: meId,
+        content,
+        progress: cur?.progress ?? 0,
+        currentStatus: cur?.status ?? null,
+        blocker: null,
+      });
+      setText('');
+      setItems(await fetchUpdates(supabase, pageId));
+    } catch (e) {
+      toast.error(`진행 로그 저장 실패: ${errorMessage(e)}`);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   return (
     <section className="mx-auto w-full max-w-3xl px-6 pb-24 sm:px-10">
       <h2 className="text-sm font-medium text-zinc-500">진행 로그 {items.length > 0 && `· ${items.length}`}</h2>
+
+      {/* 바로 쓰는 한 줄 입력 */}
+      {meId && (
+        <form
+          className="mt-2 flex items-center gap-2"
+          onSubmit={(e) => {
+            e.preventDefault();
+            void quickAdd();
+          }}
+        >
+          <input
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="오늘 한 일, 다음 할 일을 한 줄로…"
+            className="min-w-0 flex-1 rounded-lg border border-zinc-200 px-3 py-1.5 text-sm outline-none placeholder:text-zinc-400 focus:border-zinc-400"
+            disabled={saving}
+          />
+          <button
+            type="submit"
+            disabled={saving || !text.trim()}
+            className="shrink-0 rounded-lg bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40"
+          >
+            남기기
+          </button>
+          <button
+            type="button"
+            onClick={() => openLog(pageId)}
+            className="shrink-0 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs text-zinc-500 hover:bg-zinc-50"
+            title="진행률·막힘까지 함께 기록"
+          >
+            자세히
+          </button>
+        </form>
+      )}
+
       {items.length === 0 ? (
         <p className="mt-3 text-sm text-zinc-400">
-          아직 진행 로그가 없습니다. 상단 &ldquo;진행 기록&rdquo; 또는 ⌃⇧L 로 한 줄 남겨보세요.
+          아직 진행 로그가 없습니다. 위 입력창에 한 줄 남겨보세요 — 진행률까지 바꾸려면 &ldquo;자세히&rdquo;.
         </p>
       ) : (
         <ol className="mt-3 space-y-3">

@@ -16,12 +16,13 @@ export default async function AdminPage() {
   if (!me?.is_admin) redirect('/');
 
   const serviceKeyConfigured = !!process.env.SUPABASE_SERVICE_ROLE_KEY;
-  const [{ data: members }, { data: units }, { data: usage }, lastSignIn] = await Promise.all([
+  const [{ data: members }, { data: units }, { data: writers }, { data: usage }, lastSignIn] = await Promise.all([
     supabase
       .from('profiles')
       .select('id, name, email, unit_id, rank, job_title, is_admin, deactivated_at, must_change_password, created_at')
       .order('name'),
     supabase.from('v_org_units').select('*'),
+    supabase.from('org_unit_writers').select('unit_id, user_id'),
     supabase.rpc('storage_usage_bytes'),
     // 마지막 로그인은 auth 쪽 정보라 service role 로만 읽을 수 있다
     serviceKeyConfigured
@@ -42,6 +43,7 @@ export default async function AdminPage() {
       recentLoginCount={recentLoginCount}
       members={(members ?? []).map((m) => ({ ...m, last_sign_in_at: lastSignIn.get(m.id) ?? null }))}
       units={(units ?? []) as OrgUnitRow[]}
+      writers={writers ?? []}
       serviceKeyConfigured={serviceKeyConfigured}
       storageBytes={Number(usage ?? 0)}
     />

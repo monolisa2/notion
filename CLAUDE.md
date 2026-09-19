@@ -46,6 +46,7 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 - `pages.unit_id` = 공간, `pages.visibility` = `'본부'`(전원) | `'소속'`(같은 계열 조직 + 관리자) | `'개인'`(owner 만)
 - **하위 페이지는 부모의 공간·공개 범위를 상속한다(트리거).** 루트만 바꿀 수 있고, 앱에서 하위 페이지의 unit/visibility 를 직접 쓰지 말 것
 - 가시성은 RLS(`can_view_unit`)가 결정한다. 화면에서 다시 필터링하지 말고 RLS 를 믿을 것. 새 테이블·뷰를 만들면 같은 규칙을 태울 것
+- 작성 권한은 `org_units.write_scope`('전원'|'리더'|'지정') + `can_write_unit` RLS (0011). '지정'은 `org_unit_writers`. 관리자 화면에서 설정, 개인 메모는 제한 없음
 
 ### (4) 사용자
 - `profiles` = 멤버. `unit_id`(소속) `rank`(직급) `job_title`(직책) `is_admin` `deactivated_at` `must_change_password`
@@ -105,4 +106,7 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0006_labels_optional.sql 분류 라벨 — 사용 안 함 (적용하지 말 것)
 0007_stale_reminder.sql  미입력 리마인드 함수 (스케줄은 0008 이 해제)
 0008_org_spaces.sql      조직도, 공간, 공개 범위, 프로필 필드, 가시성 RLS
+0009_collections_search_storage.sql  양식·행사일·고정, 검색, 보관함 복구, 첨부 버킷
+0010_favorites_visits.sql            즐겨찾기, 최근 방문
+0011_write_permissions.sql           공간별 페이지 작성 권한 (전원/리더/지정)
 ```

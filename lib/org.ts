@@ -57,6 +57,27 @@ export function subtreeOf(units: OrgUnitRow[], unitId: string): Set<string> {
  *   중간 조상(예: 팀원에게 실 공간)은 사이드바에서 숨긴다 — 페이지 접근 권한(RLS)은 그대로이며
  *   숨긴 공간의 페이지는 홈·검색·모아보기로 접근한다. 소속이 없으면 최상위(본부)만.
  */
+/** 공간 작성 권한 '리더' 에 해당하는 직책 (0011 can_write_unit 과 동일하게 유지) */
+export const LEADER_TITLES = ['팀장', '실장', '본부장'] as const;
+
+/**
+ * 공간에 새 페이지를 만들 수 있는지 (0011 can_write_unit 의 클라이언트 판정).
+ * write_scope 가 아직 없으면(마이그레이션 전) '전원' 으로 본다.
+ */
+export function canWriteUnit(
+  unit: OrgUnitRow | undefined,
+  me: { isAdmin: boolean; jobTitle: string | null },
+  writerUnits: ReadonlySet<string>,
+): boolean {
+  if (me.isAdmin) return true;
+  if (!unit?.id) return false;
+  const scope = unit.write_scope ?? '전원';
+  if (scope === '전원') return true;
+  if (scope === '리더') return !!me.jobTitle && (LEADER_TITLES as readonly string[]).includes(me.jobTitle);
+  if (scope === '지정') return writerUnits.has(unit.id);
+  return false;
+}
+
 /**
  * 페이지를 옮길 수 있는 공간: RLS 가 "옮긴 뒤에도 내가 볼 수 있는 공간"만 허용하므로
  * 선택지도 내 계열(소속 + 조상 + 후손)로 제한한다. 관리자는 전부.

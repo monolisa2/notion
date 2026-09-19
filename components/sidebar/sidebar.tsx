@@ -22,7 +22,7 @@ import {
   type TreeNode,
 } from '@/lib/tree';
 import type { Me, OrgUnitRow, PageTreeRow, PageVisibility, SidebarPageLite } from '@/lib/types';
-import { buildOrgTree, chainOf, visibleUnitsFor, type OrgNode } from '@/lib/org';
+import { buildOrgTree, canWriteUnit, chainOf, visibleUnitsFor, type OrgNode } from '@/lib/org';
 import { ContextMenu, type MenuItem } from './context-menu';
 import { useProgressLog } from '@/components/progress-log-provider';
 import { NotificationBell } from '@/components/notifications/notification-bell';
@@ -38,6 +38,7 @@ export function Sidebar({
   units,
   favorites = [],
   recents = [],
+  writerUnits = [],
   onChanged,
 }: {
   me: Me;
@@ -45,6 +46,7 @@ export function Sidebar({
   units: OrgUnitRow[];
   favorites?: SidebarPageLite[];
   recents?: SidebarPageLite[];
+  writerUnits?: string[];
   onChanged: () => Promise<void>;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -372,7 +374,9 @@ export function Sidebar({
     );
   };
 
-  const spaceHeader = (key: string, emoji: string, label: string, badge: string | null, level: number, onAdd: () => void, mine: boolean) => (
+  const writerSet = useMemo(() => new Set(writerUnits), [writerUnits]);
+
+  const spaceHeader = (key: string, emoji: string, label: string, badge: string | null, level: number, onAdd: (() => void) | null, mine: boolean) => (
     <div
       className="group flex items-center gap-1 rounded-md pr-1 text-sm font-semibold text-zinc-500 hover:bg-zinc-200/40 dark:text-zinc-400 dark:hover:bg-zinc-800/60"
       style={{ paddingLeft: 4 + level * 10 }}
@@ -390,14 +394,16 @@ export function Sidebar({
         {mine && <span className="ml-1 rounded bg-blue-100 px-1 text-[9px] font-medium text-blue-700 dark:bg-blue-900/60 dark:text-blue-200">내 소속</span>}
       </button>
       {badge && <span className="text-[10px] font-normal text-zinc-400">{badge}</span>}
-      <button
-        type="button"
-        aria-label="이 공간에 새 페이지"
-        onClick={onAdd}
-        className="invisible h-6 w-6 rounded text-zinc-500 hover:bg-zinc-300/60 group-hover:visible dark:hover:bg-zinc-700"
-      >
-        ＋
-      </button>
+      {onAdd && (
+        <button
+          type="button"
+          aria-label="이 공간에 새 페이지"
+          onClick={onAdd}
+          className="invisible h-6 w-6 rounded text-zinc-500 hover:bg-zinc-300/60 group-hover:visible dark:hover:bg-zinc-700"
+        >
+          ＋
+        </button>
+      )}
     </div>
   );
 
@@ -408,6 +414,7 @@ export function Sidebar({
     const pageTree = buildTree(rowsByUnit.m.get(unit.id) ?? []);
     const mine = myChain.has(unit.id) && me.unitId === unit.id;
     const open = !closedSpaces.has(key);
+    const writable = canWriteUnit(unit, me, writerSet);
     return (
       <div key={key} className="mt-1">
         {spaceHeader(
@@ -416,7 +423,7 @@ export function Sidebar({
           isRoot ? `${unit.name} 공용` : unit.name ?? '',
           isRoot ? null : `${unit.member_count ?? 0}명`,
           level,
-          () => addChild(null, { unitId: unit.id, visibility }),
+          writable ? () => addChild(null, { unitId: unit.id, visibility }) : null,
           mine,
         )}
         {open && (

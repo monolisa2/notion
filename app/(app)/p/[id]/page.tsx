@@ -8,6 +8,7 @@ import { fetchComments } from '@/lib/comments';
 import { CommentThread } from '@/components/comments/comment-thread';
 import type { Me, OrgUnitRow } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
+import { ProgressPanel } from '@/components/task/progress-panel';
 import { SubpageList } from '@/components/subpage-list';
 import { VisitTracker } from '@/components/visit-tracker';
 
@@ -62,13 +63,14 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
       <VisitTracker pageId={page.id} />
 
       {isTask && <PropertyBar key={`props-${page.id}`} page={page} assignees={assignees} meId={user.id} />}
+      {isTask && <ProgressPanel key={`progress-${page.id}`} page={page} initialUpdates={updates} />}
 
       {/* key 로 페이지 이동 시 에디터를 새로 마운트 */}
       <PageEditor key={page.id} page={page} userId={user.id} />
 
       <SubpageList key={`sub-${page.id}`} page={page} />
 
-      {isTask && <UpdateTimeline key={`updates-${page.id}`} pageId={page.id} initial={updates} />}
+      {isTask && <UpdateTimeline key={`updates-${page.id}`} pageId={page.id} meId={user.id} initial={updates} />}
 
       <CommentThread key={`comments-${page.id}`} pageId={page.id} me={me} initial={comments} />
     </article>

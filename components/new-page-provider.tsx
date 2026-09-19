@@ -57,7 +57,12 @@ export function NewPageProvider({
       await onCreated?.();
       router.push(`/p/${id}`);
     } catch (e) {
-      toast.error(`페이지 추가 실패: ${errorMessage(e)}`);
+      const msg = errorMessage(e);
+      toast.error(
+        msg.includes('row-level security')
+          ? '페이지 추가 실패: 이 공간에 페이지를 만들 권한이 없습니다 (관리자가 작성 권한을 제한한 공간)'
+          : `페이지 추가 실패: ${msg}`,
+      );
     }
   };
 

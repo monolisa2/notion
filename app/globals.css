@@ -93,10 +93,25 @@ body {
   background: transparent;
 }
 
-/* 노션에 가까운 본문 타이포 */
+/* 노션에 가까운 본문 타이포 — 줄 간격은 타이트하게 */
 .teamhub-editor .bn-editor {
   font-size: 16px;
-  line-height: 1.6;
+  line-height: 1.45;
+}
+/* 블록(문단) 사이 세로 간격 축소 */
+.teamhub-editor .bn-block-content,
+.teamhub-comment-editor .bn-block-content {
+  padding-top: 2px;
+  padding-bottom: 2px;
+}
+/* 멘션(@)·슬래시(/) 추천 메뉴의 행 높이 축소 */
+.bn-suggestion-menu-item {
+  padding-top: 4px !important;
+  padding-bottom: 4px !important;
+  min-height: 0 !important;
+}
+.bn-suggestion-menu-item [class*='mantine-Group-root'] {
+  gap: 8px !important;
 }
 
 /* BlockNote 기본 폰트(Inter) 대신 사이트 공통 폰트 사용 */

@@ -19,6 +19,7 @@ export function AppShell({
   units,
   favorites,
   recents,
+  writerUnits = [],
   children,
 }: {
   me: Me;
@@ -26,6 +27,7 @@ export function AppShell({
   units: OrgUnitRow[];
   favorites: SidebarPageLite[];
   recents: SidebarPageLite[];
+  writerUnits?: string[];
   children: React.ReactNode;
 }) {
   const [tree, setTree] = useState<PageTreeRow[]>(initialTree);
@@ -63,7 +65,7 @@ export function AppShell({
       <ProgressLogProvider me={me} rows={tree}>
         <NewPageProvider me={me} onCreated={refresh}>
           <div className="flex h-dvh w-full overflow-hidden bg-white">
-            <Sidebar me={me} rows={tree} units={units} favorites={favorites} recents={recents} onChanged={refresh} />
+            <Sidebar me={me} rows={tree} units={units} favorites={favorites} recents={recents} writerUnits={writerUnits} onChanged={refresh} />
             <main className="min-w-0 flex-1 overflow-y-auto">{children}</main>
           </div>
         </NewPageProvider>
