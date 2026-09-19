@@ -316,7 +316,7 @@ export function Sidebar({
             </svg>
           </button>
 
-          <span className="flex w-5 shrink-0 items-center justify-center text-[15px] leading-none" aria-hidden="true">
+          <span className="flex w-5 shrink-0 items-center justify-center text-[14px] leading-none" aria-hidden="true">
             {node.icon ? (
               node.icon
             ) : node.type === 'task' ? (
@@ -387,7 +387,7 @@ export function Sidebar({
           <path d="M3 1.5 7 5 3 8.5" fill="none" stroke="currentColor" strokeWidth="1.6" />
         </svg>
       </button>
-      <span className="w-5 shrink-0 text-center text-[15px] leading-none" aria-hidden="true">
+      <span className="w-5 shrink-0 text-center text-[14px] leading-none" aria-hidden="true">
         {emoji}
       </span>
       <button type="button" onClick={() => toggleSpace(key)} className="min-w-0 flex-1 truncate py-1 text-left">
@@ -464,7 +464,7 @@ export function Sidebar({
   };
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-zinc-200/80 bg-[#f7f7f5] text-base">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-zinc-200/80 bg-[#f7f7f5] text-[15px]">
       <div className="flex items-center gap-2 px-3 pb-1 pt-3">
         {me.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -534,7 +534,7 @@ export function Sidebar({
           onClick={() => openLog()}
           className="flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
         >
-          <span className="w-5 text-center text-[15px] leading-none">✏️</span> 진행 로그 남기기
+          <span className="w-5 text-center text-[14px] leading-none">✏️</span> 진행 로그 남기기
           <kbd className="ml-auto text-[10px] text-zinc-400">⌃⇧L</kbd>
         </button>
       </div>
@@ -595,7 +595,7 @@ function LitePageLink({ p, active }: { p: SidebarPageLite; active: boolean }) {
         active ? 'bg-zinc-200/80 font-medium text-zinc-900' : 'text-zinc-700 hover:bg-zinc-200/60'
       }`}
     >
-      <span className="flex w-5 shrink-0 items-center justify-center text-[15px] leading-none">{p.icon ?? (p.type === 'task' ? '✅' : '📄')}</span>
+      <span className="flex w-5 shrink-0 items-center justify-center text-[14px] leading-none">{p.icon ?? (p.type === 'task' ? '✅' : '📄')}</span>
       <span className="min-w-0 flex-1 truncate">{p.title}</span>
       {p.type === 'task' && p.status && (
         <span className="shrink-0 rounded bg-zinc-200 px-1 text-[10px] text-zinc-600">{p.status}</span>
@@ -614,7 +614,7 @@ function NavLink({ href, label, icon, active }: { href: string; label: string; i
           : 'text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800'
       }`}
     >
-      <span className="w-5 text-center text-[15px] leading-none" aria-hidden="true">
+      <span className="w-5 text-center text-[14px] leading-none" aria-hidden="true">
         {icon}
       </span>
       {label}
