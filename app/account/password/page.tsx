@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { PasswordForm } from './password-form';
 
 export default async function PasswordPage({
@@ -9,9 +9,7 @@ export default async function PasswordPage({
 }) {
   const { first } = await searchParams;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
   return (

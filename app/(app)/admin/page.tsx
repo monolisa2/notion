@@ -1,5 +1,5 @@
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { AdminPanel } from '@/components/admin/admin-panel';
 import type { OrgUnitRow } from '@/lib/types';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -8,9 +8,7 @@ export const dynamic = 'force-dynamic';
 
 export default async function AdminPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
   const { data: me } = await supabase.from('profiles').select('is_admin').eq('id', user.id).maybeSingle();
   if (!me?.is_admin) redirect('/');

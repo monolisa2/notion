@@ -1,11 +1,11 @@
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSessionUser } from '@/lib/supabase/server';
+import { getStatuses } from '@/lib/reference';
 import { fetchDashboard, FEED_DAYS } from '@/lib/dashboard';
 import { Widget } from '@/components/dashboard/widget';
 import { ActivityFeed } from '@/components/dashboard/activity-feed';
 import { AssigneeSummary, BlockedTasks, DueRisk, StaleTasks } from '@/components/dashboard/widgets';
 import { statusClass } from '@/lib/status-style';
-import { DEFAULT_STATUSES } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
@@ -18,13 +18,10 @@ function greeting() {
 
 export default async function Home() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   // 상태 목록(0012) — "진행 중" 판정은 이름이 아니라 kind 로
-  const { data: statusRows } = await supabase.from('page_statuses').select('*').order('sort_order');
-  const statuses = statusRows && statusRows.length > 0 ? statusRows : DEFAULT_STATUSES;
+  const statuses = await getStatuses();
   const openNames = statuses.filter((s) => s.kind === '대기' || s.kind === '진행').map((s) => s.name);
 
   const [{ data: profile }, dash, { data: myTasks }, { data: recent }, { data: pinned }] = await Promise.all([

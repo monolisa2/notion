@@ -21,6 +21,8 @@ const num = (text: string): Block => ({ type: 'numberedListItem', content: [b(te
 const check = (text: string): Block => ({ type: 'checkListItem', props: { checked: false }, content: [b(text)] });
 const quote = (text: string): Block => ({ type: 'quote', content: [b(text)] });
 const divider = (): Block => ({ type: 'divider' });
+/** 빈 제목 3 블록 — 새 페이지의 기본 시작점 */
+const h3 = (): Block => ({ type: 'heading', props: { level: 3 }, content: [] });
 const field = (label: string, value = ''): Block => p(b(`${label}  `, true), b(value));
 
 export type Template = {
@@ -38,10 +40,10 @@ export const TEMPLATES: Template[] = [
     key: 'blank',
     icon: '📄',
     name: '빈 페이지',
-    description: '자유롭게 시작. / 를 입력하면 블록 메뉴, @ 로 동료 언급',
+    description: '제목 3 으로 시작. / 를 입력하면 블록 메뉴, @ 로 동료 언급',
     type: 'doc',
     title: () => '제목 없음',
-    content: () => [p()],
+    content: () => [h3(), p()],
   },
   {
     key: 'meeting',

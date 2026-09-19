@@ -40,6 +40,7 @@ export function Sidebar({
   favorites = [],
   recents = [],
   writerUnits = [],
+  guidePageId = null,
   onChanged,
 }: {
   me: Me;
@@ -48,6 +49,8 @@ export function Sidebar({
   favorites?: SidebarPageLite[];
   recents?: SidebarPageLite[];
   writerUnits?: string[];
+  /** 사용법 안내 페이지 — 공간 트리에서 빼고 하단 메뉴로 (0016) */
+  guidePageId?: string | null;
   onChanged: () => Promise<void>;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -66,11 +69,12 @@ export function Sidebar({
     const m = new Map<string, PageTreeRow[]>();
     const personal: PageTreeRow[] = [];
     for (const r of rows) {
+      if (guidePageId && r.id === guidePageId) continue; // 사용법은 하단 메뉴에서만
       if (r.visibility === '개인') personal.push(r);
       else if (r.unit_id) m.set(r.unit_id, [...(m.get(r.unit_id) ?? []), r]);
     }
     return { m, personal };
-  }, [rows]);
+  }, [rows, guidePageId]);
   // 공간(조직) 접기 상태
   const [closedSpaces, setClosedSpaces] = useState<Set<string>>(new Set());
   const toggleSpace = (k: string) =>
@@ -583,6 +587,9 @@ export function Sidebar({
         {orgTree.map((root) => renderSpace(root, 0))}
         {renderPersonal()}
         <div className="mt-4 border-t border-zinc-200/70 pt-1.5">
+          {guidePageId && (
+            <NavLink href={`/p/${guidePageId}`} label="사용법" icon="📖" active={currentId === guidePageId} />
+          )}
           <NavLink href="/trash" label="보관함" icon="🗑️" active={pathname.startsWith('/trash')} />
           {me.isAdmin && <NavLink href="/admin" label="관리자 설정" icon="⚙️" active={pathname.startsWith('/admin')} />}
         </div>

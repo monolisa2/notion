@@ -1,5 +1,5 @@
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { CollectionView, type CollectionItem } from '@/components/collections/collection-view';
 import type { OrgUnitRow } from '@/lib/types';
 
@@ -23,9 +23,7 @@ export default async function CollectionPage({
   if (!COLLECTION_META[template]) notFound();
 
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
 
   const [{ data: pages }, { data: units }, { data: me }] = await Promise.all([
     supabase

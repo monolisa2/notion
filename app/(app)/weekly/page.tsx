@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { statusClass } from '@/lib/status-style';
 import { DEFAULT_STATUSES } from '@/lib/types';
 import { Avatar } from '@/components/avatar';
@@ -26,9 +26,7 @@ export default async function WeeklyPage({ searchParams }: { searchParams: Promi
   const { days: daysParam } = await searchParams;
   const days = daysParam === '14' ? 14 : 7;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
   const [{ data: digest }, { data: profile }, { data: statusRows }] = await Promise.all([

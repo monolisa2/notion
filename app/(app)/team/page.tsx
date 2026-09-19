@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSessionUser } from '@/lib/supabase/server';
+import { getStatuses, getUnits } from '@/lib/reference';
 import { statusClass, statusKind } from '@/lib/status-style';
-import { DEFAULT_STATUSES, type OrgUnitRow, type StatusRow } from '@/lib/types';
 import { subtreeOf, unitLabel } from '@/lib/org';
 import { Avatar } from '@/components/avatar';
 
@@ -37,18 +37,14 @@ function dday(due: string | null, today: string) {
 export default async function TeamPage({ searchParams }: { searchParams: Promise<{ unit?: string }> }) {
   const { unit: unitParam } = await searchParams;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
-  const [{ data: profile }, { data: unitRows }, { data: statusRows }] = await Promise.all([
+  const [{ data: profile }, units, statuses] = await Promise.all([
     supabase.from('profiles').select('unit_id, is_admin, job_title').eq('id', user.id).maybeSingle(),
-    supabase.from('v_org_units').select('*'),
-    supabase.from('page_statuses').select('*').order('sort_order'),
+    getUnits(),
+    getStatuses(),
   ]);
-  const units = (unitRows ?? []) as OrgUnitRow[];
-  const statuses: StatusRow[] = statusRows && statusRows.length > 0 ? statusRows : DEFAULT_STATUSES;
 
   // 볼 조직: 지정 → 내 소속 → 본부
   const rootUnit = units.find((u) => !u.parent_id)?.id ?? null;

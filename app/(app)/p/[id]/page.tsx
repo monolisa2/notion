@@ -1,12 +1,13 @@
 import { notFound, redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSessionUser } from '@/lib/supabase/server';
+import { getStatuses, getUnits } from '@/lib/reference';
 import { PageEditor } from '@/components/editor/page-editor';
 import { PropertyBar } from '@/components/task/property-bar';
 import { UpdateTimeline } from '@/components/task/update-timeline';
 import { fetchUpdates } from '@/lib/updates';
 import { fetchComments } from '@/lib/comments';
 import { CommentThread } from '@/components/comments/comment-thread';
-import { DEFAULT_STATUSES, type Me, type OrgUnitRow } from '@/lib/types';
+import type { Me } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
 import { ProgressPanel } from '@/components/task/progress-panel';
 import {
@@ -23,9 +24,7 @@ import { ActionItemPromoter } from '@/components/task/action-item-promoter';
 export default async function PageView({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
   const { data: page, error } = await supabase
@@ -51,9 +50,9 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
     isTask ? fetchUpdates(supabase, page.id).catch(() => []) : Promise.resolve([]),
     fetchComments(supabase, page.id).catch(() => []),
     supabase.from('profiles').select('name, avatar_url, is_admin, unit_id, rank, job_title').eq('id', user.id).maybeSingle().then((r) => r.data),
-    supabase.from('v_org_units').select('*').then((r) => (r.data ?? []) as OrgUnitRow[]),
+    getUnits(),
     supabase.from('page_favorites').select('page_id').eq('user_id', user.id).eq('page_id', page.id).maybeSingle().then((r) => !!r.data),
-    supabase.from('page_statuses').select('*').order('sort_order').then((r) => (r.data && r.data.length > 0 ? r.data : DEFAULT_STATUSES)),
+    getStatuses(),
     isTask
       ? supabase.from('page_people').select('user_id').eq('page_id', id).then((r) => (r.data ?? []).map((x) => x.user_id))
       : Promise.resolve([] as string[]),

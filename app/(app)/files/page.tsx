@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { FileDownload } from '@/components/file-download';
 
 export const dynamic = 'force-dynamic';
@@ -22,9 +22,7 @@ function displayName(name: string) {
  */
 export default async function FilesPage() {
   const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
   const { data: folders } = await supabase.storage.from('attachments').list('', { limit: 200 });

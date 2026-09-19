@@ -31,3 +31,18 @@ export async function createClient() {
     },
   );
 }
+
+/**
+ * 로그인 사용자 (서버 컴포넌트용).
+ *
+ * `auth.getUser()` 는 호출할 때마다 Supabase 에 네트워크 왕복을 한다.
+ * 페이지마다 그 왕복이 렌더 앞단을 막아 체감 속도를 크게 떨어뜨리므로,
+ * 여기서는 `getClaims()` 로 JWT 를 **로컬 검증**한다 (JWKS 캐시 사용).
+ * 토큰 갱신은 proxy.ts(updateSession)가 이미 담당한다.
+ */
+export async function getSessionUser(sb: Awaited<ReturnType<typeof createClient>>) {
+  const { data } = await sb.auth.getClaims();
+  const claims = data?.claims;
+  if (!claims?.sub) return null;
+  return { id: claims.sub as string, email: (claims.email as string | undefined) ?? null };
+}

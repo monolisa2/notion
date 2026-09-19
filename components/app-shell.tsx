@@ -20,6 +20,7 @@ export function AppShell({
   favorites,
   recents,
   writerUnits = [],
+  guidePageId = null,
   children,
 }: {
   me: Me;
@@ -28,6 +29,7 @@ export function AppShell({
   favorites: SidebarPageLite[];
   recents: SidebarPageLite[];
   writerUnits?: string[];
+  guidePageId?: string | null;
   children: React.ReactNode;
 }) {
   const [tree, setTree] = useState<PageTreeRow[]>(initialTree);
@@ -85,7 +87,7 @@ export function AppShell({
                 if ((e.target as HTMLElement).closest('a')) setNavOpen(false);
               }}
             >
-              <Sidebar me={me} rows={tree} units={units} favorites={favorites} recents={recents} writerUnits={writerUnits} onChanged={refresh} />
+              <Sidebar me={me} rows={tree} units={units} favorites={favorites} recents={recents} writerUnits={writerUnits} guidePageId={guidePageId} onChanged={refresh} />
             </div>
             <main className="min-w-0 flex-1 overflow-y-auto">
               {/* 모바일 상단바 */}
