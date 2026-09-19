@@ -8,13 +8,13 @@ import { fetchComments } from '@/lib/comments';
 import { CommentThread } from '@/components/comments/comment-thread';
 import { DEFAULT_STATUSES, type Me, type OrgUnitRow } from '@/lib/types';
 import { PageHeader } from '@/components/page-header';
+import { ProgressPanel } from '@/components/task/progress-panel';
 import {
   CHILD_TASK_SELECT,
   CHILD_UPDATE_SELECT,
-  ProgressPanel,
   type ChildTaskLite,
   type ChildUpdateLite,
-} from '@/components/task/progress-panel';
+} from '@/lib/updates';
 import { SubpageList } from '@/components/subpage-list';
 import { VisitTracker } from '@/components/visit-tracker';
 import { NoticeReadStatus } from '@/components/notice-read-status';
@@ -48,8 +48,8 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
           .order('name')
           .then((r) => r.data ?? [])
       : Promise.resolve([]),
-    isTask ? fetchUpdates(supabase, page.id) : Promise.resolve([]),
-    fetchComments(supabase, page.id),
+    isTask ? fetchUpdates(supabase, page.id).catch(() => []) : Promise.resolve([]),
+    fetchComments(supabase, page.id).catch(() => []),
     supabase.from('profiles').select('name, avatar_url, is_admin, unit_id, rank, job_title').eq('id', user.id).maybeSingle().then((r) => r.data),
     supabase.from('v_org_units').select('*').then((r) => (r.data ?? []) as OrgUnitRow[]),
     supabase.from('page_favorites').select('page_id').eq('user_id', user.id).eq('page_id', page.id).maybeSingle().then((r) => !!r.data),

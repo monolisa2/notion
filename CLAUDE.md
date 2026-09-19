@@ -115,4 +115,5 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0013_people_log_comments.sql         업무 참여자(page_people) + 진행 로그 답글(comments.update_id)
 0014_progress_rollup.sql             부모 업무 진행률 = 하위 업무 평균 (트리거 자동 전파)
 0015_notice_reads_due_reminders.sql  공지 읽음 현황(notice_readers) + 기한 임박 알림(cron 켬)
+0016_guide_template.sql              양식 'guide' 허용 (template 체크 확장)
 ```

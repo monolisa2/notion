@@ -3,33 +3,18 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
-import { fetchUpdates, type UpdateWithAuthor } from '@/lib/updates';
+import {
+  CHILD_TASK_SELECT,
+  CHILD_UPDATE_SELECT,
+  fetchUpdates,
+  type ChildTaskLite,
+  type ChildUpdateLite,
+  type UpdateWithAuthor,
+} from '@/lib/updates';
 import { statusClass, statusKind } from '@/lib/status-style';
 import { DEFAULT_STATUSES, type PageRow, type StatusRow } from '@/lib/types';
 import { Avatar } from '@/components/avatar';
 import { useProgressLog } from '@/components/progress-log-provider';
-
-export type ChildTaskLite = {
-  id: string;
-  title: string;
-  icon: string | null;
-  status: string | null;
-  progress: number | null;
-  assignee: { name: string; avatar_url: string | null } | null;
-};
-
-export type ChildUpdateLite = {
-  id: string;
-  content: string;
-  progress_snapshot: number | null;
-  created_at: string;
-  author: { name: string; avatar_url: string | null } | null;
-  page: { id: string; title: string } | null;
-};
-
-export const CHILD_TASK_SELECT = 'id, title, icon, status, progress, assignee:profiles!pages_assignee_id_fkey(name, avatar_url)';
-export const CHILD_UPDATE_SELECT =
-  'id, content, progress_snapshot, created_at, author:profiles!page_updates_author_id_fkey(name, avatar_url), page:pages!inner(id, title, parent_id)';
 
 function dday(due: string | null): { label: string; tone: string } | null {
   if (!due) return null;

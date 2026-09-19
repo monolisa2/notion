@@ -11,6 +11,7 @@ import { BlockNoteView } from '@blocknote/mantine';
 import { toast } from 'sonner';
 import { usePeople } from '@/hooks/use-people';
 import { createClient } from '@/lib/supabase/client';
+import { useIsDark } from '@/components/theme-toggle';
 import { errorMessage } from '@/lib/errors';
 import { MentionMenu, schema } from './mention';
 
@@ -48,6 +49,7 @@ export default function BlockNoteEditor({
   onChange: (doc: unknown) => void;
 }) {
   const people = usePeople();
+  const isDark = useIsDark();
   const editor = useCreateBlockNote({
     schema,
     dictionary: ko,
@@ -83,7 +85,7 @@ export default function BlockNoteEditor({
   }, [editor, onChange]);
 
   return (
-    <BlockNoteView editor={editor} editable={editable} theme="light" className="teamhub-editor">
+    <BlockNoteView editor={editor} editable={editable} theme={isDark ? 'dark' : 'light'} className="teamhub-editor">
       <MentionMenu people={people} excludeId={meId} />
     </BlockNoteView>
   );

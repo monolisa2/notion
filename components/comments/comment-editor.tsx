@@ -2,6 +2,7 @@
 
 import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
+import { useIsDark } from '@/components/theme-toggle';
 
 import { useState } from 'react';
 import { ko } from '@blocknote/core/locales';
@@ -30,6 +31,7 @@ export default function CommentEditor({
   onCancel?: () => void;
 }) {
   const people = usePeople();
+  const isDark = useIsDark();
   const [busy, setBusy] = useState(false);
   const editor = useCreateBlockNote({
     schema,
@@ -60,7 +62,7 @@ export default function CommentEditor({
     >
       <BlockNoteView
         editor={editor}
-        theme="light"
+        theme={isDark ? 'dark' : 'light'}
         autoFocus={autoFocus}
         sideMenu={false}
         slashMenu={false}

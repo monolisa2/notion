@@ -26,6 +26,7 @@ import { buildOrgTree, canWriteUnit, chainOf, visibleUnitsFor, type OrgNode } fr
 import { ContextMenu, type MenuItem } from './context-menu';
 import { useProgressLog } from '@/components/progress-log-provider';
 import { NotificationBell } from '@/components/notifications/notification-bell';
+import { ThemeToggle } from '@/components/theme-toggle';
 import { useNewPage } from '@/components/new-page-provider';
 import { unitLabel } from '@/lib/org';
 
@@ -450,7 +451,7 @@ export function Sidebar({
     const key = 'personal';
     const pageTree = buildTree(rowsByUnit.personal);
     return (
-      <div key={key} className="mt-3 border-t border-zinc-200 pt-2 dark:border-zinc-800">
+      <div key={key} className="mt-4">
         {spaceHeader(key, '📝', '개인 메모', '나만 봄', 0, () => addChild(null, { unitId: null, visibility: '개인' }), false)}
         {!closedSpaces.has(key) &&
           (pageTree.length > 0 ? (
@@ -497,6 +498,7 @@ export function Sidebar({
                 <Link href="/account/password" onClick={() => setAccountOpen(false)} className="block rounded-md px-3 py-1.5 hover:bg-zinc-100">
                   비밀번호 변경
                 </Link>
+                <ThemeToggle className="block w-full rounded-md px-3 py-1.5 text-left hover:bg-zinc-100" />
                 <form action="/auth/signout" method="post">
                   <button type="submit" className="block w-full rounded-md px-3 py-1.5 text-left hover:bg-zinc-100">
                     로그아웃
@@ -546,7 +548,7 @@ export function Sidebar({
       >
         {favorites.length > 0 && (
           <div className="mb-1">
-            <div className="px-1 py-1 text-[11px] font-semibold text-zinc-400">⭐ 즐겨찾기</div>
+            <div className="px-2 pb-0.5 pt-4 text-[11px] font-medium text-zinc-400">즐겨찾기</div>
             <ul className="space-y-px">
               {favorites.map((f) => (
                 <li key={f.id}>
@@ -558,7 +560,7 @@ export function Sidebar({
         )}
         {recents.length > 0 && (
           <div className="mb-1">
-            <div className="px-1 py-1 text-[11px] font-semibold text-zinc-400">🕘 최근 항목</div>
+            <div className="px-2 pb-0.5 pt-4 text-[11px] font-medium text-zinc-400">최근 항목</div>
             <ul className="space-y-px">
               {recents.slice(0, 5).map((f) => (
                 <li key={f.id}>
@@ -568,9 +570,10 @@ export function Sidebar({
             </ul>
           </div>
         )}
+        <div className="px-2 pb-0.5 pt-4 text-[11px] font-medium text-zinc-400">공간</div>
         {orgTree.map((root) => renderSpace(root, 0))}
         {renderPersonal()}
-        <div className="mt-3 border-t border-zinc-200 pt-2">
+        <div className="mt-5 border-t border-zinc-200/70 pt-2">
           <NavLink href="/trash" label="보관함" icon="🗑️" active={pathname.startsWith('/trash')} />
           {me.isAdmin && <NavLink href="/admin" label="관리자 설정" icon="⚙️" active={pathname.startsWith('/admin')} />}
         </div>

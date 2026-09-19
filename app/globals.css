@@ -124,3 +124,85 @@ body {
 .teamhub-editor .bn-block-content[data-content-type="heading"][data-level="2"] {
   margin-top: 0.9em;
 }
+
+/* =============================================================
+   다크 모드 (html.dark — 토글은 사이드바 계정 메뉴, 쿠키 저장)
+   컴포넌트의 라이트 팔레트를 다크 값으로 일괄 매핑한다.
+   ============================================================= */
+.dark {
+  color-scheme: dark;
+  --background: #191919;
+  --foreground: #e4e4e7;
+}
+
+/* 표면 */
+.dark .bg-white { background-color: #1f1f1f; }
+.dark .bg-white\/90, .dark .bg-white\/95 { background-color: rgba(25, 25, 25, 0.92); }
+.dark .hover\:bg-white:hover { background-color: #2a2a2a; }
+.dark .bg-\[\#f7f7f5\] { background-color: #202020; }
+.dark .bg-zinc-50 { background-color: #222222; }
+.dark .bg-zinc-50\/60, .dark .bg-zinc-50\/80 { background-color: rgba(34, 34, 34, 0.7); }
+.dark .hover\:bg-zinc-50:hover, .dark .hover\:bg-zinc-50\/60:hover { background-color: #262626; }
+.dark .bg-zinc-100 { background-color: #2a2a2a; }
+.dark .hover\:bg-zinc-100:hover { background-color: #2e2e2e; }
+.dark .bg-zinc-200 { background-color: #333333; }
+.dark .bg-zinc-200\/60, .dark .bg-zinc-200\/70, .dark .bg-zinc-200\/80 { background-color: rgba(58, 58, 58, 0.8); }
+.dark .hover\:bg-zinc-200:hover, .dark .hover\:bg-zinc-200\/60:hover { background-color: #343434; }
+.dark .hover\:bg-zinc-300\/60:hover { background-color: rgba(70, 70, 70, 0.7); }
+.dark .hover\:bg-zinc-200\/40:hover { background-color: rgba(58, 58, 58, 0.5); }
+.dark .bg-zinc-900 { background-color: #3f3f46; }
+.dark .hover\:bg-zinc-700:hover { background-color: #52525b; }
+
+/* 글자 */
+.dark .text-zinc-900 { color: #ececec; }
+.dark .text-zinc-800 { color: #dcdcdc; }
+.dark .text-zinc-700 { color: #c4c4c8; }
+.dark .hover\:text-zinc-800:hover, .dark .hover\:text-zinc-700:hover { color: #e4e4e7; }
+.dark .text-zinc-600 { color: #a8a8ad; }
+.dark .text-zinc-500 { color: #8f8f94; }
+
+/* 선 */
+.dark .border-zinc-100 { border-color: #2c2c2c; }
+.dark .border-zinc-200 { border-color: #373737; }
+.dark .border-zinc-200\/70, .dark .border-zinc-200\/80 { border-color: rgba(55, 55, 55, 0.85); }
+.dark .border-zinc-300 { border-color: #464646; }
+.dark .divide-zinc-50 > * + * { border-color: #262626; }
+.dark .divide-zinc-100 > * + * { border-color: #2c2c2c; }
+.dark .ring-white { --tw-ring-color: #1f1f1f; }
+.dark .border-b-zinc-50, .dark .border-zinc-50 { border-color: #262626; }
+
+/* 상태·강조 칩: 연한 배경 → 반투명, 진한 글자 → 밝은 톤 */
+.dark .bg-blue-100 { background-color: rgba(59, 130, 246, 0.22); }
+.dark .bg-violet-100 { background-color: rgba(139, 92, 246, 0.22); }
+.dark .bg-emerald-100 { background-color: rgba(16, 185, 129, 0.22); }
+.dark .bg-amber-100 { background-color: rgba(245, 158, 11, 0.22); }
+.dark .bg-red-100 { background-color: rgba(239, 68, 68, 0.22); }
+.dark .bg-orange-100 { background-color: rgba(249, 115, 22, 0.22); }
+.dark .bg-cyan-100 { background-color: rgba(6, 182, 212, 0.22); }
+.dark .bg-pink-100 { background-color: rgba(236, 72, 153, 0.22); }
+.dark .bg-lime-100 { background-color: rgba(132, 204, 22, 0.22); }
+.dark .bg-yellow-100 { background-color: rgba(234, 179, 8, 0.22); }
+.dark .text-blue-800, .dark .text-blue-700 { color: #93c5fd; }
+.dark .text-violet-800 { color: #c4b5fd; }
+.dark .text-emerald-800 { color: #6ee7b7; }
+.dark .text-amber-800, .dark .text-amber-700, .dark .text-amber-900 { color: #fcd34d; }
+.dark .text-red-800, .dark .text-red-700, .dark .text-red-600 { color: #fca5a5; }
+.dark .text-orange-800 { color: #fdba74; }
+.dark .text-orange-600 { color: #fb923c; }
+.dark .text-cyan-800 { color: #67e8f9; }
+.dark .text-pink-800 { color: #f9a8d4; }
+.dark .text-lime-800 { color: #bef264; }
+.dark .text-yellow-800 { color: #fde047; }
+.dark .text-blue-400 { color: #93c5fd; }
+
+/* 연한 색 배경 박스 */
+.dark .bg-blue-50, .dark .bg-blue-50\/50, .dark .bg-blue-50\/60 { background-color: rgba(59, 130, 246, 0.12); }
+.dark .hover\:bg-blue-50:hover { background-color: rgba(59, 130, 246, 0.18); }
+.dark .bg-amber-50, .dark .bg-amber-50\/60 { background-color: rgba(245, 158, 11, 0.12); }
+.dark .bg-red-50, .dark .bg-red-50\/40, .dark .bg-red-50\/60 { background-color: rgba(239, 68, 68, 0.12); }
+.dark .border-blue-300, .dark .border-blue-400 { border-color: rgba(96, 165, 250, 0.6); }
+.dark .border-amber-200, .dark .border-amber-200\/70 { border-color: rgba(245, 158, 11, 0.35); }
+.dark .border-red-100, .dark .border-red-200 { border-color: rgba(239, 68, 68, 0.35); }
+
+/* 멘션 칩 */
+.dark .bn-mention { background: rgba(59, 130, 246, 0.25); color: #93c5fd; }

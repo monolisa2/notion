@@ -10,6 +10,28 @@ export type UpdateWithAuthor = PageUpdateRow & {
   author: { id: string; name: string; avatar_url: string | null } | null;
 };
 
+/** 진행률 패널용: 하위 업무 목록 / 하위 업무 최근 기록 (서버·클라이언트 공용) */
+export type ChildTaskLite = {
+  id: string;
+  title: string;
+  icon: string | null;
+  status: string | null;
+  progress: number | null;
+  assignee: { name: string; avatar_url: string | null } | null;
+};
+export type ChildUpdateLite = {
+  id: string;
+  content: string;
+  progress_snapshot: number | null;
+  created_at: string;
+  author: { name: string; avatar_url: string | null } | null;
+  page: { id: string; title: string } | null;
+};
+export const CHILD_TASK_SELECT =
+  'id, title, icon, status, progress, assignee:profiles!pages_assignee_id_fkey(name, avatar_url)';
+export const CHILD_UPDATE_SELECT =
+  'id, content, progress_snapshot, created_at, author:profiles!page_updates_author_id_fkey(name, avatar_url), page:pages!inner(id, title, parent_id)';
+
 export const UPDATE_SELECT =
   'id, page_id, author_id, content, progress_snapshot, status_snapshot, blocker, created_at, author:profiles!page_updates_author_id_fkey(id, name, avatar_url)';
 
