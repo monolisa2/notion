@@ -507,6 +507,9 @@ export function Sidebar({
             <>
               <div className="fixed inset-0 z-10" onMouseDown={() => setAccountOpen(false)} />
               <div className="absolute right-0 top-full z-20 mt-1 w-44 rounded-lg border border-zinc-200 bg-white p-1 text-sm shadow-lg">
+                <Link href="/account" onClick={() => setAccountOpen(false)} className="block rounded-md px-3 py-1.5 hover:bg-zinc-100">
+                  내 계정 · 알림 설정
+                </Link>
                 <Link href="/account/password" onClick={() => setAccountOpen(false)} className="block rounded-md px-3 py-1.5 hover:bg-zinc-100">
                   비밀번호 변경
                 </Link>
@@ -529,8 +532,14 @@ export function Sidebar({
           <input
             name="q"
             placeholder="검색"
-            className="w-full bg-transparent text-zinc-800 outline-none placeholder:text-zinc-400"
+            className="w-full min-w-0 bg-transparent text-zinc-800 outline-none placeholder:text-zinc-400"
           />
+          <kbd
+            className="shrink-0 rounded border border-zinc-200 px-1 text-[10px] text-zinc-400"
+            title="어디서든 Ctrl+K (Mac 은 ⌘K) 로 페이지를 바로 찾아 갈 수 있습니다"
+          >
+            ⌘K
+          </kbd>
         </label>
       </form>
 

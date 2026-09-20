@@ -8,6 +8,7 @@ import { Sidebar } from '@/components/sidebar/sidebar';
 import { ProgressLogProvider } from '@/components/progress-log-provider';
 import { TreeContext } from '@/components/tree-context';
 import { NewPageProvider } from '@/components/new-page-provider';
+import { QuickSwitcher } from '@/components/quick-switcher';
 
 /**
  * 앱 공통 레이아웃: 사이드바 + 본문.
@@ -106,6 +107,7 @@ export function AppShell({
               </div>
               {children}
             </main>
+            <QuickSwitcher rows={tree} favorites={favorites} recents={recents} />
           </div>
         </NewPageProvider>
       </ProgressLogProvider>
