@@ -65,16 +65,42 @@ export function Sidebar({
   const sidebarUnits = useMemo(() => visibleUnitsFor(units, me.unitId, me.isAdmin), [units, me.unitId, me.isAdmin]);
   const orgTree = useMemo(() => buildOrgTree(sidebarUnits), [sidebarUnits]);
   const myChain = useMemo(() => chainOf(units, me.unitId), [units, me.unitId]);
+  /**
+   * 공간 트리에서 뺄 페이지들.
+   *  - 게시 중인 공지(루트의 pinned) — 📢 공지 화면에 모여 있으므로 트리에 또 둘 필요가 없다
+   *  - 사용법 안내 — 하단 메뉴에서만
+   * 하위 페이지가 딸려 있으면 같이 뺀다 (부모만 빼면 자식이 공간 최상단으로 떠오른다).
+   */
+  const hiddenIds = useMemo(() => {
+    const byParent = new Map<string, PageTreeRow[]>();
+    for (const r of rows) {
+      if (!r.parent_id) continue;
+      byParent.set(r.parent_id, [...(byParent.get(r.parent_id) ?? []), r]);
+    }
+    const hidden = new Set<string>();
+    const hide = (id: string) => {
+      if (hidden.has(id)) return;
+      hidden.add(id);
+      for (const c of byParent.get(id) ?? []) if (c.id) hide(c.id);
+    };
+    for (const r of rows) {
+      if (!r.id) continue;
+      if (r.pinned && !r.parent_id) hide(r.id);
+    }
+    if (guidePageId) hide(guidePageId);
+    return hidden;
+  }, [rows, guidePageId]);
+
   const rowsByUnit = useMemo(() => {
     const m = new Map<string, PageTreeRow[]>();
     const personal: PageTreeRow[] = [];
     for (const r of rows) {
-      if (guidePageId && r.id === guidePageId) continue; // 사용법은 하단 메뉴에서만
+      if (r.id && hiddenIds.has(r.id)) continue;
       if (r.visibility === '개인') personal.push(r);
       else if (r.unit_id) m.set(r.unit_id, [...(m.get(r.unit_id) ?? []), r]);
     }
     return { m, personal };
-  }, [rows, guidePageId]);
+  }, [rows, hiddenIds]);
   // 공간(조직) 접기 상태
   const [closedSpaces, setClosedSpaces] = useState<Set<string>>(new Set());
   const toggleSpace = (k: string) =>

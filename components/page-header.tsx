@@ -214,7 +214,7 @@ export function PageHeader({
                   onClick={() => void apply('공지 고정', () => setPinned(supabase, page.id, !page.pinned))}
                   className="block w-full rounded-md px-3 py-1.5 text-left hover:bg-zinc-100"
                 >
-                  {page.pinned ? '공지 고정 해제' : '공지로 고정 (홈 상단)'}
+                  {page.pinned ? '공지 고정 해제 (공간으로 되돌림)' : '공지로 고정 (홈·📢 공지)'}
                 </button>
               )}
               <button
