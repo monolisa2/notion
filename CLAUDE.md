@@ -85,6 +85,9 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 - 서버 컴포넌트 기본, 상호작용 필요한 곳만 `'use client'`
 - 대시보드 위젯은 5개 고정 (`v_stale_tasks` `v_blocked_tasks` `v_due_risk` `v_assignee_summary` `v_activity_feed`). 집계는 뷰에서
 - 진행 로그 입력은 텍스트 + 진행률 + (선택)막힘 3개. 필드 추가 요청은 기본 거절
+- "내 업무"는 **담당(assignee_id) ∪ 참여(page_people)**. 담당자만 보면 참여자 화면에서 업무가 사라진다
+- 본문 되돌리기는 `page_snapshots`(0018) — 트리거가 자동 기록하므로 앱에서 INSERT 하지 말 것.
+  되돌리기는 반드시 `savePage()` 로 (멘션 색인 동기화)
 
 ---
 
@@ -117,4 +120,5 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0015_notice_reads_due_reminders.sql  공지 읽음 현황(notice_readers) + 기한 임박 알림(cron 켬)
 0016_guide_template.sql              양식 'guide' 허용 (template 체크 확장)
 0017_search_multiword.sql            검색: 여러 단어 AND + pg_trgm 부분일치 인덱스
+0018_page_history_avatars.sql        본문 버전 기록(page_snapshots) + 프로필 사진 버킷(avatars)
 ```
