@@ -567,23 +567,28 @@ export function Sidebar({
         </label>
       </form>
 
+      {/* 진행 로그는 링크가 아니라 '행동' 이라 메뉴 목록에 섞지 않고 위에 따로 둔다.
+          이 플랫폼에서 사람들이 제일 자주 해야 하는 일이기도 하다 */}
+      <div className="px-2 pb-1 pt-1.5">
+        <button
+          type="button"
+          onClick={() => openLog()}
+          className="flex w-full items-center gap-2 rounded-md bg-zinc-900 px-2.5 py-1.5 text-[13px] font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+        >
+          <span aria-hidden="true">✏️</span>
+          진행 로그 남기기
+          <kbd className="ml-auto text-[10px] font-normal opacity-60">⌃⇧L</kbd>
+        </button>
+      </div>
+
       <div className="px-2">
         <NavLink href="/" label="홈" icon="🏠" active={pathname === '/'} />
         <NavLink href="/tasks" label="업무" icon="✅" active={pathname.startsWith('/tasks')} />
         <NavLink href="/team" label="팀 현황" icon="👥" active={pathname.startsWith('/team')} />
         <NavLink href="/calendar" label="캘린더" icon="📅" active={pathname.startsWith('/calendar')} />
         <NavLink href="/notices" label="공지" icon="📢" active={pathname.startsWith('/notices')} />
-        <NavLink href="/collections/meeting" label="모아보기" icon="🗂️" active={pathname.startsWith('/collections')} />
-        <NavLink href="/weekly" label="주간 모아보기" icon="📊" active={pathname.startsWith('/weekly')} />
-        <NavLink href="/files" label="파일" icon="📎" active={pathname.startsWith('/files')} />
-        <button
-          type="button"
-          onClick={() => openLog()}
-          className="flex w-full items-center gap-2 rounded-md px-2 py-1 text-zinc-600 hover:bg-zinc-200/60 dark:text-zinc-300 dark:hover:bg-zinc-800"
-        >
-          <span className="w-5 text-center text-[14px] leading-none">✏️</span> 진행 로그 남기기
-          <kbd className="ml-auto text-[10px] text-zinc-400">⌃⇧L</kbd>
-        </button>
+        <NavLink href="/collections/meeting" label="회의록" icon="📝" active={pathname.startsWith('/collections')} />
+        <NavLink href="/weekly" label="주간 현황" icon="📊" active={pathname.startsWith('/weekly')} />
       </div>
 
       <nav

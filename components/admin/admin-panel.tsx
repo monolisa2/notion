@@ -1,5 +1,6 @@
 'use client';
 
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
@@ -131,13 +132,29 @@ export function AdminPanel({
           ['첫 로그인 대기', `${members.filter((m) => !m.deactivated_at && m.must_change_password).length}명`, '임시 비밀번호 상태'],
           ['최근 7일 로그인', `${recentLoginCount}명`, serviceKeyConfigured ? '' : '서버 키 필요'],
           ['첨부 파일 용량', fmtBytes(storageBytes), `무료 한도 1GB 의 ${Math.round((storageBytes / STORAGE_LIMIT) * 100)}%`],
-        ].map(([k, v, d]) => (
-          <div key={k} className="rounded-xl border border-zinc-200 p-3">
-            <div className="text-[11px] text-zinc-500">{k}</div>
-            <div className="mt-1 text-xl font-semibold tabular-nums">{v}</div>
-            {d && <div className="text-[11px] text-zinc-400">{d}</div>}
-          </div>
-        ))}
+        ].map(([k, v, d]) => {
+          // 첨부 용량 카드는 파일 목록으로 들어가는 문 —
+          // 일반 사용자는 쓸 일이 없어 사이드바에서 빼고 이쪽으로 옮겼다
+          const card = (
+            <>
+              <div className="flex items-center gap-1 text-[11px] text-zinc-500">
+                {k}
+                {k === '첨부 파일 용량' && <span className="text-zinc-400">· 파일 보기 →</span>}
+              </div>
+              <div className="mt-1 text-xl font-semibold tabular-nums">{v}</div>
+              {d && <div className="text-[11px] text-zinc-400">{d}</div>}
+            </>
+          );
+          return k === '첨부 파일 용량' ? (
+            <Link key={k} href="/files" className="rounded-xl border border-zinc-200 p-3 hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800">
+              {card}
+            </Link>
+          ) : (
+            <div key={k} className="rounded-xl border border-zinc-200 p-3">
+              {card}
+            </div>
+          );
+        })}
       </div>
 
       {!serviceKeyConfigured && (

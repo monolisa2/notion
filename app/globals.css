@@ -13,15 +13,14 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   /*
-   * 노션과 같은 글꼴 구성 — 웹폰트를 받지 않고 **기기에 있는 글꼴**을 쓴다.
-   *   라틴: macOS SF Pro / Windows Segoe UI
-   *   한글: macOS Apple SD Gothic Neo / Windows 맑은 고딕
-   * (노션도 한글 웹폰트를 따로 싣지 않아 OS 글꼴로 떨어진다. 그래서 기기마다 조금씩 다르다)
-   * Segoe UI 에는 한글 글리프가 없어 자연히 맑은 고딕으로 넘어간다 — 순서가 중요하다.
+   * 라틴·숫자는 Arial, 한글은 기기 글꼴.
+   *
+   * Arial 에는 한글 글리프가 없어서 한글은 자연히 뒤쪽으로 넘어간다 —
+   * 윈도우는 맑은 고딕, 맥은 Apple SD Gothic Neo. (노션도 한글은 OS 글꼴로 떨어뜨린다)
+   * 웹폰트는 받지 않는다.
    */
-  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI Variable Text",
-    "Segoe UI", "Apple SD Gothic Neo", "Malgun Gothic", "맑은 고딕", Helvetica, Arial,
-    sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --font-sans: Arial, Helvetica, "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo",
+    "Noto Sans KR", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
