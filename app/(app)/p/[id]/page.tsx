@@ -91,7 +91,9 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
   };
 
   return (
-    <article className="min-h-full">
+    // pb-[30vh]: 페이지 끝에서도 조금 더 내려갈 수 있게 남겨 두는 여백.
+    // 이게 없으면 마지막 줄이 화면 맨 아래에 붙어서 / 메뉴·@ 메뉴가 잘린다.
+    <article className="min-h-full pb-[30vh]">
       <PageHeader
         key={`hdr-${page.id}`}
         page={page}

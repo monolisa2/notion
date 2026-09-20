@@ -87,7 +87,14 @@ body {
   padding-top: 0;
   padding-bottom: 0;
 }
-/* 멘션(@)·슬래시(/) 추천 메뉴의 행 높이 축소 */
+/* 멘션(@)·슬래시(/) 추천 메뉴
+   화면 아래쪽에서 열려도 잘리지 않도록 높이를 화면에 맞춰 제한한다.
+   (행 높이도 함께 줄여 한 번에 더 많이 보이게) */
+.bn-suggestion-menu {
+  max-height: min(300px, 42vh) !important;
+  overflow-y: auto !important;
+  overscroll-behavior: contain;
+}
 .bn-suggestion-menu-item {
   padding-top: 4px !important;
   padding-bottom: 4px !important;
