@@ -18,6 +18,20 @@
 }
 
 
+/*
+ * 글자 크기의 기준점.
+ *
+ * Tailwind 의 text-sm / text-xs / 여백(p-2, gap-3 …)은 전부 rem 이라
+ * **이 값 하나로 화면 전체가 같이 줄고 늘어난다.**
+ *
+ * 왜 16px 이 아닌가: 노션과 같은 px 를 써도 우리 글꼴(Noto Sans KR)이
+ * 노션의 한글 대체 글꼴(맑은 고딕 등)보다 크게 보인다. 그 차이를 여기서 메운다.
+ * 크기를 다시 조절할 일이 생기면 **이 숫자만** 바꾸면 된다.
+ */
+html {
+  font-size: 15px;
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
@@ -63,8 +77,8 @@ body {
 
 /* 노션에 가까운 본문 타이포 — 줄 간격은 타이트하게 */
 .teamhub-editor .bn-editor {
-  font-size: 16px;
-  line-height: 1.35;
+  font-size: 15px;
+  line-height: 1.4;
 }
 /* 블록(문단) 사이 세로 간격 축소 */
 .teamhub-editor .bn-block-content,

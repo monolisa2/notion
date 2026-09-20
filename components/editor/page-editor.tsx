@@ -193,7 +193,7 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
         }}
         placeholder="제목 없음"
         aria-label="페이지 제목"
-        className="w-full bg-transparent text-[40px] font-bold leading-tight tracking-tight text-zinc-900 outline-none placeholder:text-zinc-300"
+        className="w-full bg-transparent text-[36px] font-bold leading-tight tracking-tight text-zinc-900 outline-none placeholder:text-zinc-300"
       />
 
       <div className="mt-3 -mx-12">

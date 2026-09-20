@@ -500,7 +500,7 @@ export function Sidebar({
   };
 
   return (
-    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-zinc-200/80 bg-[#f7f7f5] text-[15px]">
+    <aside className="flex h-full w-64 shrink-0 flex-col border-r border-zinc-200/80 bg-[#f7f7f5] text-[14px]">
       <div className="flex items-center gap-2 px-3 pb-1 pt-3">
         {me.avatarUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
