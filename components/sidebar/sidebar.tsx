@@ -406,7 +406,19 @@ export function Sidebar({
         </div>
 
         {isOpen && node.children.length > 0 && (
-          <ul>{node.children.map((c) => renderNode(c, level + 1))}</ul>
+          /*
+           * 상위 - 하위 연결선.
+           * 부모 줄의 ▸ 중심(4 + level*14 + 10)에서 세로로 내려 마지막 하위까지 잇는다.
+           * 들여쓰기만으로는 "무엇 아래 무엇" 이 잘 안 보인다는 요청 (2026-09-20)
+           */
+          <ul className="relative">
+            <span
+              aria-hidden="true"
+              className="pointer-events-none absolute inset-y-0 w-px bg-zinc-300/70 dark:bg-zinc-600/70"
+              style={{ left: 4 + level * 14 + 10 }}
+            />
+            {node.children.map((c) => renderNode(c, level + 1))}
+          </ul>
         )}
       </li>
     );

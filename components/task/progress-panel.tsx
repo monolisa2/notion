@@ -179,13 +179,34 @@ export function ProgressPanel({
 
         {autoFromChildren ? (
           <>
-            {/* 이 % 가 어떤 업무들의 평균인지 */}
-            <ul className="mt-3 space-y-1">
+            {/*
+              이 % 가 어떤 업무들의 평균인지 — 숫자로도, 선으로도 보이게.
+              "상위 = 하위 평균" 이 말로만 있으면 안 와닿는다는 요청 (2026-09-20)
+            */}
+            <p className="mt-2 px-2 text-[11px] tabular-nums text-zinc-500 dark:text-zinc-400">
+              {/* 하위가 많으면 수식이 한 줄을 넘어가 오히려 안 읽힌다 */}
+              {children.length <= 6
+                ? `(${children.map((c) => c.progress ?? 0).join(' + ')}) ÷ ${children.length}건 = `
+                : `하위 ${children.length}건의 평균 = `}
+              <span className="font-semibold text-zinc-700 dark:text-zinc-200">{progress}%</span>
+            </p>
+            <ul className="relative mt-1 space-y-1">
+              {/* 위 진행률 막대에서 마지막 하위까지 내려오는 세로선 */}
+              <span
+                aria-hidden="true"
+                className="pointer-events-none absolute left-[13px] top-0 w-px bg-zinc-300 dark:bg-zinc-600"
+                style={{ bottom: 16 }}
+              />
               {children.map((c) => (
-                <li key={c.id}>
+                <li key={c.id} className="relative">
+                  {/* 세로선에서 각 하위로 뻗는 가로선 */}
+                  <span
+                    aria-hidden="true"
+                    className="pointer-events-none absolute left-[13px] top-1/2 h-px w-2 bg-zinc-300 dark:bg-zinc-600"
+                  />
                   <Link
                     href={`/p/${c.id}`}
-                    className="flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm hover:bg-white"
+                    className="flex items-center gap-2 rounded-lg py-1.5 pl-6 pr-2 text-sm hover:bg-white"
                   >
                     <span className="w-5 shrink-0 text-center">{c.icon ?? '☑'}</span>
                     <span className="min-w-0 flex-1 truncate">{c.title}</span>

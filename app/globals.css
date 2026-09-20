@@ -13,12 +13,12 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   /*
-   * Noto Sans KR (app/layout.tsx 에서 next/font 로 받아 자체 호스팅).
+   * Pretendard Variable (app/layout.tsx 에서 npm 패키지째 묶어 자체 호스팅).
    *
    * 기기 글꼴을 쓰면 보는 사람 컴퓨터에 따라 같은 화면이 달라진다.
    * 뒤쪽은 폰트가 드물게 안 받아질 때를 위한 대비책이다.
    */
-  --font-sans: var(--font-noto-sans-kr), "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo",
+  --font-sans: "Pretendard Variable", Pretendard, "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo",
     Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }

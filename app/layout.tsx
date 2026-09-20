@@ -1,22 +1,16 @@
 import type { Metadata } from 'next';
-import { Noto_Sans_KR } from 'next/font/google';
 import { cookies } from 'next/headers';
+import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
 import './globals.css';
 import { Providers } from '@/components/providers';
 import { APP_NAME } from '@/lib/branding';
 
 /*
- * Noto Sans KR — 빌드 때 받아 자체 호스팅한다 (구글 CDN 런타임 의존 없음, 비용 0원).
- * 사람마다 다른 기기 글꼴(맑은 고딕 / Apple SD Gothic Neo)을 쓰면
- * 같은 화면이 컴퓨터마다 다르게 보인다 — 그게 싫어 다시 웹폰트로 돌아왔다.
- * subsets 는 미리 불러올 부분만 고르는 값일 뿐이다 — 한글 글리프는 전부 포함된다.
+ * Pretendard Variable — npm 패키지를 빌드 때 같이 묶는다 (외부 CDN 의존 없음, 무료 OFL).
+ *
+ * 동적 서브셋: 92조각으로 쪼개져 있고 각 조각에 unicode-range 가 붙어 있어
+ * **화면에 실제로 나온 글자가 든 조각만** 내려받는다. 가변 글꼴이라 굵기는 한 벌로 전부 커버.
  */
-const notoSansKr = Noto_Sans_KR({
-  subsets: ['latin'],
-  weight: ['400', '500', '700'],
-  variable: '--font-noto-sans-kr',
-  display: 'swap',
-});
 
 export const metadata: Metadata = {
   title: APP_NAME,
@@ -27,7 +21,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   // 테마는 쿠키로 — 서버 렌더 때부터 적용돼 깜빡임이 없다
   const theme = (await cookies()).get('theme')?.value === 'dark' ? 'dark' : '';
   return (
-    <html lang="ko" className={`h-full antialiased ${notoSansKr.variable} ${theme}`} suppressHydrationWarning>
+    <html lang="ko" className={`h-full antialiased ${theme}`} suppressHydrationWarning>
       <head>
       </head>
       <body className="flex min-h-full flex-col bg-white text-zinc-900 dark:bg-[#191919] dark:text-zinc-200">

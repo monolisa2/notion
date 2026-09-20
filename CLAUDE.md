@@ -25,7 +25,7 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 | DB / Auth / Realtime / Storage | Supabase (Free) |
 | 에디터 | BlockNote (mantine) — 블록 중첩·슬래시·드래그·되돌리기는 전부 위임 |
 | 스타일 | Tailwind CSS 4 |
-| 글꼴 | **Noto Sans KR** — `next/font` 로 빌드 때 받아 자체 호스팅(구글 CDN 런타임 의존 없음, 무료). 기기 글꼴은 컴퓨터마다 화면이 달라져 되돌렸다. `--font-sans` 하나로 관리 |
+| 글꼴 | **Pretendard Variable** — npm 패키지(`pretendard`, OFL)를 빌드에 묶어 자체 호스팅. 동적 서브셋 92조각이라 화면에 나온 글자가 든 조각만 내려받고, 가변 글꼴이라 굵기는 한 벌로 끝. `--font-sans` 하나로 관리 |
 | 배포 | Vercel |
 | 로그인 | **회사 이메일 + 비밀번호.** 가입은 닫고 관리자가 계정 생성(임시 비밀번호, 첫 로그인 변경 강제) |
 | 외부 알림 | 네이버웍스 봇 (Edge Function, 코드 보관 중 · 나중에 켬) |
