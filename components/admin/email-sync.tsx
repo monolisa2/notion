@@ -147,7 +147,7 @@ export function EmailSync({ onDone }: { onDone: () => void }) {
           type="button"
           disabled={busy || csv.trim().length === 0}
           onClick={() => void makePlan()}
-          className="rounded-md bg-zinc-900 px-2.5 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40 dark:bg-zinc-100 dark:text-zinc-900"
+          className="btn-primary rounded-md px-2.5 py-1 text-xs font-medium disabled:opacity-40"
         >
           {busy ? '확인 중…' : '미리보기'}
         </button>
@@ -176,7 +176,7 @@ export function EmailSync({ onDone }: { onDone: () => void }) {
                 type="button"
                 disabled={busy}
                 onClick={() => void apply()}
-                className="ml-auto rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+                className="btn-primary ml-auto rounded-md px-3 py-1 text-xs font-medium disabled:opacity-50"
               >
                 {busy ? `바꾸는 중… ${progress ?? ''}` : `${changes.length}명 적용`}
               </button>

@@ -53,7 +53,7 @@ export function PasswordForm({ first }: { first: boolean }) {
       <button
         type="submit"
         disabled={pending}
-        className="w-full rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+        className="btn-primary w-full rounded-lg px-4 py-2.5 text-sm font-medium disabled:opacity-60"
       >
         {pending ? '변경 중…' : first ? '변경하고 시작하기' : '변경'}
       </button>

@@ -564,7 +564,7 @@ export function Sidebar({
 
       {/* 검색 */}
       <form action="/search" method="get" className="px-2 pb-1">
-        <label className="flex items-center gap-2 rounded-md border border-zinc-200/80 bg-white px-2 py-1 text-zinc-400 focus-within:border-zinc-400">
+        <label className="flex items-center gap-2 rounded-md border border-zinc-200/80 bg-[var(--sidebar-field-bg)] px-2 py-1 text-zinc-400 focus-within:border-zinc-400">
           <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true"><circle cx="11" cy="11" r="7" /><path d="m20 20-3.5-3.5" /></svg>
           <input
             name="q"
@@ -586,7 +586,7 @@ export function Sidebar({
         <button
           type="button"
           onClick={() => openLog()}
-          className="flex w-full items-center gap-2 rounded-md bg-zinc-900 px-2.5 py-1.5 text-[13px] font-medium text-white hover:bg-zinc-700 dark:bg-zinc-100 dark:text-zinc-900 dark:hover:bg-zinc-300"
+          className="btn-primary flex w-full items-center gap-2 rounded-md px-2.5 py-1.5 text-[13px] font-medium"
         >
           <span aria-hidden="true">✏️</span>
           진행 로그 남기기

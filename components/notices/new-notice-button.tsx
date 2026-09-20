@@ -101,7 +101,7 @@ export function NewNoticeButton({
         type="button"
         disabled={busy}
         onClick={() => void write()}
-        className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
+        className="btn-primary rounded-md px-3 py-1.5 text-xs font-medium disabled:opacity-50"
       >
         {busy ? '만드는 중…' : '＋ 공지 쓰기'}
       </button>

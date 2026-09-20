@@ -72,7 +72,7 @@ export function SubpageList({ page, statuses = DEFAULT_STATUSES }: { page: PageR
                   onClick={() => setViewPref(v)}
                   className={`rounded px-2 py-0.5 text-[11px] ${
                     view === v
-                      ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
+                      ? 'btn-primary'
                       : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                   }`}
                 >

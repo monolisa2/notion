@@ -187,7 +187,7 @@ export function TaskList({
               type="button"
               onClick={() => setParam({ view: v })}
               className={`rounded px-2.5 py-1 text-xs ${
-                view === v ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                view === v ? 'btn-primary' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
               }`}
             >
               {v === 'table' ? '테이블' : v === 'kanban' ? '칸반' : '타임라인'}

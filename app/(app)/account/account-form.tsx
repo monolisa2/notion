@@ -222,7 +222,7 @@ export function AccountForm({ profile }: { profile: Profile }) {
                     type="button"
                     onClick={() => setKind(k)}
                     className={`rounded px-2.5 py-1 text-xs ${
-                      kind === k ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
+                      kind === k ? 'btn-primary' : 'text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800'
                     }`}
                   >
                     {k === 'shape' ? '그림' : '이모지'}

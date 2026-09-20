@@ -152,8 +152,37 @@ body {
    다크 모드 (html.dark — 토글은 사이드바 계정 메뉴, 쿠키 저장)
    컴포넌트의 라이트 팔레트를 다크 값으로 일괄 매핑한다.
    ============================================================= */
+/*
+ * 주요 동작 버튼 (로그인·저장·기록 남기기·보기 토글 …)
+ *
+ * 전에는 컴포넌트마다 `bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900` 을 썼는데,
+ * 아래 다크 매핑 표가 **레이어 밖**이라 Tailwind 의 dark: 유틸리티를 항상 이겼다.
+ * 그래서 다크 모드에서 "어두운 회색 배경 + 검은 글자"(대비 1.7:1)가 되어 글자가 안 보였다.
+ * 색을 클래스 조합이 아니라 **이 토큰 한 곳**에서 정해 그 싸움을 없앤다.
+ */
+:root {
+  --btn-bg: #18181b;
+  --btn-fg: #ffffff;
+  --btn-bg-hover: #3f3f46;
+  --sidebar-field-bg: #ffffff;
+}
+
+.btn-primary {
+  background-color: var(--btn-bg);
+  color: var(--btn-fg);
+}
+.btn-primary:hover:not(:disabled) {
+  background-color: var(--btn-bg-hover);
+}
+
 .dark {
   color-scheme: dark;
+  /* 다크에서는 밝은 버튼 + 어두운 글자로 뒤집는다 (대비 14.5:1) */
+  --btn-bg: #e8e8ea;
+  --btn-fg: #18181b;
+  --btn-bg-hover: #ffffff;
+  /* 검색창 등 입력 면 — 사이드바(#202020)와 구분되게 한 단 밝게 */
+  --sidebar-field-bg: #2b2b2d;
   --background: #191919;
   --foreground: #e4e4e7;
 }
@@ -177,12 +206,19 @@ body {
 .dark .hover\:bg-zinc-700:hover { background-color: #52525b; }
 
 /* 글자 */
-.dark .text-zinc-900 { color: #ececec; }
-.dark .text-zinc-800 { color: #dcdcdc; }
-.dark .text-zinc-700 { color: #c4c4c8; }
-.dark .hover\:text-zinc-800:hover, .dark .hover\:text-zinc-700:hover { color: #e4e4e7; }
-.dark .text-zinc-600 { color: #a8a8ad; }
-.dark .text-zinc-500 { color: #8f8f94; }
+/*
+ * 흐린 순서대로 단계가 벌어지게. zinc-400 이 매핑에서 빠져 있어 라이트 값(#a1a1aa)이
+ * 그대로 쓰였고, 그 결과 **가장 흐려야 할 글자가 zinc-500·600 보다 밝았다**(순서 뒤집힘).
+ * 괄호 안은 사이드바 #202020 위에서의 대비 — 전부 4.5:1 이상.
+ */
+.dark .text-zinc-900 { color: #f6f6f8; } /* 15.1:1 */
+.dark .text-zinc-800 { color: #e8e8ec; } /* 13.3:1 */
+.dark .text-zinc-700 { color: #d2d2d8; } /* 10.8:1 */
+.dark .hover\:text-zinc-800:hover, .dark .hover\:text-zinc-700:hover { color: #f6f6f8; }
+.dark .text-zinc-600 { color: #b8b8bf; } /*  8.3:1 */
+.dark .text-zinc-500 { color: #a0a0a7; } /*  6.3:1 */
+.dark .text-zinc-400 { color: #8a8a90; } /*  4.8:1 */
+.dark .placeholder\:text-zinc-400::placeholder { color: #8a8a90; }
 
 /* 선 */
 .dark .border-zinc-100 { border-color: #2c2c2c; }

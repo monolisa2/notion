@@ -87,7 +87,7 @@ export default function CommentEditor({
           type="button"
           disabled={busy}
           onClick={() => void submit()}
-          className="rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-60 dark:bg-zinc-100 dark:text-zinc-900"
+          className="btn-primary rounded-md px-3 py-1 text-xs font-medium disabled:opacity-60"
         >
           {busy ? '저장 중…' : submitLabel}
         </button>

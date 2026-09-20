@@ -288,7 +288,7 @@ function MembersTab({
               placeholder={'유숙진, ysj@enliple.com, 재무팀, 차장, 팀장\n김수연, ksy@enliple.com, 재무팀, 과장, 팀원'}
               className="mt-2 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-2 font-mono text-xs outline-none focus:border-blue-500 dark:border-zinc-700"
             />
-            <button type="button" disabled={busy || !canAuth || !bulk.trim()} onClick={() => void submitBulk()} className="mt-2 rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">
+            <button type="button" disabled={busy || !canAuth || !bulk.trim()} onClick={() => void submitBulk()} className="btn-primary mt-2 rounded-md px-3 py-1.5 text-xs font-medium disabled:opacity-50">
               {busy ? '등록 중…' : '일괄 등록'}
             </button>
           </div>
@@ -310,7 +310,7 @@ function MembersTab({
               <select value={form.jobTitle} onChange={(e) => setForm({ ...form, jobTitle: e.target.value })} className={`${select} flex-1 py-1.5`}>
                 {JOB_TITLES.map((t) => <option key={t} value={t}>{t}</option>)}
               </select>
-              <button type="submit" disabled={busy || !canAuth} className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900">
+              <button type="submit" disabled={busy || !canAuth} className="btn-primary rounded-md px-3 py-1.5 text-xs font-medium disabled:opacity-50">
                 만들기
               </button>
             </div>
@@ -623,7 +623,7 @@ function OrgTab({
             <option value="본부">본부</option><option value="실">실</option><option value="팀">팀</option>
           </select>
           <input required placeholder="조직 이름" value={form.name} onChange={(e) => setForm({ ...form, name: e.target.value })} className={`${select} py-1.5`} />
-          <button type="submit" className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white dark:bg-zinc-100 dark:text-zinc-900">추가</button>
+          <button type="submit" className="btn-primary rounded-md px-3 py-1.5 text-xs font-medium">추가</button>
         </form>
       </section>
 
