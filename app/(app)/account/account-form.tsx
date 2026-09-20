@@ -24,6 +24,19 @@ const NOTIFY_FIELDS = [
 
 const MAX_AVATAR = 2 * 1024 * 1024;
 
+/**
+ * 공개 URL 에서 버킷 안 경로(<uid>/<파일명>)를 되짚는다.
+ * 사진을 바꿀 때마다 옛 파일이 그대로 남으면 1GB 를 야금야금 먹는다.
+ */
+function avatarPathOf(url: string | null, userId: string): string | null {
+  if (!url) return null;
+  const i = url.indexOf('/avatars/');
+  if (i < 0) return null;
+  const path = decodeURIComponent(url.slice(i + '/avatars/'.length).split('?')[0]);
+  // 남의 폴더는 건드리지 않는다 (정책상 실패하지만 호출 자체를 막는다)
+  return path.startsWith(`${userId}/`) ? path : null;
+}
+
 export function AccountForm({ profile }: { profile: Profile }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -92,6 +105,9 @@ export function AccountForm({ profile }: { profile: Profile }) {
       const url = data.publicUrl;
       const { error } = await supabase.from('profiles').update({ avatar_url: url }).eq('id', profile.id);
       if (error) throw error;
+      // 성공한 뒤에 옛 파일 정리 (실패해도 사진 교체는 이미 끝난 것이라 조용히 넘어간다)
+      const old = avatarPathOf(avatar, profile.id);
+      if (old) await supabase.storage.from('avatars').remove([old]).catch(() => undefined);
       setAvatar(url);
       toast.success('프로필 사진을 바꿨습니다');
       router.refresh();
@@ -106,6 +122,10 @@ export function AccountForm({ profile }: { profile: Profile }) {
   const removeAvatar = async () => {
     setBusy(true);
     const { error } = await supabase.from('profiles').update({ avatar_url: null }).eq('id', profile.id);
+    if (!error) {
+      const old = avatarPathOf(avatar, profile.id);
+      if (old) await supabase.storage.from('avatars').remove([old]).catch(() => undefined);
+    }
     setBusy(false);
     if (error) {
       toast.error(`사진 삭제 실패: ${errorMessage(error)}`);

@@ -56,3 +56,24 @@ export function blocksToText(content: unknown, limit = 400): string {
 export function contentLength(content: unknown): number {
   return blocksToText(content, Number.MAX_SAFE_INTEGER).length;
 }
+
+/**
+ * 키 순서에 흔들리지 않는 JSON 문자열.
+ *
+ * Postgres 의 jsonb 는 키를 **자기 방식대로 정렬해서** 돌려준다.
+ * 그래서 우리가 보낸 본문과 Realtime 으로 돌아온 본문은 내용이 같아도
+ * JSON.stringify 결과가 다르다. 본문이 실제로 바뀌었는지 보려면 이걸 쓴다.
+ */
+export function stableJson(value: unknown): string {
+  const walk = (v: unknown): unknown => {
+    if (Array.isArray(v)) return v.map(walk);
+    if (v && typeof v === 'object') {
+      const src = v as Record<string, unknown>;
+      const out: Record<string, unknown> = {};
+      for (const k of Object.keys(src).sort()) out[k] = walk(src[k]);
+      return out;
+    }
+    return v;
+  };
+  return JSON.stringify(walk(value));
+}

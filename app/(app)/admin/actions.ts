@@ -175,6 +175,8 @@ export async function openTasksOf(userId: string) {
       .eq('assignee_id', userId)
       .in('status', openNames)
       .is('archived_at', null)
+      // 개인 메모 안의 업무는 본인만 보는 것이라 넘기지 않는다
+      .neq('visibility', '개인')
       .order('updated_at', { ascending: false })
       .limit(100);
     if (error) throw new Error(error.message);
@@ -210,7 +212,9 @@ export async function reassignTasks(fromUserId: string, toUserId: string) {
       .eq('type', 'task')
       .eq('assignee_id', fromUserId)
       .in('status', openNames)
-      .is('archived_at', null);
+      .is('archived_at', null)
+      // service role 이라 RLS 를 통과한다 → 개인 메모 업무는 여기서 직접 제외해야 한다
+      .neq('visibility', '개인');
     if (error) throw new Error(error.message);
     const rows = tasks ?? [];
     if (rows.length === 0) return { moved: 0 };

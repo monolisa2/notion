@@ -50,7 +50,7 @@ export default async function Home() {
         .from('page_people')
         .select(`page:pages!page_people_page_id_fkey(${TASK_COLS}, type, archived_at)`)
         .eq('user_id', user!.id)
-        .limit(50)
+        .limit(200)
         .then((r) => {
           const rows = (r.data ?? []) as unknown as { page: (MyTask & { type: string; archived_at: string | null }) | null }[];
           return rows

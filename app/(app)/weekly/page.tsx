@@ -5,6 +5,7 @@ import { statusClass } from '@/lib/status-style';
 import { DEFAULT_STATUSES } from '@/lib/types';
 import { Avatar } from '@/components/avatar';
 import { WeeklyDraftButton } from '@/components/weekly/weekly-draft-button';
+import { getUnits } from '@/lib/reference';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,11 +31,13 @@ export default async function WeeklyPage({ searchParams }: { searchParams: Promi
   const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
-  const [{ data: digest }, { data: profile }, { data: statusRows }] = await Promise.all([
+  const [{ data: digest }, { data: profile }, { data: statusRows }, units] = await Promise.all([
     supabase.rpc('weekly_digest', { p_days: days }),
     supabase.from('profiles').select('is_admin, job_title, unit_id').eq('id', user.id).maybeSingle(),
     supabase.from('page_statuses').select('*').order('sort_order'),
+    getUnits(),
   ]);
+  const rootUnitId = units.find((u) => !u.parent_id)?.id ?? null;
   const statuses = statusRows && statusRows.length > 0 ? statusRows : DEFAULT_STATUSES;
   const isLead = !!profile?.is_admin || ['팀장', '실장', '본부장'].includes(profile?.job_title ?? '');
   const silent: SilentRow[] = isLead
@@ -56,6 +59,7 @@ export default async function WeeklyPage({ searchParams }: { searchParams: Promi
             days={days}
             meId={user.id}
             meUnitId={profile?.unit_id ?? null}
+            rootUnitId={rootUnitId}
           />
         </div>
         <div className="flex gap-1 rounded-md border border-zinc-200 p-0.5 text-xs">

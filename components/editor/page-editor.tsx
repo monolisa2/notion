@@ -11,6 +11,7 @@ import { setPageIcon } from '@/lib/pages';
 import { ICON_CHOICES } from '@/lib/templates';
 import { useRouter } from 'next/navigation';
 import type { PageRow } from '@/lib/types';
+import { stableJson } from '@/lib/history';
 
 // BlockNote 는 브라우저 전용 (window 사용) → SSR 끔
 const BlockNoteEditor = dynamic(() => import('./blocknote-editor'), {
@@ -106,7 +107,9 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
           const row = payload.new as { content: unknown };
           // 내 저장이 돌아온 것 / 본문이 아닌 속성 변경은 무시
           if (Date.now() - savedAtRef.current < 3000) return;
-          if (JSON.stringify(row.content) === JSON.stringify(latest.current.content)) return;
+          // jsonb 는 키 순서를 바꿔서 돌려주므로 stableJson 으로 비교한다.
+          // (그냥 JSON.stringify 로 비교하면 남이 상태·기한만 바꿔도 본문이 바뀐 걸로 보인다)
+          if (stableJson(row.content) === stableJson(latest.current.content)) return;
           setRemoteEdit(new Date().toISOString());
         },
       )

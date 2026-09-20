@@ -1,7 +1,6 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { errorMessage } from '@/lib/errors';
@@ -31,7 +30,6 @@ export function PageHistory({
   onClose: () => void;
 }) {
   const supabase = useMemo(() => createClient(), []);
-  const router = useRouter();
   const [rows, setRows] = useState<SnapshotRow[] | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selected, setSelected] = useState<SnapshotRow | null>(null);
@@ -60,7 +58,10 @@ export function PageHistory({
       await savePage(supabase, { pageId, authorId: meId, title: snap.title, content: snap.content });
       toast.success('되돌렸습니다. 화면을 새로 불러옵니다');
       onClose();
-      router.refresh();
+      // router.refresh() 로는 안 된다 — 에디터(BlockNote)는 page.id 로 마운트돼 있어서
+      // 서버 데이터만 새로 받으면 화면의 본문은 옛 내용 그대로다.
+      // 그 상태에서 한 글자만 쳐도 자동저장이 되돌린 내용을 다시 덮어쓴다.
+      window.location.reload();
     } catch (e) {
       toast.error(`되돌리기 실패: ${errorMessage(e)}`);
     } finally {

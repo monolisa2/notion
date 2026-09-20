@@ -57,17 +57,27 @@ export function WeeklyDraftButton({
   days,
   meId,
   meUnitId,
+  rootUnitId,
 }: {
   rows: DigestLite[];
   days: number;
   meId: string;
   meUnitId: string | null;
+  /** 소속이 아직 없는 사람을 위한 대체 공간 (본부 공용) */
+  rootUnitId: string | null;
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [busy, setBusy] = useState(false);
 
+  // 공간이 없으면 pages_space_shape 제약에 걸린다 (개인 메모가 아니면 unit_id 필수)
+  const unitId = meUnitId ?? rootUnitId;
+
   const create = async () => {
+    if (!unitId) {
+      toast.error('소속이 아직 지정되지 않아 페이지를 만들 수 없습니다. 관리자에게 소속 지정을 요청하세요.');
+      return;
+    }
     setBusy(true);
     try {
       const byAuthor = new Map<string, DigestLite[]>();
@@ -117,8 +127,8 @@ export function WeeklyDraftButton({
         title: `주간 정리 ${today()}`,
         icon: '🗓',
         template: 'weekly',
-        unitId: meUnitId,
-        visibility: '소속',
+        unitId,
+        visibility: meUnitId ? '소속' : '본부',
         content,
       });
       toast.success('주간 정리 초안을 만들었습니다');
