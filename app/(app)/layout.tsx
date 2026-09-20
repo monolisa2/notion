@@ -10,7 +10,9 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
-  const [{ data: profile }, tree, units, { data: favorites }, { data: recents }, { data: writerRows }, guidePageId] = await Promise.all([
+  // 사용법 페이지 조회는 뺐다 — 트리에서 빼는 기준이 "고정(pinned)" 으로 바뀌면서
+  // 레이아웃마다 도는 이 왕복이 필요 없어졌다
+  const [{ data: profile }, tree, units, { data: favorites }, { data: recents }, { data: writerRows }] = await Promise.all([
     supabase
       .from('profiles')
       .select('id, name, email, avatar_url, is_admin, unit_id, rank, job_title, must_change_password')
@@ -23,15 +25,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     // '지정' 공간에서 내가 작성 가능한 조직 (0011 이전 DB 에서는 에러 → 빈 배열)
     supabase.from('org_unit_writers').select('unit_id').eq('user_id', user.id),
     // 사용법 안내는 공간 트리에서 빼고 하단 메뉴로 (0016 이전 DB 면 null)
-    supabase
-      .from('pages')
-      .select('id')
-      .eq('template', 'guide')
-      .is('archived_at', null)
-      .order('updated_at', { ascending: false })
-      .limit(1)
-      .maybeSingle()
-      .then((r) => r.data?.id ?? null),
   ]);
 
   // 관리자가 만든 계정의 첫 로그인: 비밀번호를 바꿔야 들어올 수 있다
@@ -56,7 +49,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       favorites={(favorites ?? []) as SidebarPageLite[]}
       recents={(recents ?? []) as SidebarPageLite[]}
       writerUnits={(writerRows ?? []).map((w) => w.unit_id)}
-      guidePageId={guidePageId}
     >
       {children}
     </AppShell>

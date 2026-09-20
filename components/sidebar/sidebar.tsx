@@ -40,7 +40,6 @@ export function Sidebar({
   favorites = [],
   recents = [],
   writerUnits = [],
-  guidePageId = null,
   onChanged,
 }: {
   me: Me;
@@ -49,8 +48,6 @@ export function Sidebar({
   favorites?: SidebarPageLite[];
   recents?: SidebarPageLite[];
   writerUnits?: string[];
-  /** 사용법 안내 페이지 — 공간 트리에서만 뺀다 (보는 곳은 📢 공지) */
-  guidePageId?: string | null;
   onChanged: () => Promise<void>;
 }) {
   const supabase = useMemo(() => createClient(), []);
@@ -87,9 +84,10 @@ export function Sidebar({
       if (!r.id) continue;
       if (r.pinned && !r.parent_id) hide(r.id);
     }
-    if (guidePageId) hide(guidePageId);
+    // 사용법도 "고정돼 있을 때만" 뺀다.
+    // 고정을 풀면 📢 공지 에서도 사라지므로, 그때는 공간 트리에 보여야 찾을 수 있다.
     return hidden;
-  }, [rows, guidePageId]);
+  }, [rows]);
 
   const rowsByUnit = useMemo(() => {
     const m = new Map<string, PageTreeRow[]>();

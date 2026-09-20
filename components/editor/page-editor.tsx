@@ -55,6 +55,9 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
     useCallback(
       async (payload) => {
         try {
+          // 보내기 **전에도** 찍는다 — 저장이 끝나기 전에 Realtime 메아리가 먼저 오면
+          // 내 저장을 남의 수정으로 오해해 경고가 뜬다
+          savedAtRef.current = Date.now();
           // 저장은 반드시 savePage 를 통해서 (멘션 diff 동기화가 묶여 있다)
           await savePage(supabase, {
             pageId: page.id,

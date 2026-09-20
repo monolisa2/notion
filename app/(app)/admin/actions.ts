@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { generateTempPassword } from '@/lib/password';
 import { JOB_TITLES, RANKS, type Tables } from '@/lib/types';
+import { EMAIL_BATCH } from '@/lib/admin-limits';
 
 type Result<T = undefined> = { ok: true; data: T } | { ok: false; error: string };
 
@@ -301,21 +302,37 @@ export async function updateMemberEmail(userId: string, email: string) {
   });
 }
 
-/** 계획대로 일괄 적용. 비밀번호·소속은 그대로 둔다 */
+/**
+ * 계획대로 적용. 비밀번호·소속은 그대로 둔다.
+ *
+ * 한 사람당 원격 호출이 2번(auth + profiles)이라 20명만 돼도 서버리스 제한에 걸린다.
+ * 그래서 **조각으로 나눠 부르고**, 누가 됐고 누가 실패했는지 이름까지 돌려준다.
+ * (중간에 끊겨도 어디까지 됐는지 알 수 있어야 한다)
+ */
 export async function applyEmailPlan(pairs: { userId: string; email: string }[]) {
   return wrap(async () => {
     await requireAdmin();
-    const done: string[] = [];
-    const failed: { userId: string; error: string }[] = [];
+    if (pairs.length > EMAIL_BATCH) {
+      throw new Error(`한 번에 ${EMAIL_BATCH}명까지만 처리합니다`);
+    }
+    const admin = createAdminClient();
+    const { data: names } = await admin
+      .from('profiles')
+      .select('id, name')
+      .in('id', pairs.map((p) => p.userId));
+    const nameOf = (id: string) => (names ?? []).find((n) => n.id === id)?.name ?? id.slice(0, 8);
+
+    let done = 0;
+    const failed: { name: string; error: string }[] = [];
     for (const p of pairs) {
       try {
         await changeEmail(p.userId, p.email);
-        done.push(p.userId);
+        done += 1;
       } catch (e) {
-        failed.push({ userId: p.userId, error: e instanceof Error ? e.message : String(e) });
+        failed.push({ name: nameOf(p.userId), error: e instanceof Error ? e.message : String(e) });
       }
     }
-    return { done: done.length, failed };
+    return { done, failed };
   });
 }
 
@@ -331,19 +348,20 @@ export async function openTasksOf(userId: string) {
       .filter((s) => s.kind === '대기' || s.kind === '진행' || s.kind === '보류')
       .map((s) => s.name);
     if (openNames.length === 0) return { count: 0, titles: [] as string[] };
-    const { data, error } = await supabase
-      .from('pages')
-      .select('id, title')
-      .eq('type', 'task')
-      .eq('assignee_id', userId)
-      .in('status', openNames)
-      .is('archived_at', null)
-      // 개인 메모 안의 업무는 본인만 보는 것이라 넘기지 않는다
-      .neq('visibility', '개인')
-      .order('updated_at', { ascending: false })
-      .limit(100);
+    // 건수는 count 로 정확히 (목록만 limit — 예전엔 limit 에 걸려 250건도 "100건" 으로 보였다)
+    const base = () =>
+      supabase
+        .from('pages')
+        .select('id, title', { count: 'exact' })
+        .eq('type', 'task')
+        .eq('assignee_id', userId)
+        .in('status', openNames)
+        .is('archived_at', null)
+        // 개인 메모 안의 업무는 본인만 보는 것이라 넘기지 않는다
+        .neq('visibility', '개인');
+    const { data, count, error } = await base().order('updated_at', { ascending: false }).limit(5);
     if (error) throw new Error(error.message);
-    return { count: (data ?? []).length, titles: (data ?? []).slice(0, 5).map((t) => t.title) };
+    return { count: count ?? (data ?? []).length, titles: (data ?? []).map((t) => t.title) };
   });
 }
 

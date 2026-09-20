@@ -76,6 +76,9 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 
 - 멘션 저장은 user id(`props.userId`). 이름 문자열 저장 금지
 - 본문은 `savePage()`, 댓글은 `saveComment()` 로만 저장 (내부에서 `sync_*_mentions` diff 동기화)
+- **security definer 함수는 열람 권한을 스스로 검사할 것** (`can_view_page`, 0022).
+  RLS 를 우회하는 함수라 호출자가 그 페이지를 볼 수 있는지 함수 안에서 확인하지 않으면
+  못 보는 페이지의 정보가 샌다 (0019 의 `notice_audience` 가 실제로 그랬다)
 - 알림 생성은 `enqueue_notification` 만 (자기 멘션 제외 · 5분 묶음 · 수신 설정 존중). 직접 INSERT 금지
 - 미입력 리마인드(0007)는 **권장만** 으로 결정 → 스케줄 등록하지 않음. 켤 때는 요구사항 문서 먼저 갱신
 - 기한 임박 알림(0015)은 **켜져 있음** — 평일 09:00 KST, 기한 당일·3일 전 담당자에게 due_soon
@@ -140,4 +143,5 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0019_notice_notifications.sql        공지 알림(kind='notice') — notice_audience / notify_notice
 0020_group_mentions.sql              조직 멘션 — expand_unit_mention (가시성 필터 포함)
 0021_notice_write.sql                공지 고정 INSERT 구멍 차단 + 공지 바로 쓰기
+0022_review_fixes.sql                공지 대상 조회 권한 검사(can_view_page) + 저장 공간 집계에 avatars 포함
 ```

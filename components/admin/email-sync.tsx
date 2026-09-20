@@ -3,6 +3,7 @@
 import { useRef, useState } from 'react';
 import { toast } from 'sonner';
 import { applyEmailPlan, planEmailsFromCsv, type EmailPlanRow } from '@/app/(app)/admin/actions';
+import { EMAIL_BATCH } from '@/lib/admin-limits';
 
 /**
  * 회사 메일 일괄 반영.
@@ -56,20 +57,35 @@ export function EmailSync({ onDone }: { onDone: () => void }) {
     if (r.data.every((x) => x.status !== '변경')) toast.info('바꿀 것이 없습니다');
   };
 
+  const [progress, setProgress] = useState<string | null>(null);
+
   const apply = async () => {
     if (!window.confirm(`${changes.length}명의 로그인 메일을 바꿉니다.\n비밀번호는 그대로입니다. 계속할까요?`)) return;
     setBusy(true);
-    const r = await applyEmailPlan(changes.map((c) => ({ userId: c.userId!, email: c.newEmail! })));
-    setBusy(false);
-    if (!r.ok) {
-      toast.error(r.error);
-      return;
+    // 한 사람당 원격 호출이 2번이라 한 번에 다 보내면 서버 시간 제한에 걸린다 → 조각으로
+    const pairs = changes.map((c) => ({ userId: c.userId!, email: c.newEmail! }));
+    let done = 0;
+    const failed: { name: string; error: string }[] = [];
+    for (let i = 0; i < pairs.length; i += EMAIL_BATCH) {
+      setProgress(`${Math.min(i + EMAIL_BATCH, pairs.length)} / ${pairs.length}`);
+      const r = await applyEmailPlan(pairs.slice(i, i + EMAIL_BATCH));
+      if (!r.ok) {
+        setBusy(false);
+        setProgress(null);
+        toast.error(`${done}명까지 바꾼 뒤 멈췄습니다: ${r.error}`);
+        onDone();
+        return;
+      }
+      done += r.data.done;
+      failed.push(...r.data.failed);
     }
-    toast.success(
-      r.data.failed.length === 0
-        ? `${r.data.done}명의 메일을 바꿨습니다`
-        : `${r.data.done}명 완료 · ${r.data.failed.length}명 실패 (${r.data.failed[0].error})`,
-    );
+    setBusy(false);
+    setProgress(null);
+    if (failed.length === 0) {
+      toast.success(`${done}명의 메일을 바꿨습니다`);
+    } else {
+      toast.error(`${done}명 완료 · 실패 ${failed.length}명 — ${failed.map((f) => f.name).join(', ')}`);
+    }
     setPlan(null);
     setCsv('');
     onDone();
@@ -162,7 +178,7 @@ export function EmailSync({ onDone }: { onDone: () => void }) {
                 onClick={() => void apply()}
                 className="ml-auto rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50 dark:bg-zinc-100 dark:text-zinc-900"
               >
-                {busy ? '바꾸는 중…' : `${changes.length}명 적용`}
+                {busy ? `바꾸는 중… ${progress ?? ''}` : `${changes.length}명 적용`}
               </button>
             )}
           </div>

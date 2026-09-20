@@ -189,6 +189,15 @@ export function extractGroupMentions(doc: unknown): ExtractedGroup[] {
  *
  * 사람 멘션과 합칠 때는 **사람 멘션이 이긴다** — 직접 부른 맥락이 더 정확하다.
  */
+type ExpandedRow = { user_id: string; unit_id: string };
+
+/**
+ * 같은 페이지·같은 조직 조합은 한 번만 물어본다.
+ * 자동저장은 700ms 마다 도는데, 조직 멘션이 그대로면 매번 물을 이유가 없다.
+ * (탭을 닫으면 사라지는 메모리 캐시라 조직 인원이 바뀌어도 다음 방문에 반영된다)
+ */
+const expandCache = new Map<string, ExpandedRow[]>();
+
 async function expandGroups(
   supabase: SupabaseClient,
   pageId: string,
@@ -196,13 +205,22 @@ async function expandGroups(
   target: Map<string, string>,
 ): Promise<void> {
   if (groups.length === 0) return;
-  const { data, error } = await supabase.rpc('expand_unit_mention', {
-    p_page: pageId,
-    p_units: groups.map((g) => g.unitId),
-  });
-  if (error) throw error;
+  const units = groups.map((g) => g.unitId).sort();
+  const key = `${pageId}|${units.join(',')}`;
+
+  let rows = expandCache.get(key);
+  if (!rows) {
+    const { data, error } = await supabase.rpc('expand_unit_mention', {
+      p_page: pageId,
+      p_units: units,
+    });
+    if (error) throw error;
+    rows = (data ?? []) as ExpandedRow[];
+    expandCache.set(key, rows);
+  }
+
   const contextOf = new Map(groups.map((g) => [g.unitId, g.context]));
-  for (const row of (data ?? []) as { user_id: string; unit_id: string }[]) {
+  for (const row of rows) {
     if (target.has(row.user_id)) continue;
     target.set(row.user_id, contextOf.get(row.unit_id) ?? '');
   }
@@ -233,7 +251,13 @@ export async function savePage(
   // 사람 멘션 + 조직 멘션(구성원으로 펼친 것)
   const targets = new Map<string, string>();
   for (const m of extractMentions(content)) targets.set(m.userId, m.context);
-  await expandGroups(supabase, pageId, extractGroupMentions(content), targets);
+  try {
+    await expandGroups(supabase, pageId, extractGroupMentions(content), targets);
+  } catch {
+    // 본문은 위에서 이미 저장됐다. 여기서 줄어든 명단으로 동기화하면
+    // 앞서 걸린 조직 멘션이 **지워지므로** 동기화를 통째로 건너뛴다 (다음 저장에 맞춰진다)
+    return { newMentions: 0 };
+  }
 
   const contexts: Record<string, string> = {};
   for (const [userId, context] of targets) contexts[userId] = context;
@@ -270,7 +294,11 @@ export async function saveComment(
 
   const targets = new Map<string, string>();
   for (const m of extractMentions(params.body)) targets.set(m.userId, m.context);
-  await expandGroups(supabase, params.pageId, extractGroupMentions(params.body), targets);
+  try {
+    await expandGroups(supabase, params.pageId, extractGroupMentions(params.body), targets);
+  } catch {
+    // 댓글은 이미 등록됐다 — 멘션 알림만 건너뛴다
+  }
 
   if (targets.size > 0) {
     await supabase.rpc('sync_comment_mentions', {

@@ -49,7 +49,17 @@ export function PageHistory({
     };
   }, [supabase, pageId]);
 
-  const nowLen = contentLength(currentContent);
+  const nowLen = useMemo(() => contentLength(currentContent), [currentContent]);
+  // 스냅샷별 글자 수는 목록이 바뀔 때만 계산한다 (렌더마다 30번 다시 세지 않도록)
+  const lenById = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of rows ?? []) m.set(s.id, contentLength(s.content));
+    return m;
+  }, [rows]);
+  const previewText = useMemo(
+    () => (selected ? blocksToText(selected.content, 4000) : ''),
+    [selected],
+  );
 
   const restore = async (snap: SnapshotRow) => {
     if (!window.confirm(`${when(snap.created_at)} 직전 내용으로 되돌립니다.\n지금 본문은 기록에 남으니 다시 되돌릴 수 있습니다.`)) return;
@@ -90,7 +100,7 @@ export function PageHistory({
               </p>
             )}
             {rows?.map((s) => {
-              const len = contentLength(s.content);
+              const len = lenById.get(s.id) ?? 0;
               const shrank = len > 200 && nowLen < len / 2;
               return (
                 <button
@@ -136,7 +146,7 @@ export function PageHistory({
           <div className="min-h-0 flex-1 overflow-y-auto px-4 py-3">
             {selected ? (
               <p className="whitespace-pre-wrap text-sm leading-relaxed text-zinc-700 dark:text-zinc-300">
-                {blocksToText(selected.content, 4000) || '(빈 본문)'}
+                {previewText || '(빈 본문)'}
               </p>
             ) : (
               <p className="text-sm text-zinc-400">왼쪽에서 시점을 고르세요.</p>

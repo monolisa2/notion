@@ -47,20 +47,26 @@ export default async function Home() {
         .is('archived_at', null)
         .order('due_date', { ascending: true, nullsFirst: false })
         .limit(10),
-      // 내가 "참여자"로 들어가 있는 업무 (0013) — 담당자가 아니어도 내 일이다
+      // 내가 "참여자"로 들어가 있는 업무 (0013) — 담당자가 아니어도 내 일이다.
+      // 참여 목록(가벼운 id 만)을 먼저 받고, 거르기·정렬은 DB 에 맡긴다.
+      // (예전엔 앞에서 200개를 자른 뒤 JS 로 걸러서, 참여가 많으면 진행 중 업무가 빠질 수 있었다)
       supabase
         .from('page_people')
-        .select(`page:pages!page_people_page_id_fkey(${TASK_COLS}, type, archived_at)`)
+        .select('page_id')
         .eq('user_id', user!.id)
-        .limit(200)
-        .then((r) => {
-          const rows = (r.data ?? []) as unknown as { page: (MyTask & { type: string; archived_at: string | null }) | null }[];
-          return rows
-            .map((x) => x.page)
-            .filter(
-              (p): p is MyTask & { type: string; archived_at: string | null } =>
-                !!p && p.type === 'task' && !p.archived_at && openNames.includes(p.status ?? ''),
-            );
+        .then(async ({ data }) => {
+          const ids = (data ?? []).map((r) => r.page_id);
+          if (ids.length === 0) return [] as MyTask[];
+          const { data: rows } = await supabase
+            .from('pages')
+            .select(TASK_COLS)
+            .in('id', ids)
+            .eq('type', 'task')
+            .in('status', openNames)
+            .is('archived_at', null)
+            .order('due_date', { ascending: true, nullsFirst: false })
+            .limit(10);
+          return (rows ?? []) as MyTask[];
         }),
       supabase
         .from('pages')
