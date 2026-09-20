@@ -63,7 +63,8 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 - `page_updates` UPDATE / DELETE 금지 (append-only)
 - 뷰 생성 시 `security_invoker = true` 누락 금지
 - `service_role` 키를 클라이언트로 보내거나 `NEXT_PUBLIC_` 로 노출 금지
-- `@팀전체` 그룹 멘션 금지
+- `@팀전체` 그룹 멘션 금지 — 본문에서 @ 로 전체를 부르는 것은 계속 금지.
+  전체에 알려야 하면 **공지로 고정한 뒤 "알림 보내기"**(`notify_notice`, 0019). 작성자·관리자만, 하루 한 번
 
 ---
 
@@ -74,6 +75,9 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 - 알림 생성은 `enqueue_notification` 만 (자기 멘션 제외 · 5분 묶음 · 수신 설정 존중). 직접 INSERT 금지
 - 미입력 리마인드(0007)는 **권장만** 으로 결정 → 스케줄 등록하지 않음. 켤 때는 요구사항 문서 먼저 갱신
 - 기한 임박 알림(0015)은 **켜져 있음** — 평일 09:00 KST, 기한 당일·3일 전 담당자에게 due_soon
+- 공지 알림(0019, `kind='notice'`)은 **고정된 공지에서 작성자·관리자가 직접 누를 때만**.
+  대상은 `notice_audience` — `pages_select` 와 같은 규칙이라 못 보는 사람에겐 안 간다.
+  하루 한 번(같은 공지·같은 사람), 수신 설정(notify_*)은 따르지 않는다(공식 공지)
 
 ---
 
@@ -121,4 +125,5 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0016_guide_template.sql              양식 'guide' 허용 (template 체크 확장)
 0017_search_multiword.sql            검색: 여러 단어 AND + pg_trgm 부분일치 인덱스
 0018_page_history_avatars.sql        본문 버전 기록(page_snapshots) + 프로필 사진 버킷(avatars)
+0019_notice_notifications.sql        공지 알림(kind='notice') — notice_audience / notify_notice
 ```

@@ -1728,6 +1728,8 @@ export type Database = {
         Returns: number
       }
       my_unit_id: { Args: Record<PropertyKey, never>; Returns: string }
+      notice_audience: { Args: { p_page: string }; Returns: string[] }
+      notice_pending_count: { Args: { p_page: string }; Returns: number }
       notice_readers: {
         Args: { p_page: string }
         Returns: {
@@ -1736,6 +1738,7 @@ export type Database = {
           user_id: string
         }[]
       }
+      notify_notice: { Args: { p_page: string }; Returns: number }
       page_label: { Args: { p_id: string }; Returns: string }
       pgp_armor_headers: {
         Args: { "": string }
@@ -1784,6 +1787,10 @@ export type Database = {
       }
       text2ltree: { Args: { "": string }; Returns: unknown }
       touch_page_visit: { Args: { p_page_id: string }; Returns: undefined }
+      user_can_view_unit: {
+        Args: { p_unit: string; p_user: string }
+        Returns: boolean
+      }
       weekly_digest: {
         Args: { p_days?: number }
         Returns: {

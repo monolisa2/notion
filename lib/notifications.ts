@@ -2,7 +2,7 @@ import type { Db } from './pages';
 import type { Tables } from './types';
 
 export type NotificationRow = Tables['notifications']['Row'];
-export type NotificationKind = 'mention' | 'assigned' | 'comment' | 'due_soon' | 'stale';
+export type NotificationKind = 'mention' | 'assigned' | 'comment' | 'due_soon' | 'stale' | 'notice';
 
 export const KIND_META: Record<NotificationKind, { icon: string; label: string }> = {
   mention: { icon: '@', label: '멘션' },
@@ -10,6 +10,7 @@ export const KIND_META: Record<NotificationKind, { icon: string; label: string }
   comment: { icon: '💬', label: '댓글' },
   due_soon: { icon: '⏰', label: '기한' },
   stale: { icon: '🕒', label: '정체' },
+  notice: { icon: '📢', label: '공지' },
 };
 
 export async function fetchNotifications(sb: Db, limit = 30): Promise<NotificationRow[]> {
