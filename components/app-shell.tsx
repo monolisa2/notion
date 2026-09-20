@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { fetchTree } from '@/lib/pages';
 import type { Me, OrgUnitRow, PageTreeRow, SidebarPageLite } from '@/lib/types';
@@ -36,6 +37,8 @@ export function AppShell({
   const supabaseRef = useRef(createClient());
   const refetchTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const router = useRouter();
+
   const refresh = useCallback(async () => {
     try {
       setTree(await fetchTree(supabaseRef.current));
@@ -43,6 +46,20 @@ export function AppShell({
       // 일시적 네트워크 오류는 다음 변경 때 다시 시도된다
     }
   }, []);
+
+  /**
+   * 사용자가 사이드바에서 직접 바꾼 경우 — 트리와 **열려 있는 페이지 화면**을 같이 다시 그린다.
+   *
+   * 트리만 받으면 사이드바 아이콘만 ✅ 로 바뀌고 본문은 문서 화면 그대로 남는다
+   * ("업무로 전환" 을 눌러도 진행 로그 칸이 안 나오고, 다른 페이지를 다녀와야 나왔다).
+   *
+   * 아래 Realtime 구독은 일부러 이걸 쓰지 않는다 — 남이 페이지를 하나 고칠 때마다
+   * 보고 있던 사람 전원의 화면을 통째로 다시 받게 되기 때문이다.
+   */
+  const refreshHere = useCallback(async () => {
+    await refresh();
+    router.refresh();
+  }, [refresh, router]);
 
   // 변경 이벤트가 연달아 오면 300ms 로 묶어서 한 번만 다시 받는다
   const scheduleRefresh = useCallback(() => {
@@ -87,7 +104,7 @@ export function AppShell({
                 if ((e.target as HTMLElement).closest('a')) setNavOpen(false);
               }}
             >
-              <Sidebar me={me} rows={tree} units={units} favorites={favorites} recents={recents} writerUnits={writerUnits} onChanged={refresh} />
+              <Sidebar me={me} rows={tree} units={units} favorites={favorites} recents={recents} writerUnits={writerUnits} onChanged={refreshHere} />
             </div>
             <main className="min-w-0 flex-1 overflow-y-auto">
               {/* 모바일 상단바 */}
