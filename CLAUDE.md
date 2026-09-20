@@ -25,6 +25,7 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 | DB / Auth / Realtime / Storage | Supabase (Free) |
 | 에디터 | BlockNote (mantine) — 블록 중첩·슬래시·드래그·되돌리기는 전부 위임 |
 | 스타일 | Tailwind CSS 4 |
+| 글꼴 | **웹폰트 없음 — 기기 글꼴(노션과 같은 방식).** `--font-sans` 하나로 관리, 한글은 OS 글꼴(맑은 고딕·Apple SD Gothic Neo)로 떨어진다 |
 | 배포 | Vercel |
 | 로그인 | **회사 이메일 + 비밀번호.** 가입은 닫고 관리자가 계정 생성(임시 비밀번호, 첫 로그인 변경 강제) |
 | 외부 알림 | 네이버웍스 봇 (Edge Function, 코드 보관 중 · 나중에 켬) |
@@ -93,9 +94,9 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 ## 6. 화면 원칙
 
 - 한국어 UI, 날짜 `YYYY-MM-DD`, 상태 값은 DB 의 한글 문자열 그대로
-- **글자 크기의 기준은 `app/globals.css` 의 `html { font-size }` 하나다** (현재 15px).
+- **글자 크기의 기준은 `app/globals.css` 의 `html { font-size }` 하나다** (현재 16px).
   Tailwind 의 text-*·여백이 전부 rem 이라 이 값 하나로 화면 전체가 같이 움직인다.
-  px 로 박아 둔 곳은 세 군데뿐 — 사이드바 14px · 에디터 본문 15px · 페이지 제목 36px.
+  px 로 박아 둔 곳은 세 군데뿐 — 사이드바 14px · 에디터 본문 16px · 페이지 제목 40px.
   크기 조절 요청이 오면 개별 컴포넌트를 고치지 말고 이 네 값만 손댈 것
 - 업무 상태 목록은 `page_statuses` (0012, 본부 공통). 화면은 이 목록으로 그리고, 집계·완료 판정은 `kind`(`status_kind()`) 로. 이름 리터럴 비교 금지. 편집은 관리자+조직장(RLS)
 - 에러는 삼키지 말고 토스트(`sonner`)로. 메시지는 `errorMessage()` 로 뽑는다

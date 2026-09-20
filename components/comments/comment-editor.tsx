@@ -1,6 +1,5 @@
 'use client';
 
-import '@blocknote/core/fonts/inter.css';
 import '@blocknote/mantine/style.css';
 import { useIsDark } from '@/components/theme-toggle';
 
