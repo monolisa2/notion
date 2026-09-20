@@ -136,6 +136,15 @@ export function ProgressPanel({
 
   return (
     <section className="mx-auto w-full max-w-[900px] px-6 pt-3 sm:px-12">
+      {/* 모바일: 본문이 길어도 한 손으로 기록할 수 있게 하단 고정 버튼 */}
+      <button
+        type="button"
+        onClick={() => openLog(page.id)}
+        className="fixed bottom-4 right-4 z-30 rounded-full bg-zinc-900 px-4 py-3 text-sm font-medium text-white shadow-lg md:hidden"
+      >
+        ✏️ 진행 기록
+      </button>
+
       <div className="rounded-xl border border-zinc-200 bg-zinc-50/60 px-4 py-3">
         <div className="flex items-baseline gap-2">
           <span className="text-2xl font-bold tabular-nums text-zinc-900">{progress}%</span>
@@ -145,16 +154,19 @@ export function ProgressPanel({
               하위 업무 {children.length}건 평균
             </span>
           )}
-          {!autoFromChildren && (
-            <button
-              type="button"
-              onClick={() => openLog(page.id)}
-              className="rounded-md border border-zinc-300 bg-white px-2 py-0.5 text-[11px] text-zinc-600 hover:bg-zinc-50"
-              title="진행률 변경은 항상 기록과 함께 남습니다"
-            >
-              ✏️ 기록하고 변경
-            </button>
-          )}
+          {/* 기록 버튼은 항상 보인다. 하위 업무가 있으면 %는 잠기고 글만 남는다 */}
+          <button
+            type="button"
+            onClick={() => openLog(page.id)}
+            className="rounded-md border border-zinc-300 bg-white px-2 py-0.5 text-[11px] text-zinc-600 hover:bg-zinc-50"
+            title={
+              autoFromChildren
+                ? '진행률은 하위 업무 평균이라 여기서 바꿀 수 없습니다. 상황만 기록합니다'
+                : '진행률 변경은 항상 기록과 함께 남습니다'
+            }
+          >
+            {autoFromChildren ? '✏️ 기록 남기기' : '✏️ 기록하고 변경'}
+          </button>
           {due && (
             <span className={`ml-auto text-xs tabular-nums ${due.tone}`} title={`기한 ${dueDate}`}>
               기한 {dueDate} · {due.label}

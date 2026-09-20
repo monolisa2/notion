@@ -12,6 +12,7 @@ import { changeableUnitsFor, unitLabel } from '@/lib/org';
 import type { OrgUnitRow, PageRow, PageVisibility } from '@/lib/types';
 import { useTree } from '@/components/tree-context';
 import { PageHistory } from '@/components/page-history';
+import { PagePresence } from '@/components/page-presence';
 
 const VIS_LABEL: Record<PageVisibility, string> = { 본부: '본부 전체', 소속: '소속 조직만', 개인: '나만 봄' };
 
@@ -25,6 +26,8 @@ export function PageHeader({
   meId,
   meUnitId = null,
   isFavorite = false,
+  meName = '나',
+  meAvatarUrl = null,
 }: {
   page: PageRow;
   units: OrgUnitRow[];
@@ -32,6 +35,8 @@ export function PageHeader({
   meId?: string;
   meUnitId?: string | null;
   isFavorite?: boolean;
+  meName?: string;
+  meAvatarUrl?: string | null;
 }) {
   const [fav, setFav] = useState(isFavorite);
   const supabase = useMemo(() => createClient(), []);
@@ -148,6 +153,9 @@ export function PageHeader({
           {VIS_LABEL[page.visibility as PageVisibility] ?? page.visibility}
         </span>
       )}
+
+      {/* 지금 같이 보고 있는 사람 */}
+      {meId && <PagePresence pageId={page.id} me={{ id: meId, name: meName, avatarUrl: meAvatarUrl }} />}
 
       <span className="hidden text-xs text-zinc-400 sm:inline">수정 {page.updated_at.slice(0, 10)}</span>
 

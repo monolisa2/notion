@@ -92,7 +92,17 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
 
   return (
     <article className="min-h-full">
-      <PageHeader key={`hdr-${page.id}`} page={page} units={units} isAdmin={me.isAdmin} meId={user.id} meUnitId={me.unitId} isFavorite={fav} />
+      <PageHeader
+        key={`hdr-${page.id}`}
+        page={page}
+        units={units}
+        isAdmin={me.isAdmin}
+        meId={user.id}
+        meUnitId={me.unitId}
+        isFavorite={fav}
+        meName={me.name}
+        meAvatarUrl={me.avatarUrl}
+      />
       <VisitTracker pageId={page.id} />
 
       {/* 공지면 읽음 현황 (작성자·관리자에게만 서버가 응답) */}
