@@ -19,6 +19,7 @@ import {
 import { SubpageList } from '@/components/subpage-list';
 import { VisitTracker } from '@/components/visit-tracker';
 import { NoticeReadStatus } from '@/components/notice-read-status';
+import { NoticePinHint } from '@/components/notice-pin-hint';
 import { ActionItemPromoter } from '@/components/task/action-item-promoter';
 
 export default async function PageView({ params }: { params: Promise<{ id: string }> }) {
@@ -109,6 +110,12 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
 
       {/* 공지면 읽음 현황 (작성자·관리자에게만 서버가 응답) */}
       {page.pinned && (me.isAdmin || page.created_by === user.id) && <NoticeReadStatus pageId={page.id} />}
+
+      {/* 공지 양식인데 아직 고정 안 됨 — 양식과 고정은 별개라 헷갈린다 */}
+      {!page.pinned && page.template === 'notice' && page.visibility !== '개인' &&
+        (me.isAdmin || page.created_by === user.id) && (
+          <NoticePinHint key={`pin-${page.id}`} pageId={page.id} isAdmin={me.isAdmin} />
+        )}
 
       {isTask && (
         <PropertyBar

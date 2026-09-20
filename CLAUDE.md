@@ -63,8 +63,12 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 - `page_updates` UPDATE / DELETE 금지 (append-only)
 - 뷰 생성 시 `security_invoker = true` 누락 금지
 - `service_role` 키를 클라이언트로 보내거나 `NEXT_PUBLIC_` 로 노출 금지
-- `@팀전체` 그룹 멘션 금지 — 본문에서 @ 로 전체를 부르는 것은 계속 금지.
-  전체에 알려야 하면 **공지로 고정한 뒤 "알림 보내기"**(`notify_notice`, 0019). 작성자·관리자만, 하루 한 번
+- (2026-09-20 결정 변경) 조직 멘션은 **허용**한다 — 이전의 "`@팀전체` 금지" 규칙은 폐기.
+  다만 폭탄이 되지 않게 아래를 반드시 지킬 것:
+  · 대상은 `expand_unit_mention`(0020)이 정한다 — **그 페이지를 볼 수 있는 사람만**, 하위 조직까지 펼침
+  · 누가 어느 조직인지·누가 그 페이지를 볼 수 있는지는 **DB 가 판단**한다. 앱에서 명단을 만들지 말 것
+  · 저장은 `props.unitId` (조직명 문자열 금지)
+  · 반복 저장 시 재발송 없음 — `sync_page_mentions` 의 차집합에 맡긴다
 
 ---
 
@@ -75,6 +79,8 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 - 알림 생성은 `enqueue_notification` 만 (자기 멘션 제외 · 5분 묶음 · 수신 설정 존중). 직접 INSERT 금지
 - 미입력 리마인드(0007)는 **권장만** 으로 결정 → 스케줄 등록하지 않음. 켤 때는 요구사항 문서 먼저 갱신
 - 기한 임박 알림(0015)은 **켜져 있음** — 평일 09:00 KST, 기한 당일·3일 전 담당자에게 due_soon
+- 조직 멘션(0020)은 사람 멘션과 같은 경로(`sync_*_mentions`)를 탄다.
+  `savePage`/`saveComment` 가 `extractGroupMentions` → `expand_unit_mention` 으로 펼친 뒤 합친다
 - 공지 알림(0019, `kind='notice'`)은 **고정된 공지에서 작성자·관리자가 직접 누를 때만**.
   대상은 `notice_audience` — `pages_select` 와 같은 규칙이라 못 보는 사람에겐 안 간다.
   하루 한 번(같은 공지·같은 사람), 수신 설정(notify_*)은 따르지 않는다(공식 공지)
@@ -126,4 +132,5 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0017_search_multiword.sql            검색: 여러 단어 AND + pg_trgm 부분일치 인덱스
 0018_page_history_avatars.sql        본문 버전 기록(page_snapshots) + 프로필 사진 버킷(avatars)
 0019_notice_notifications.sql        공지 알림(kind='notice') — notice_audience / notify_notice
+0020_group_mentions.sql              조직 멘션 — expand_unit_mention (가시성 필터 포함)
 ```

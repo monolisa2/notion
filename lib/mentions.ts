@@ -58,7 +58,20 @@ export interface ExtractedMention {
   context: string;
 }
 
+/** 조직 멘션(@인사관리실) — 저장 형태는 unit id (0020) */
+export interface ExtractedGroup {
+  unitId: string;
+  label: string;
+  context: string;
+}
+
 const MENTION_TYPES = new Set(['mention', 'userMention']);
+
+function nodeUnitId(node: AnyNode): string | null {
+  const bag = { ...(node.attrs ?? {}), ...(node.props ?? {}) } as Record<string, unknown>;
+  const raw = bag.unitId ?? bag.unit_id;
+  return typeof raw === 'string' && raw.length > 0 ? raw : null;
+}
 
 function nodeUserId(node: AnyNode): string | null {
   const bag = { ...(node.attrs ?? {}), ...(node.props ?? {}) } as Record<string, unknown>;
@@ -139,6 +152,62 @@ export function extractMentions(doc: unknown): ExtractedMention[] {
   return [...found.values()];
 }
 
+/**
+ * 조직 멘션만 뽑는다. 사람 멘션과 같은 블록 순회를 쓴다.
+ * (extractMentions 는 userId 가 있는 노드만 담으므로 조직 멘션은 그쪽에 섞이지 않는다)
+ */
+export function extractGroupMentions(doc: unknown): ExtractedGroup[] {
+  const found = new Map<string, ExtractedGroup>();
+  if (!doc || typeof doc !== 'object') return [];
+
+  const visitBlock = (block: AnyNode) => {
+    const context = inlineText(block);
+    const scan = (n: AnyNode) => {
+      if (n.type && MENTION_TYPES.has(n.type)) {
+        const unitId = nodeUnitId(n);
+        if (unitId && !found.has(unitId)) {
+          found.set(unitId, { unitId, label: nodeLabel(n), context: context.slice(0, 200) });
+        }
+      }
+      for (const child of inlineNodes(n.content)) scan(child);
+    };
+    scan(block);
+    for (const child of block.children ?? []) visitBlock(child);
+  };
+
+  const blocks = Array.isArray(doc) ? (doc as AnyNode[]) : [(doc as AnyNode)];
+  for (const b of blocks) visitBlock(b);
+  return [...found.values()];
+}
+
+/**
+ * 조직 멘션을 구성원으로 펼친다 (0020).
+ *
+ * 펼치는 일은 **DB 가 한다** — 누가 그 조직 소속인지, 그리고 그 사람이
+ * 이 페이지를 볼 수 있는지는 서버만 알아야 한다.
+ * (못 보는 페이지의 알림을 받으면 눌러도 안 열린다)
+ *
+ * 사람 멘션과 합칠 때는 **사람 멘션이 이긴다** — 직접 부른 맥락이 더 정확하다.
+ */
+async function expandGroups(
+  supabase: SupabaseClient,
+  pageId: string,
+  groups: ExtractedGroup[],
+  target: Map<string, string>,
+): Promise<void> {
+  if (groups.length === 0) return;
+  const { data, error } = await supabase.rpc('expand_unit_mention', {
+    p_page: pageId,
+    p_units: groups.map((g) => g.unitId),
+  });
+  if (error) throw error;
+  const contextOf = new Map(groups.map((g) => [g.unitId, g.context]));
+  for (const row of (data ?? []) as { user_id: string; unit_id: string }[]) {
+    if (target.has(row.user_id)) continue;
+    target.set(row.user_id, contextOf.get(row.unit_id) ?? '');
+  }
+}
+
 /** 문서 전체 평문 (검색·주간보고용) */
 export function docToPlainText(doc: unknown): string {
   const blocks = Array.isArray(doc) ? (doc as AnyNode[]) : [doc as AnyNode];
@@ -161,14 +230,18 @@ export async function savePage(
     .eq('id', pageId);
   if (upErr) throw upErr;
 
-  const mentions = extractMentions(content);
+  // 사람 멘션 + 조직 멘션(구성원으로 펼친 것)
+  const targets = new Map<string, string>();
+  for (const m of extractMentions(content)) targets.set(m.userId, m.context);
+  await expandGroups(supabase, pageId, extractGroupMentions(content), targets);
+
   const contexts: Record<string, string> = {};
-  for (const m of mentions) contexts[m.userId] = m.context;
+  for (const [userId, context] of targets) contexts[userId] = context;
 
   const { data, error: rpcErr } = await supabase.rpc('sync_page_mentions', {
     p_page_id: pageId,
     p_author_id: authorId,
-    p_mentioned: mentions.map((m) => m.userId),
+    p_mentioned: [...targets.keys()],
     p_contexts: contexts,
   });
   if (rpcErr) throw rpcErr;
@@ -195,11 +268,14 @@ export async function saveComment(
     .single();
   if (error) throw error;
 
-  const mentions = extractMentions(params.body);
-  if (mentions.length > 0) {
+  const targets = new Map<string, string>();
+  for (const m of extractMentions(params.body)) targets.set(m.userId, m.context);
+  await expandGroups(supabase, params.pageId, extractGroupMentions(params.body), targets);
+
+  if (targets.size > 0) {
     await supabase.rpc('sync_comment_mentions', {
       p_comment_id: comment.id,
-      p_mentioned: mentions.map((m) => m.userId),
+      p_mentioned: [...targets.keys()],
     });
   }
   return comment.id;

@@ -1719,6 +1719,13 @@ export type Database = {
         }
         Returns: string
       }
+      expand_unit_mention: {
+        Args: { p_page: string; p_units: string[] }
+        Returns: {
+          unit_id: string
+          user_id: string
+        }[]
+      }
       gen_random_uuid: { Args: Record<PropertyKey, never>; Returns: string }
       gen_salt: { Args: { "": string }; Returns: string }
       is_admin: { Args: Record<PropertyKey, never>; Returns: boolean }
