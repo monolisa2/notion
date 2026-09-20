@@ -4,6 +4,7 @@ import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { statusClass } from '@/lib/status-style';
 import { DEFAULT_STATUSES } from '@/lib/types';
 import { Avatar } from '@/components/avatar';
+import { WeeklyDraftButton } from '@/components/weekly/weekly-draft-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,7 +32,7 @@ export default async function WeeklyPage({ searchParams }: { searchParams: Promi
 
   const [{ data: digest }, { data: profile }, { data: statusRows }] = await Promise.all([
     supabase.rpc('weekly_digest', { p_days: days }),
-    supabase.from('profiles').select('is_admin, job_title').eq('id', user.id).maybeSingle(),
+    supabase.from('profiles').select('is_admin, job_title, unit_id').eq('id', user.id).maybeSingle(),
     supabase.from('page_statuses').select('*').order('sort_order'),
   ]);
   const statuses = statusRows && statusRows.length > 0 ? statusRows : DEFAULT_STATUSES;
@@ -49,7 +50,15 @@ export default async function WeeklyPage({ searchParams }: { searchParams: Promi
       <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">주간 모아보기</h1>
         <span className="text-sm text-zinc-400">지난 {days}일의 진행 로그 · 사람별</span>
-        <div className="ml-auto flex gap-1 rounded-md border border-zinc-200 p-0.5 text-xs">
+        <div className="ml-auto flex items-center gap-2">
+          <WeeklyDraftButton
+            rows={rows}
+            days={days}
+            meId={user.id}
+            meUnitId={profile?.unit_id ?? null}
+          />
+        </div>
+        <div className="flex gap-1 rounded-md border border-zinc-200 p-0.5 text-xs">
           {[7, 14].map((d) => (
             <Link
               key={d}

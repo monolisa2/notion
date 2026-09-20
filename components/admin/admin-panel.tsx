@@ -10,6 +10,8 @@ import {
   createUnit,
   deleteUnit,
   resetPassword,
+  openTasksOf,
+  reassignTasks,
   setActive,
   setUnitWriters,
   updateMember,
@@ -186,6 +188,13 @@ function MembersTab({
   const [busy, setBusy] = useState(false);
   const [showInactive, setShowInactive] = useState(false);
   const [q, setQ] = useState('');
+  // 비활성화 전 인수인계 — 담당 업무가 남아 있으면 누구에게 넘길지 먼저 묻는다
+  const [handover, setHandover] = useState<{
+    member: { id: string; name: string };
+    count: number;
+    titles: string[];
+    to: string;
+  } | null>(null);
 
   const query = q.trim().toLowerCase();
   const visible = members.filter((m) => {
@@ -399,10 +408,26 @@ function MembersTab({
                                 : `${btn} text-red-600`
                             }
                             onClick={() => {
-                              const msg = inactive
-                                ? `${m.name} 님을 다시 활성화할까요? 로그인이 다시 열립니다.`
-                                : `${m.name} 님을 비활성화할까요? 로그인이 차단되고 목록에서 숨겨집니다.`;
-                              if (window.confirm(msg)) void run(setActive(m.id, inactive));
+                              if (inactive) {
+                                if (window.confirm(`${m.name} 님을 다시 활성화할까요? 로그인이 다시 열립니다.`)) {
+                                  void run(setActive(m.id, true));
+                                }
+                                return;
+                              }
+                              // 비활성화: 남은 담당 업무를 먼저 확인
+                              void openTasksOf(m.id).then((r) => {
+                                if (!r.ok) {
+                                  toast.error(r.error);
+                                  return;
+                                }
+                                if (r.data.count === 0) {
+                                  if (window.confirm(`${m.name} 님을 비활성화할까요? 로그인이 차단되고 목록에서 숨겨집니다.`)) {
+                                    void run(setActive(m.id, false));
+                                  }
+                                  return;
+                                }
+                                setHandover({ member: { id: m.id, name: m.name }, count: r.data.count, titles: r.data.titles, to: '' });
+                              });
                             }}
                           >
                             {inactive ? '복구' : '비활성화'}
@@ -421,6 +446,75 @@ function MembersTab({
         </div>
         <p className="mt-2 text-xs text-zinc-400">소속 인원: {options.map((o) => `${o.unit.name} ${members.filter((m) => m.unit_id === o.id && !m.deactivated_at).length}`).join(' · ')} · 미지정 {members.filter((m) => !m.unit_id && !m.deactivated_at).length} — {unitName(null) === '미지정' ? '' : ''}</p>
       </section>
+
+      {/* 비활성화 전 인수인계 */}
+      {handover && (
+        <>
+          <div className="fixed inset-0 z-40 bg-black/30" onMouseDown={() => setHandover(null)} />
+          <div className="fixed left-1/2 top-1/2 z-50 w-[min(92vw,26rem)] -translate-x-1/2 -translate-y-1/2 rounded-xl border border-zinc-200 bg-white p-4 shadow-xl">
+            <h3 className="text-sm font-semibold">{handover.member.name} 님의 담당 업무 {handover.count}건</h3>
+            <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+              비활성화해도 담당자는 그대로 남습니다. 넘길 사람을 정하면 한 번에 옮기고, 각 업무의 진행 기록에도 남습니다.
+            </p>
+            {handover.titles.length > 0 && (
+              <ul className="mt-2 max-h-28 overflow-y-auto rounded-md bg-zinc-50 px-3 py-2 text-xs text-zinc-600">
+                {handover.titles.map((t) => (
+                  <li key={t} className="truncate">· {t}</li>
+                ))}
+                {handover.count > handover.titles.length && (
+                  <li className="text-zinc-400">외 {handover.count - handover.titles.length}건</li>
+                )}
+              </ul>
+            )}
+            <label className="mt-3 block">
+              <span className="text-xs text-zinc-500">넘길 사람</span>
+              <select
+                value={handover.to}
+                onChange={(e) => setHandover({ ...handover, to: e.target.value })}
+                className="mt-1 w-full rounded-md border border-zinc-200 px-2 py-1.5 text-sm outline-none"
+              >
+                <option value="">고르지 않음 (담당자 그대로 두기)</option>
+                {members
+                  .filter((x) => !x.deactivated_at && x.id !== handover.member.id)
+                  .map((x) => (
+                    <option key={x.id} value={x.id}>
+                      {x.name}
+                    </option>
+                  ))}
+              </select>
+            </label>
+            <div className="mt-4 flex justify-end gap-2">
+              <button
+                type="button"
+                className="rounded-md px-3 py-1 text-xs text-zinc-500 hover:bg-zinc-100"
+                onClick={() => setHandover(null)}
+              >
+                취소
+              </button>
+              <button
+                type="button"
+                className="rounded-md bg-red-600 px-3 py-1 text-xs font-medium text-white hover:bg-red-700"
+                onClick={() => {
+                  const h = handover;
+                  setHandover(null);
+                  void (async () => {
+                    if (h.to) {
+                      await run(reassignTasks(h.member.id, h.to), (d) =>
+                        toast.success(`업무 ${d.moved}건을 넘겼습니다`),
+                      );
+                    }
+                    await run(setActive(h.member.id, false), () =>
+                      toast.success(`${h.member.name} 님을 비활성화했습니다`),
+                    );
+                  })();
+                }}
+              >
+                {handover.to ? '넘기고 비활성화' : '그대로 비활성화'}
+              </button>
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }
@@ -622,6 +716,7 @@ function OrgTab({
           </div>
         </>
       )}
+
     </>
   );
 }

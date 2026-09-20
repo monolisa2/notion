@@ -156,6 +156,88 @@ export async function setActive(userId: string, active: boolean) {
   });
 }
 
+/**
+ * 이 사람이 담당인 "아직 안 끝난" 업무.
+ * 퇴사·휴직으로 비활성화할 때, 담당자가 그대로 남아 유령 업무가 되는 것을 막는다.
+ */
+export async function openTasksOf(userId: string) {
+  return wrap(async () => {
+    const { supabase } = await requireAdmin();
+    const { data: statuses } = await supabase.from('page_statuses').select('name, kind');
+    const openNames = (statuses ?? [])
+      .filter((s) => s.kind === '대기' || s.kind === '진행' || s.kind === '보류')
+      .map((s) => s.name);
+    if (openNames.length === 0) return { count: 0, titles: [] as string[] };
+    const { data, error } = await supabase
+      .from('pages')
+      .select('id, title')
+      .eq('type', 'task')
+      .eq('assignee_id', userId)
+      .in('status', openNames)
+      .is('archived_at', null)
+      .order('updated_at', { ascending: false })
+      .limit(100);
+    if (error) throw new Error(error.message);
+    return { count: (data ?? []).length, titles: (data ?? []).slice(0, 5).map((t) => t.title) };
+  });
+}
+
+/**
+ * 담당 업무 일괄 재배정. 넘긴 내역은 각 업무의 진행 로그에도 남는다
+ * (나중에 "이거 왜 내 앞으로 왔지?" 를 답할 수 있어야 한다).
+ */
+export async function reassignTasks(fromUserId: string, toUserId: string) {
+  return wrap(async () => {
+    const { supabase, userId: me } = await requireAdmin();
+    if (fromUserId === toUserId) throw new Error('같은 사람에게는 넘길 수 없습니다');
+
+    const { data: statuses } = await supabase.from('page_statuses').select('name, kind');
+    const openNames = (statuses ?? [])
+      .filter((s) => s.kind === '대기' || s.kind === '진행' || s.kind === '보류')
+      .map((s) => s.name);
+    if (openNames.length === 0) return { moved: 0 };
+
+    const admin = createAdminClient();
+    const { data: names } = await admin
+      .from('profiles')
+      .select('id, name')
+      .in('id', [fromUserId, toUserId]);
+    const nameOf = (id: string) => (names ?? []).find((n) => n.id === id)?.name ?? '알 수 없음';
+
+    const { data: tasks, error } = await admin
+      .from('pages')
+      .select('id, status, progress')
+      .eq('type', 'task')
+      .eq('assignee_id', fromUserId)
+      .in('status', openNames)
+      .is('archived_at', null);
+    if (error) throw new Error(error.message);
+    const rows = tasks ?? [];
+    if (rows.length === 0) return { moved: 0 };
+
+    const { error: upErr } = await admin
+      .from('pages')
+      .update({ assignee_id: toUserId })
+      .in('id', rows.map((t) => t.id));
+    if (upErr) throw new Error(upErr.message);
+
+    // 진행 로그에 흔적 (append-only, status_snapshot 은 건드리지 않는다)
+    const note = `담당자 변경: ${nameOf(fromUserId)} → ${nameOf(toUserId)} (계정 비활성화에 따른 인수인계)`;
+    await admin.from('page_updates').insert(
+      rows.map((t) => ({
+        page_id: t.id,
+        author_id: me,
+        content: note,
+        progress_snapshot: t.progress,
+        status_snapshot: null,
+        blocker: null,
+      })),
+    );
+
+    return { moved: rows.length };
+  });
+}
+
 // ---------- 조직도 ----------
 export async function createUnit(input: { parentId: string | null; name: string; level: '본부' | '실' | '팀' }) {
   return wrap(async () => {
