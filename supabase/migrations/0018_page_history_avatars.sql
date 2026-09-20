@@ -24,6 +24,9 @@
 -- -------------------------------------------------------------
 -- (1) 본문 버전 기록
 -- -------------------------------------------------------------
+drop trigger if exists pages_snapshot_bu on pages;
+drop table if exists page_snapshots cascade;
+
 create table page_snapshots (
   id         uuid primary key default gen_random_uuid(),
   page_id    uuid not null references pages(id) on delete cascade,
@@ -121,6 +124,12 @@ begin
     insert into storage.buckets (id, name, public, file_size_limit)
     values ('avatars', 'avatars', true, 2 * 1024 * 1024)
     on conflict (id) do update set public = true, file_size_limit = 2 * 1024 * 1024;
+
+    -- 두 번 실행해도 안전하게 (SQL 편집기에서 다시 돌리는 경우)
+    execute $p$ drop policy if exists "avatars_read" on storage.objects $p$;
+    execute $p$ drop policy if exists "avatars_insert" on storage.objects $p$;
+    execute $p$ drop policy if exists "avatars_update" on storage.objects $p$;
+    execute $p$ drop policy if exists "avatars_delete" on storage.objects $p$;
 
     execute $p$ create policy "avatars_read" on storage.objects
       for select using (bucket_id = 'avatars') $p$;
