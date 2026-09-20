@@ -34,7 +34,7 @@ function dday(due: string | null, today: string) {
 }
 
 /**
- * 우리 팀 업무 현황 — 한 화면에 "누가 / 무엇을 / 어디까지 / 마지막 기록" 을 모아 본다.
+ * 진행 상황 — 한 화면에 "누가 / 무엇을 / 어디까지 / 마지막 기록" 을 모아 본다.
  * 기본은 내 소속(하위 조직 포함). 관리자·실장은 다른 조직도 골라 볼 수 있다.
  */
 export default async function TeamPage({
@@ -156,9 +156,15 @@ export default async function TeamPage({
   return (
     <div className="mx-auto w-full max-w-5xl px-6 py-8 sm:px-8">
       <div className="flex flex-wrap items-center gap-3">
-        <h1 className="text-2xl font-semibold tracking-tight">
-          {unitLabel(units, unitId) || '본부'} 업무 현황
-        </h1>
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {unitLabel(units, unitId) || '본부'} 진행 상황
+          </h1>
+          {/* '업무 찾기'(/tasks) 와 하는 일이 달라 한 줄로 못 박아 둔다 */}
+          <p className="mt-0.5 text-xs text-zinc-400">
+            누가 어디까지 왔는지 보는 곳 — 진행 중인 업무만, 마지막 기록과 함께
+          </p>
+        </div>
         {/* 업무별(구조) / 담당자별(사람) — 같은 데이터를 다른 축으로 본다 */}
         <div className="flex gap-1 rounded-md border border-zinc-200 p-0.5 text-xs dark:border-zinc-700">
           {(

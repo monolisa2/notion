@@ -49,7 +49,8 @@ function riskOf(due: string | null, today: string): string | null {
 }
 
 /**
- * 업무 목록: 테이블 / 칸반(status) 토글, 필터는 URL 쿼리로 유지.
+ * 업무 찾기: 찾고·거르고·바꾸는 화면. 테이블 / 칸반 / 타임라인, 필터는 URL 쿼리로 유지.
+ * (읽기 전용 현황판은 /team '진행 상황' — 거긴 마지막 진행 기록이 같이 나온다)
  * (라벨 필터는 0006 마이그레이션을 실행하지 않았으므로 없음)
  */
 export function TaskList({
@@ -164,7 +165,11 @@ export function TaskList({
   return (
     <div className="mx-auto w-full max-w-6xl px-6 py-8 sm:px-8">
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-2 text-2xl font-semibold tracking-tight">업무 목록</h1>
+        <div className="mr-2">
+          <h1 className="text-2xl font-semibold tracking-tight">업무 찾기</h1>
+          {/* '진행 상황'(/team) 과 하는 일이 달라 한 줄로 못 박아 둔다 */}
+          <p className="mt-0.5 text-xs text-zinc-400">찾고 · 거르고 · 바꾸는 곳 — 전 조직, 완료된 업무까지</p>
+        </div>
         <span className="text-sm text-zinc-400">{filtered.length}건</span>
 
         {view === 'kanban' && (

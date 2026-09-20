@@ -584,8 +584,8 @@ export function Sidebar({
 
       <div className="px-2">
         <NavLink href="/" label="홈" icon="🏠" active={pathname === '/'} />
-        <NavLink href="/tasks" label="업무" icon="✅" active={pathname.startsWith('/tasks')} />
-        <NavLink href="/team" label="팀 현황" icon="👥" active={pathname.startsWith('/team')} />
+        <NavLink href="/tasks" label="업무 찾기" icon="✅" active={pathname.startsWith('/tasks')} />
+        <NavLink href="/team" label="진행 상황" icon="👥" active={pathname.startsWith('/team')} />
         <NavLink href="/calendar" label="캘린더" icon="📅" active={pathname.startsWith('/calendar')} />
         <NavLink href="/notices" label="공지" icon="📢" active={pathname.startsWith('/notices')} />
         <NavLink href="/collections/meeting" label="회의록" icon="📝" active={pathname.startsWith('/collections')} />

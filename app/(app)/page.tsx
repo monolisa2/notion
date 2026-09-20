@@ -145,7 +145,7 @@ export default async function Home() {
             {[
               ['1', '페이지 만들기', '왼쪽 사이드바에서 팀 이름에 마우스를 올리면 ＋ 가 나옵니다. 회의록·업무·공지 양식을 고르세요.'],
               ['2', '쓰고 공유하기', '본문은 자동 저장됩니다. / 로 블록 메뉴, @ 로 동료 언급, 하단에서 댓글.'],
-              ['3', '업무로 관리하기', '페이지를 업무로 전환하면 상태·담당자·기한이 붙고, 업무 목록과 이 홈에 모입니다.'],
+              ['3', '업무로 관리하기', '페이지를 업무로 전환하면 상태·담당자·기한이 붙고, 업무 찾기와 이 홈에 모입니다.'],
             ].map(([n, t, d]) => (
               <div key={n} className="rounded-xl border border-zinc-200 p-4">
                 <div className="flex h-6 w-6 items-center justify-center rounded-full bg-zinc-900 text-xs font-semibold text-white">{n}</div>
@@ -211,7 +211,7 @@ export default async function Home() {
       {/* 본부 현황 — 위젯 5개 고정 */}
       <div className="mt-10 flex items-baseline gap-3">
         <h2 className="text-sm font-semibold text-zinc-700">본부 현황</h2>
-        <Link href="/tasks" className="ml-auto text-xs text-zinc-400 hover:underline">업무 목록 →</Link>
+        <Link href="/tasks" className="ml-auto text-xs text-zinc-400 hover:underline">업무 찾기 →</Link>
       </div>
       <Suspense fallback={<DashboardSkeleton />}>
         <DashboardSection statuses={statuses} />
