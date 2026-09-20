@@ -94,7 +94,9 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 - 에러는 삼키지 말고 토스트(`sonner`)로. 메시지는 `errorMessage()` 로 뽑는다
 - 서버 컴포넌트 기본, 상호작용 필요한 곳만 `'use client'`
 - 공지는 **`pinned` 가 기준**이다 (공지 양식 `template='notice'` 는 서식일 뿐).
-  전용 화면은 `/notices`, 모아보기(`/collections`)는 회의록·주간 정리만 다룬다
+  전용 화면은 `/notices`, 모아보기(`/collections`)는 회의록·주간 정리만 다룬다.
+  공지 작성은 `/notices` 의 "＋ 공지 쓰기" 하나로 — 공간·양식·고정을 사용자가 각각 고르게 하지 말 것.
+  고정 권한은 관리자만이고 **UPDATE·INSERT 양쪽 트리거**가 지킨다(0009 + 0021)
 - 대시보드 위젯은 5개 고정 (`v_stale_tasks` `v_blocked_tasks` `v_due_risk` `v_assignee_summary` `v_activity_feed`). 집계는 뷰에서
 - 진행 로그 입력은 텍스트 + 진행률 + (선택)막힘 3개. 필드 추가 요청은 기본 거절
 - "내 업무"는 **담당(assignee_id) ∪ 참여(page_people)**. 담당자만 보면 참여자 화면에서 업무가 사라진다
@@ -135,4 +137,5 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 0018_page_history_avatars.sql        본문 버전 기록(page_snapshots) + 프로필 사진 버킷(avatars)
 0019_notice_notifications.sql        공지 알림(kind='notice') — notice_audience / notify_notice
 0020_group_mentions.sql              조직 멘션 — expand_unit_mention (가시성 필터 포함)
+0021_notice_write.sql                공지 고정 INSERT 구멍 차단 + 공지 바로 쓰기
 ```

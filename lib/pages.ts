@@ -29,6 +29,8 @@ export async function createPage(
     content?: unknown;
     template?: string | null;
     eventDate?: string | null;
+    /** 공지로 바로 게시 (관리자만 — DB 트리거가 검사한다, 0021) */
+    pinned?: boolean;
   },
 ): Promise<string> {
   const type = params.type ?? 'doc';
@@ -45,6 +47,7 @@ export async function createPage(
       content: (params.content ?? null) as never,
       template: params.template ?? (type === 'task' ? 'task' : null),
       event_date: params.eventDate ?? null,
+      ...(params.pinned ? { pinned: true } : {}),
       ...(params.parentId === null
         ? {
             visibility: params.visibility ?? '본부',

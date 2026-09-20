@@ -4,6 +4,7 @@ import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { getUnits } from '@/lib/reference';
 import { unitLabel } from '@/lib/org';
 import { Avatar } from '@/components/avatar';
+import { NewNoticeButton } from '@/components/notices/new-notice-button';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,7 @@ export default async function NoticesPage() {
   const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
-  const [{ data: pinned }, { data: past }, units, { data: visits }] = await Promise.all([
+  const [{ data: pinned }, { data: past }, units, { data: visits }, { data: me }] = await Promise.all([
     supabase
       .from('pages')
       .select(SELECT)
@@ -62,7 +63,9 @@ export default async function NoticesPage() {
       .limit(50),
     getUnits(),
     supabase.from('page_visits').select('page_id').eq('user_id', user.id),
+    supabase.from('profiles').select('name, unit_id, is_admin').eq('id', user.id).maybeSingle(),
   ]);
+  const rootUnitId = units.find((u) => !u.parent_id)?.id ?? null;
 
   const seen = new Set((visits ?? []).map((v) => v.page_id));
   const live = (pinned ?? []) as unknown as NoticeRow[];
@@ -70,16 +73,25 @@ export default async function NoticesPage() {
 
   return (
     <div className="mx-auto w-full max-w-3xl px-6 py-8 sm:px-8">
-      <div className="flex flex-wrap items-baseline gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <h1 className="text-2xl font-semibold tracking-tight">공지</h1>
         <span className="text-sm text-zinc-400">게시 중 {live.length}건</span>
+        <div className="ml-auto">
+          <NewNoticeButton
+            isAdmin={me?.is_admin ?? false}
+            rootUnitId={rootUnitId}
+            myUnitId={me?.unit_id ?? null}
+            myUnitName={unitLabel(units, me?.unit_id ?? null) || '내 소속'}
+            authorName={me?.name ?? '나'}
+          />
+        </div>
       </div>
 
       {live.length === 0 ? (
         <p className="mt-10 rounded-xl border border-dashed border-zinc-200 px-4 py-8 text-center text-sm leading-relaxed text-zinc-400 dark:border-zinc-700">
           게시 중인 공지가 없습니다.
           <br />
-          공지 양식으로 페이지를 쓴 뒤 <b>⋯ 메뉴 → &ldquo;공지로 고정&rdquo;</b> 하면 여기와 홈 상단에 올라옵니다.
+          오른쪽 위 <b>＋ 공지 쓰기</b> 를 누르면 바로 씁니다 — 양식과 게시가 함께 됩니다.
         </p>
       ) : (
         <ul className="mt-4 space-y-2">
