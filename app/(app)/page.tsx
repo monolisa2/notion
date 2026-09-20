@@ -5,6 +5,7 @@ import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { getMyProfile, getStatuses } from '@/lib/reference';
 import { statusClass } from '@/lib/status-style';
 import { kstHour, kstToday } from '@/lib/kst';
+import { APP_NAME } from '@/lib/branding';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,7 +107,7 @@ export default async function Home() {
       <h1 className="text-2xl font-semibold tracking-tight">
         {greeting()}, {profile?.name ?? '반갑습니다'}님
       </h1>
-      <p className="mt-1 text-sm text-zinc-500">{today} · 경영관리본부 TeamHub</p>
+      <p className="mt-1 text-sm text-zinc-500">{today} · 경영관리본부 {APP_NAME}</p>
 
       {/* 고정 공지 */}
       {(pinned ?? []).length > 0 && (

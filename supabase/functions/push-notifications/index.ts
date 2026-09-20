@@ -117,7 +117,7 @@ const KIND_LABEL: Record<string, string> = {
 
 function composeMessage(rows: NotificationRow[], baseUrl: string): string {
   const lines: string[] = [];
-  lines.push(rows.length === 1 ? '[TeamHub] 새 알림' : `[TeamHub] 새 알림 ${rows.length}건`);
+  lines.push(rows.length === 1 ? '[TEAM_HUB] 새 알림' : `[TEAM_HUB] 새 알림 ${rows.length}건`);
   for (const n of rows) {
     lines.push('');
     lines.push(`• (${KIND_LABEL[n.kind] ?? n.kind}) ${n.title}`);

@@ -3,6 +3,7 @@ import { Noto_Sans_KR } from 'next/font/google';
 import { cookies } from 'next/headers';
 import './globals.css';
 import { Providers } from '@/components/providers';
+import { APP_NAME } from '@/lib/branding';
 
 /*
  * Noto Sans KR — 빌드 때 받아 자체 호스팅한다 (구글 CDN 런타임 의존 없음, 비용 0원).
@@ -18,7 +19,7 @@ const notoSansKr = Noto_Sans_KR({
 });
 
 export const metadata: Metadata = {
-  title: 'TeamHub',
+  title: APP_NAME,
   description: '경영관리본부 업무 공유 플랫폼',
 };
 

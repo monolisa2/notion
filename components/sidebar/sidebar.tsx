@@ -29,6 +29,7 @@ import { NotificationBell } from '@/components/notifications/notification-bell';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { useNewPage } from '@/components/new-page-provider';
 import { unitLabel } from '@/lib/org';
+import { APP_NAME } from '@/lib/branding';
 
 type DropPos = 'before' | 'after' | 'inside';
 type DropTarget = { id: string; pos: DropPos } | { id: null; pos: 'root' };
@@ -513,7 +514,7 @@ export function Sidebar({
         <div className="min-w-0 flex-1 leading-tight">
           <div className="truncate font-semibold text-zinc-800">{me.name}</div>
           <div className="truncate text-[11px] text-zinc-500">
-            {[unitLabel(units, me.unitId), me.rank, me.jobTitle].filter(Boolean).join(' · ') || 'TeamHub'}
+            {[unitLabel(units, me.unitId), me.rank, me.jobTitle].filter(Boolean).join(' · ') || APP_NAME}
           </div>
         </div>
         <NotificationBell meId={me.id} />

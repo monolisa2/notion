@@ -1,4 +1,5 @@
 import { LoginForm } from './login-form';
+import { APP_NAME } from '@/lib/branding';
 
 export default async function LoginPage({
   searchParams,
@@ -9,7 +10,7 @@ export default async function LoginPage({
   return (
     <main className="flex flex-1 items-center justify-center px-4">
       <div className="w-full max-w-sm rounded-2xl border border-zinc-200 bg-white p-8 shadow-sm dark:border-zinc-800 dark:bg-zinc-900">
-        <h1 className="text-2xl font-semibold tracking-tight">TeamHub</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{APP_NAME}</h1>
         <p className="mt-2 text-sm text-zinc-600 dark:text-zinc-400">경영관리본부 업무 공유 플랫폼</p>
         <div className="mt-8">
           <LoginForm next={next} />

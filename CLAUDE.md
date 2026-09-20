@@ -1,4 +1,4 @@
-# TeamHub — 경영관리본부 업무 공유 플랫폼
+# TEAM_HUB — 경영관리본부 업무 공유 플랫폼
 
 Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반드시 준수할 것.
 요구사항의 원문은 `docs/REQUIREMENTS.md` (v1 확정). 이 파일은 그 문서를 구현할 때의 규칙이다.
@@ -94,6 +94,8 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 ## 6. 화면 원칙
 
 - 한국어 UI, 날짜 `YYYY-MM-DD`, 상태 값은 DB 의 한글 문자열 그대로
+- 사이트 이름은 `lib/branding.ts` 의 `APP_NAME` 하나다 (현재 `TEAM_HUB`). 화면에 이름을 리터럴로 박지 말 것 —
+  앱 밖이라 못 가져다 쓰는 곳은 두 군데뿐(네이버웍스 Edge Function · `package.json` 의 name)
 - **글자 크기의 기준은 `app/globals.css` 의 `html { font-size }` 하나다** (현재 15px — Noto Sans KR 이 커 보여 보정).
   Tailwind 의 text-*·여백이 전부 rem 이라 이 값 하나로 화면 전체가 같이 움직인다.
   px 로 박아 둔 곳은 세 군데뿐 — 사이드바 14px · 에디터 본문 16px · 페이지 제목 40px.

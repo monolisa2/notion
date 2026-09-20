@@ -203,7 +203,7 @@ export type EmailPlanRow = {
   name: string;
   currentEmail: string | null;
   newEmail: string | null;
-  status: '변경' | '같음' | '명단에 없음' | 'TeamHub 에 없음';
+  status: '변경' | '같음' | '명단에 없음' | '앱에 없음';
 };
 
 /**
@@ -271,7 +271,7 @@ export async function planEmailsFromCsv(csv: string, domain: string) {
       };
     });
 
-    // CSV 에만 있고 TeamHub 에 없는 사람은 굳이 다 보여주지 않는다 (240명이 쏟아진다)
+    // CSV 에만 있고 우리 쪽에 없는 사람은 굳이 다 보여주지 않는다 (240명이 쏟아진다)
     return rows;
   });
 }

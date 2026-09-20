@@ -1,4 +1,4 @@
-# TeamHub 운영 안내
+# TEAM_HUB 운영 안내
 
 기능이 아니라 **운영**에 관한 문서. 인사관리실(관리자)이 읽는다.
 한 번 설정하면 끝나는 것과 매달 하는 것, 그리고 무료 플랜이라 알고 있어야 하는 제약을 모았다.
@@ -37,7 +37,7 @@ SUPABASE_DB_URL='postgresql://postgres:비밀번호@db.xxxx.supabase.co:5432/pos
 2. `Enable Custom SMTP` 켜고 회사 메일 정보 입력
    - Host / Port: 네이버웍스 SMTP (`smtp.worksmobile.com`, 465 또는 587)
    - Username / Password: 발송 전용 계정 (개인 계정 말고 `teamhub@회사도메인` 같은 것을 하나 파는 게 좋다)
-   - Sender email / Sender name: 위 계정 / `TeamHub`
+   - Sender email / Sender name: 위 계정 / `TEAM_HUB`
 3. **Authentication → Email Templates → Reset Password** 의 문구를 한국어로 다듬는다
 4. 로그인 화면에 "비밀번호 찾기" 를 넣는 작업은 그다음에 하면 된다 (설정이 먼저)
 

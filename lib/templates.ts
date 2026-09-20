@@ -4,6 +4,7 @@
  * BlockNote 블록 JSON 을 그대로 pages.content 에 넣는다.
  */
 import type { PageType } from './types';
+import { APP_NAME } from '@/lib/branding';
 
 type Inline = string | { type: 'text'; text: string; styles: Record<string, boolean> };
 type Block = {
@@ -126,10 +127,10 @@ export const TEMPLATES: Template[] = [
   {
     key: 'guide',
     icon: '📖',
-    name: 'TeamHub 사용법 안내',
+    name: `${APP_NAME} 사용법 안내`,
     description: '처음 오신 분들께 — 본부 공용에 만들어 공지로 고정하세요',
     type: 'doc',
-    title: () => 'TeamHub 3분 사용법',
+    title: () => `${APP_NAME} 3분 사용법`,
     content: () => [
       quote('처음 오셨나요? 이 페이지만 읽으면 오늘부터 쓸 수 있습니다. (3분)'),
       h(3, '1. 여기는 무엇을 하는 곳인가'),

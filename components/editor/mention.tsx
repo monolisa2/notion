@@ -52,7 +52,7 @@ export const schema = BlockNoteSchema.create().extend({
   inlineContentSpecs: { mention: Mention },
 });
 
-export type TeamHubEditor = typeof schema.BlockNoteEditor;
+export type AppEditor = typeof schema.BlockNoteEditor;
 
 /**
  * `@` 입력 시 사람 자동완성. BlockNoteView 의 자식으로 넣는다.
