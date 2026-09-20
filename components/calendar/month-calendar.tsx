@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { kstToday } from '@/lib/kst';
 import { usePathname, useRouter } from 'next/navigation';
 import { useMemo, useState } from 'react';
 import { buildOrgTree, type OrgNode } from '@/lib/org';
@@ -75,7 +76,7 @@ export function MonthCalendar({
     ...Array.from({ length: daysInMonth }, (_, i) => `${month}-${String(i + 1).padStart(2, '0')}`),
   ];
   while (cells.length % 7) cells.push(null);
-  const today = new Date().toISOString().slice(0, 10);
+  const today = kstToday();
 
   const allowed = unit ? subtree(orgTree, unit) : null;
   const byDate = useMemo(() => {

@@ -156,6 +156,150 @@ export async function setActive(userId: string, active: boolean) {
   });
 }
 
+// ---------- 회사 메일 반영 ----------
+
+/**
+ * 네이버웍스 멤버 CSV 한 줄 파싱 (따옴표 안의 쉼표를 지킨다).
+ */
+function csvCells(line: string): string[] {
+  const out: string[] = [];
+  let cur = '';
+  let quoted = false;
+  for (let i = 0; i < line.length; i += 1) {
+    const c = line[i];
+    if (c === '"') {
+      if (quoted && line[i + 1] === '"') {
+        cur += '"';
+        i += 1;
+      } else quoted = !quoted;
+    } else if (c === ',' && !quoted) {
+      out.push(cur);
+      cur = '';
+    } else cur += c;
+  }
+  out.push(cur);
+  return out.map((x) => x.trim());
+}
+
+export type EmailPlanRow = {
+  userId: string | null;
+  name: string;
+  currentEmail: string | null;
+  newEmail: string | null;
+  status: '변경' | '같음' | '명단에 없음' | 'TeamHub 에 없음';
+};
+
+/**
+ * 네이버웍스 멤버 CSV 를 읽어 "누구를 어떤 메일로 바꿀지" 계획을 만든다.
+ * 실제 변경은 하지 않는다 — 관리자가 확인한 뒤 applyEmailPlan 으로 적용한다.
+ *
+ * 회사 메일은 CSV 의 ID 칸 + 도메인 (예: mcshin → mcshin@enliple.com).
+ * 사람 짝짓기는 **이름(성+이름) 완전 일치**만 한다 — 비슷한 이름을 자동으로 맞추면
+ * 엉뚱한 사람의 로그인 주소가 바뀐다.
+ */
+export async function planEmailsFromCsv(csv: string, domain: string) {
+  return wrap(async () => {
+    const { supabase } = await requireAdmin();
+    const dom = domain.trim().replace(/^@/, '').toLowerCase();
+    if (!dom || !dom.includes('.')) throw new Error('메일 도메인을 확인하세요 (예: enliple.com)');
+
+    const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
+    if (lines.length < 2) throw new Error('CSV 내용이 비어 있습니다');
+
+    // 머리글에서 성·이름·ID 칸 위치를 찾는다 (칸 순서가 바뀌어도 동작하도록)
+    const head = csvCells(lines[0]).map((h) => h.replace(/\*/g, '').trim());
+    const iLast = head.findIndex((h) => h === '성');
+    const iFirst = head.findIndex((h) => h === '이름');
+    const iId = head.findIndex((h) => h === 'ID');
+    if (iLast < 0 || iFirst < 0 || iId < 0) {
+      throw new Error('머리글에서 성·이름·ID 칸을 찾지 못했습니다 (네이버웍스 멤버 CSV 가 맞는지 확인하세요)');
+    }
+
+    // 이름 → 아이디. 같은 이름이 둘 이상이면 자동 반영에서 제외한다
+    const byName = new Map<string, string | null>();
+    for (const line of lines.slice(1)) {
+      const c = csvCells(line);
+      const name = `${c[iLast] ?? ''}${c[iFirst] ?? ''}`.trim();
+      const id = (c[iId] ?? '').trim();
+      if (!name || !id) continue;
+      byName.set(name, byName.has(name) ? null : id); // 중복 이름 → null (건너뜀)
+    }
+
+    const { data: members, error } = await supabase
+      .from('profiles')
+      .select('id, name, email')
+      .is('deactivated_at', null)
+      .order('name');
+    if (error) throw new Error(error.message);
+
+    const rows: EmailPlanRow[] = (members ?? []).map((m) => {
+      const id = byName.get(m.name);
+      if (id === undefined) {
+        return { userId: m.id, name: m.name, currentEmail: m.email, newEmail: null, status: '명단에 없음' };
+      }
+      if (id === null) {
+        // 같은 이름이 CSV 에 둘 이상 — 사람이 직접 골라야 한다
+        return { userId: m.id, name: m.name, currentEmail: m.email, newEmail: null, status: '명단에 없음' };
+      }
+      const next = `${id.toLowerCase()}@${dom}`;
+      return {
+        userId: m.id,
+        name: m.name,
+        currentEmail: m.email,
+        newEmail: next,
+        status: (m.email ?? '').toLowerCase() === next ? '같음' : '변경',
+      };
+    });
+
+    // CSV 에만 있고 TeamHub 에 없는 사람은 굳이 다 보여주지 않는다 (240명이 쏟아진다)
+    return rows;
+  });
+}
+
+/** 한 사람의 로그인 메일 변경 (auth + profiles). 비밀번호는 건드리지 않는다. */
+async function changeEmail(userId: string, email: string) {
+  const next = email.trim().toLowerCase();
+  if (!EMAIL_RE.test(next)) throw new Error(`이메일 형식이 아닙니다: ${email}`);
+  const admin = createAdminClient();
+  const { error } = await admin.auth.admin.updateUserById(userId, {
+    email: next,
+    email_confirm: true, // 확인 메일 없이 바로 사용 (무료 플랜은 메일 발송이 사실상 막혀 있다)
+  });
+  if (error) {
+    throw new Error(
+      error.message.includes('already') ? `이미 다른 계정이 쓰는 메일입니다: ${next}` : error.message,
+    );
+  }
+  const { error: pErr } = await admin.from('profiles').update({ email: next }).eq('id', userId);
+  if (pErr) throw new Error(pErr.message);
+}
+
+/** 한 사람만 바꾸기 (관리자 표에서 직접 수정) */
+export async function updateMemberEmail(userId: string, email: string) {
+  return wrap(async () => {
+    await requireAdmin();
+    await changeEmail(userId, email);
+  });
+}
+
+/** 계획대로 일괄 적용. 비밀번호·소속은 그대로 둔다 */
+export async function applyEmailPlan(pairs: { userId: string; email: string }[]) {
+  return wrap(async () => {
+    await requireAdmin();
+    const done: string[] = [];
+    const failed: { userId: string; error: string }[] = [];
+    for (const p of pairs) {
+      try {
+        await changeEmail(p.userId, p.email);
+        done.push(p.userId);
+      } catch (e) {
+        failed.push({ userId: p.userId, error: e instanceof Error ? e.message : String(e) });
+      }
+    }
+    return { done: done.length, failed };
+  });
+}
+
 /**
  * 이 사람이 담당인 "아직 안 끝난" 업무.
  * 퇴사·휴직으로 비활성화할 때, 담당자가 그대로 남아 유령 업무가 되는 것을 막는다.

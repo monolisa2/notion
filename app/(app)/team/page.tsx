@@ -5,6 +5,7 @@ import { getStatuses, getUnits } from '@/lib/reference';
 import { statusClass, statusKind } from '@/lib/status-style';
 import { subtreeOf, unitLabel } from '@/lib/org';
 import { Avatar } from '@/components/avatar';
+import { kstToday } from '@/lib/kst';
 import { fetchParticipantsByPage } from '@/lib/participation';
 
 export const dynamic = 'force-dynamic';
@@ -104,7 +105,7 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
     a === '__none__' ? 1 : b === '__none__' ? -1 : 0,
   );
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = kstToday();
   const overdue = open.filter((t) => t.due_date && t.due_date < today).length;
   const avg = open.length
     ? Math.round(open.reduce((n, t) => n + (t.progress ?? 0), 0) / open.length)

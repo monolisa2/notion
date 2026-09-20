@@ -4,11 +4,13 @@ import { DashboardSection, DashboardSkeleton } from '@/components/dashboard/dash
 import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { getMyProfile, getStatuses } from '@/lib/reference';
 import { statusClass } from '@/lib/status-style';
+import { kstHour, kstToday } from '@/lib/kst';
 
 export const dynamic = 'force-dynamic';
 
 function greeting() {
-  const h = new Date().getHours();
+  // 서버는 UTC 로 돈다 — 한국 시간으로 인사해야 한다
+  const h = kstHour();
   if (h < 11) return '좋은 아침입니다';
   if (h < 17) return '좋은 오후입니다';
   return '수고 많으셨습니다';
@@ -90,7 +92,7 @@ export default async function Home() {
     .sort((a, b) => (a.due_date ?? '9999').localeCompare(b.due_date ?? '9999'))
     .slice(0, 8);
 
-  const today = new Date().toISOString().slice(0, 10);
+  const today = kstToday();
   const isNewcomer = visitCount === 0;
 
   return (

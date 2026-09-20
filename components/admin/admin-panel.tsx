@@ -15,8 +15,10 @@ import {
   setActive,
   setUnitWriters,
   updateMember,
+  updateMemberEmail,
   updateUnit,
 } from '@/app/(app)/admin/actions';
+import { EmailSync } from '@/components/admin/email-sync';
 
 type Member = {
   id: string;
@@ -319,6 +321,7 @@ function MembersTab({
           <label className="flex items-center gap-1.5 text-xs text-zinc-500">
             <input type="checkbox" checked={showInactive} onChange={(e) => setShowInactive(e.target.checked)} /> 비활성 포함
           </label>
+          {canAuth && <EmailSync onDone={() => void run(Promise.resolve({ ok: true as const, data: undefined }))} />}
         </div>
         <div className="mt-2 overflow-x-auto rounded-xl border border-zinc-200 dark:border-zinc-800">
           <table className="w-full min-w-[920px] text-sm">
@@ -348,7 +351,26 @@ function MembersTab({
                       />
                       {m.id === meId && <span className="ml-1 text-[10px] text-zinc-400">(나)</span>}
                     </td>
-                    <td className="px-3 py-1.5 text-xs text-zinc-500">{m.email}</td>
+                    <td className="px-3 py-1.5">
+                      <input
+                        defaultValue={m.email ?? ''}
+                        disabled={!canAuth}
+                        title="로그인에 쓰는 메일 주소입니다"
+                        onBlur={(e) => {
+                          const next = e.target.value.trim().toLowerCase();
+                          if (!next || next === (m.email ?? '').toLowerCase()) {
+                            e.target.value = m.email ?? '';
+                            return;
+                          }
+                          if (!window.confirm(`${m.name} 님의 로그인 메일을\n${m.email} → ${next}\n으로 바꿉니다. 비밀번호는 그대로입니다.`)) {
+                            e.target.value = m.email ?? '';
+                            return;
+                          }
+                          void run(updateMemberEmail(m.id, next));
+                        }}
+                        className="w-44 rounded border border-transparent bg-transparent px-1 py-0.5 text-xs text-zinc-500 hover:border-zinc-200 focus:border-blue-400 focus:outline-none disabled:hover:border-transparent dark:hover:border-zinc-700"
+                      />
+                    </td>
                     <td className="px-3 py-1.5">
                       <select value={m.unit_id ?? ''} onChange={(e) => void run(updateMember(m.id, { unitId: e.target.value || null }))} className={select}>
                         <option value="">미지정</option>
