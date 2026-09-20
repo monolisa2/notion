@@ -29,7 +29,22 @@ const STATUS_LABEL: Record<SaveStatus, string> = {
   error: '저장 실패',
 };
 
-export function PageEditor({ page, userId }: { page: PageRow; userId: string }) {
+export function PageEditor({
+  page,
+  userId,
+  afterTitle,
+}: {
+  page: PageRow;
+  userId: string;
+  /**
+   * 제목과 본문 **사이**에 끼워 넣을 것 (업무 속성 줄 · 진행률 패널).
+   *
+   * 제목·본문·자동저장이 이 컴포넌트 하나에 묶여 있어서 제목만 따로 떼어낼 수 없다.
+   * 그래서 반대로 **넣을 자리를 연다** — 페이지가 "제목 → 진행 상황 → 본문" 순서로 읽히게.
+   * 전에는 속성·진행률·하위 페이지가 전부 위에 있어서 제목이 한 화면 아래로 밀려 있었다.
+   */
+  afterTitle?: React.ReactNode;
+}) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
   const [title, setTitle] = useState(page.title);
@@ -196,7 +211,10 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
         className="w-full bg-transparent text-[40px] font-bold leading-tight tracking-tight text-zinc-900 outline-none placeholder:text-zinc-300"
       />
 
-      <div className="mt-3 -mx-12">
+      {/* 바깥 컨테이너의 좌우 여백을 되돌린다 — 안쪽 섹션이 제 여백을 다시 준다 */}
+      {afterTitle && <div className="-mx-6 sm:-mx-12">{afterTitle}</div>}
+
+      <div className={`-mx-12 ${afterTitle ? 'mt-5' : 'mt-3'}`}>
         <BlockNoteEditor initialContent={page.content} meId={userId} pageId={page.id} onChange={onContentChange} />
       </div>
     </div>

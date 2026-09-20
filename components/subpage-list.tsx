@@ -14,7 +14,16 @@ import { statusClass } from '@/lib/status-style';
 import type { PageRow, PageVisibility } from '@/lib/types';
 
 /** 노션처럼 페이지 본문 아래에 하위 페이지를 카드로 보여준다 */
-export function SubpageList({ page, statuses = DEFAULT_STATUSES }: { page: PageRow; statuses?: StatusRow[] }) {
+export function SubpageList({
+  page,
+  statuses = DEFAULT_STATUSES,
+  progressAuto = false,
+}: {
+  page: PageRow;
+  statuses?: StatusRow[];
+  /** 위 진행률 패널이 이 하위 업무들의 평균을 쓰고 있는가 (0014) — 같은 목록이 두 번 나오는 이유를 한 줄로 밝힌다 */
+  progressAuto?: boolean;
+}) {
   const { rows } = useTree();
   const { open } = useNewPage();
   const router = useRouter();
@@ -57,6 +66,10 @@ export function SubpageList({ page, statuses = DEFAULT_STATUSES }: { page: PageR
             <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-[11px] tabular-nums text-zinc-500 dark:bg-zinc-800">
               {children.length}
             </span>
+          )}
+          {/* 위에서 본 목록이 또 나오는 게 아니라, 저 진행률이 여기서 나온 것임을 잇는다 */}
+          {progressAuto && tasks.length > 0 && (
+            <span className="text-[11px] font-normal text-zinc-400">· 위 진행률은 이 업무들의 평균입니다</span>
           )}
         </h2>
 

@@ -117,38 +117,51 @@ export default async function PageView({ params }: { params: Promise<{ id: strin
           <NoticePinHint key={`pin-${page.id}`} pageId={page.id} isAdmin={me.isAdmin} />
         )}
 
-      {isTask && (
-        <PropertyBar
-          key={`props-${page.id}`}
-          page={page}
-          assignees={assignees}
-          meId={user.id}
-          statuses={statuses}
-          initialPeople={peopleIds}
-        />
-      )}
-      {isTask && (
-        <ProgressPanel
-          key={`progress-${page.id}`}
-          page={page}
-          initialUpdates={updates}
-          statuses={statuses}
-          autoFromChildren={progressAuto}
-          initialChildren={childTasks}
-          initialChildUpdates={childUpdates}
-        />
-      )}
+      {/*
+        화면 순서: 제목 → 업무 속성·진행 상황 → 본문 → 하위 페이지 → 진행 기록 → 댓글.
 
-      {/* 회의록: 액션 아이템을 하위 업무로 승격 */}
+        전에는 속성·진행률·하위 페이지가 전부 제목 위에 있어서, 페이지를 열면
+        **제목이 한 화면 아래로 밀려** 무슨 페이지인지가 안 보였다 (2026-09-20).
+        제목·본문·자동저장이 PageEditor 하나에 묶여 있어 제목만 떼어낼 수 없으므로,
+        속성·진행률을 `afterTitle` 로 넘겨 제목 바로 밑에 끼운다.
+      */}
+      <PageEditor
+        key={page.id}
+        page={page}
+        userId={user.id}
+        afterTitle={
+          isTask ? (
+            <>
+              <PropertyBar
+                key={`props-${page.id}`}
+                page={page}
+                assignees={assignees}
+                meId={user.id}
+                statuses={statuses}
+                initialPeople={peopleIds}
+              />
+              <ProgressPanel
+                key={`progress-${page.id}`}
+                page={page}
+                initialUpdates={updates}
+                statuses={statuses}
+                autoFromChildren={progressAuto}
+                initialChildren={childTasks}
+                initialChildUpdates={childUpdates}
+              />
+            </>
+          ) : null
+        }
+      />
+
+      {/* 회의록: 본문을 읽고 난 뒤에 액션 아이템을 하위 업무로 승격한다 */}
       {page.template === 'meeting' && (
         <ActionItemPromoter key={`actions-${page.id}`} page={page} meId={user.id} people={assignees} />
       )}
 
-      {/* 하위 페이지를 본문 위에 — 들어오자마자 구조가 보이게 */}
-      <SubpageList key={`sub-${page.id}`} page={page} statuses={statuses} />
-
-      {/* key 로 페이지 이동 시 에디터를 새로 마운트 */}
-      <PageEditor key={page.id} page={page} userId={user.id} />
+      {/* 하위 페이지는 본문 **아래**. 위에 두면 제목을 밀어내고,
+          업무의 경우 진행률 패널이 이미 같은 하위 업무를 보여 줘 두 번 나온다 */}
+      <SubpageList key={`sub-${page.id}`} page={page} statuses={statuses} progressAuto={progressAuto} />
 
       {isTask && (
         <UpdateTimeline key={`updates-${page.id}`} pageId={page.id} meId={user.id} initial={updates} progressAuto={progressAuto} />
