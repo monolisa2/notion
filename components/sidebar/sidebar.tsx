@@ -49,7 +49,7 @@ export function Sidebar({
   favorites?: SidebarPageLite[];
   recents?: SidebarPageLite[];
   writerUnits?: string[];
-  /** 사용법 안내 페이지 — 공간 트리에서 빼고 하단 메뉴로 (0016) */
+  /** 사용법 안내 페이지 — 공간 트리에서만 뺀다 (보는 곳은 📢 공지) */
   guidePageId?: string | null;
   onChanged: () => Promise<void>;
 }) {
@@ -622,10 +622,8 @@ export function Sidebar({
         <div className="px-2 pb-0.5 pt-3 text-[11px] font-medium text-zinc-400">공간</div>
         {orgTree.map((root) => renderSpace(root, 0))}
         {renderPersonal()}
+        {/* 사용법은 공지로 고정돼 있어 📢 공지 에서 볼 수 있다 — 하단에 또 둘 필요가 없다 */}
         <div className="mt-4 border-t border-zinc-200/70 pt-1.5">
-          {guidePageId && (
-            <NavLink href={`/p/${guidePageId}`} label="사용법" icon="📖" active={currentId === guidePageId} />
-          )}
           <NavLink href="/trash" label="보관함" icon="🗑️" active={pathname.startsWith('/trash')} />
           {me.isAdmin && <NavLink href="/admin" label="관리자 설정" icon="⚙️" active={pathname.startsWith('/admin')} />}
         </div>

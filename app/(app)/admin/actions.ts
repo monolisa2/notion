@@ -159,9 +159,12 @@ export async function setActive(userId: string, active: boolean) {
 // ---------- 회사 메일 반영 ----------
 
 /**
- * 네이버웍스 멤버 CSV 한 줄 파싱 (따옴표 안의 쉼표를 지킨다).
+ * 한 줄을 칸으로 나눈다 (따옴표 안의 구분자는 지킨다).
+ *
+ * 구분자가 쉼표만 있는 게 아니다 — 엑셀에서 열었다 저장하면 탭이나 세미콜론이 되기도 한다.
+ * 그래서 머리글 줄을 보고 구분자를 먼저 정한 뒤 그걸로 나눈다.
  */
-function csvCells(line: string): string[] {
+function splitCells(line: string, sep: string): string[] {
   const out: string[] = [];
   let cur = '';
   let quoted = false;
@@ -172,13 +175,26 @@ function csvCells(line: string): string[] {
         cur += '"';
         i += 1;
       } else quoted = !quoted;
-    } else if (c === ',' && !quoted) {
+    } else if (c === sep && !quoted) {
       out.push(cur);
       cur = '';
     } else cur += c;
   }
   out.push(cur);
   return out.map((x) => x.trim());
+}
+
+/** 머리글 줄에서 구분자 추론 (따옴표 밖에 제일 많이 나오는 것) */
+function detectSeparator(headerLine: string): string {
+  let quoted = false;
+  const count: Record<string, number> = { ',': 0, '\t': 0, ';': 0 };
+  for (const c of headerLine) {
+    if (c === '"') quoted = !quoted;
+    else if (!quoted && c in count) count[c] += 1;
+  }
+  return (Object.entries(count).sort((a, b) => b[1] - a[1])[0]?.[1] ?? 0) > 0
+    ? Object.entries(count).sort((a, b) => b[1] - a[1])[0][0]
+    : ',';
 }
 
 export type EmailPlanRow = {
@@ -206,19 +222,22 @@ export async function planEmailsFromCsv(csv: string, domain: string) {
     const lines = csv.split(/\r?\n/).filter((l) => l.trim().length > 0);
     if (lines.length < 2) throw new Error('CSV 내용이 비어 있습니다');
 
-    // 머리글에서 성·이름·ID 칸 위치를 찾는다 (칸 순서가 바뀌어도 동작하도록)
-    const head = csvCells(lines[0]).map((h) => h.replace(/\*/g, '').trim());
+    // 머리글에서 성·이름·ID 칸 위치를 찾는다 (칸 순서·구분자가 달라도 동작하도록)
+    const sep = detectSeparator(lines[0]);
+    const head = splitCells(lines[0], sep).map((h) => h.replace(/[*\s]/g, '').trim());
     const iLast = head.findIndex((h) => h === '성');
     const iFirst = head.findIndex((h) => h === '이름');
-    const iId = head.findIndex((h) => h === 'ID');
+    const iId = head.findIndex((h) => h.toLowerCase() === 'id');
     if (iLast < 0 || iFirst < 0 || iId < 0) {
-      throw new Error('머리글에서 성·이름·ID 칸을 찾지 못했습니다 (네이버웍스 멤버 CSV 가 맞는지 확인하세요)');
+      throw new Error(
+        `머리글에서 성·이름·ID 칸을 찾지 못했습니다. 읽은 머리글: ${head.slice(0, 8).join(' / ') || '(비어 있음)'}`,
+      );
     }
 
     // 이름 → 아이디. 같은 이름이 둘 이상이면 자동 반영에서 제외한다
     const byName = new Map<string, string | null>();
     for (const line of lines.slice(1)) {
-      const c = csvCells(line);
+      const c = splitCells(line, sep);
       const name = `${c[iLast] ?? ''}${c[iFirst] ?? ''}`.trim();
       const id = (c[iId] ?? '').trim();
       if (!name || !id) continue;
