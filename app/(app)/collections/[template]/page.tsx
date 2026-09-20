@@ -1,4 +1,4 @@
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { createClient, getSessionUser } from '@/lib/supabase/server';
 import { CollectionView, type CollectionItem } from '@/components/collections/collection-view';
 import type { OrgUnitRow } from '@/lib/types';
@@ -20,6 +20,8 @@ export default async function CollectionPage({
 }) {
   const { template } = await params;
   const { unit, period } = await searchParams;
+  // 공지는 "고정" 기준의 전용 화면으로 옮겼다 (옛 링크 대응)
+  if (template === 'notice') redirect('/notices');
   if (!COLLECTION_META[template]) notFound();
 
   const supabase = await createClient();

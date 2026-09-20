@@ -103,7 +103,12 @@ export default async function Home() {
       {/* 고정 공지 */}
       {(pinned ?? []).length > 0 && (
         <section className="mt-6 rounded-xl border border-amber-200 bg-amber-50/50 p-4">
-          <h2 className="text-xs font-semibold uppercase tracking-wide text-amber-800">📌 공지</h2>
+          <div className="flex items-baseline gap-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wide text-amber-800">📌 공지</h2>
+            <Link href="/notices" className="ml-auto text-xs text-amber-800/70 hover:underline">
+              전체 보기
+            </Link>
+          </div>
           <ul className="mt-2 space-y-1">
             {(pinned ?? []).map((n) => (
               <li key={n.id}>

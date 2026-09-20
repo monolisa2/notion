@@ -93,6 +93,8 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 - 업무 상태 목록은 `page_statuses` (0012, 본부 공통). 화면은 이 목록으로 그리고, 집계·완료 판정은 `kind`(`status_kind()`) 로. 이름 리터럴 비교 금지. 편집은 관리자+조직장(RLS)
 - 에러는 삼키지 말고 토스트(`sonner`)로. 메시지는 `errorMessage()` 로 뽑는다
 - 서버 컴포넌트 기본, 상호작용 필요한 곳만 `'use client'`
+- 공지는 **`pinned` 가 기준**이다 (공지 양식 `template='notice'` 는 서식일 뿐).
+  전용 화면은 `/notices`, 모아보기(`/collections`)는 회의록·주간 정리만 다룬다
 - 대시보드 위젯은 5개 고정 (`v_stale_tasks` `v_blocked_tasks` `v_due_risk` `v_assignee_summary` `v_activity_feed`). 집계는 뷰에서
 - 진행 로그 입력은 텍스트 + 진행률 + (선택)막힘 3개. 필드 추가 요청은 기본 거절
 - "내 업무"는 **담당(assignee_id) ∪ 참여(page_people)**. 담당자만 보면 참여자 화면에서 업무가 사라진다

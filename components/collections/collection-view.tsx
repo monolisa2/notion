@@ -238,7 +238,7 @@ export function CollectionView({
         <div className="flex gap-1 rounded-lg border border-zinc-200 p-0.5">
           {tab('meeting', '회의록', '📝')}
           {tab('weekly', '주간 정리', '🗓')}
-          {tab('notice', '공지', '📢')}
+          {/* 공지는 "고정" 이 기준이라 별도 화면(/notices)으로 뺐다 */}
         </div>
       </div>
       <p className="mt-2 text-sm text-zinc-500">
