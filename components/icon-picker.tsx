@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo, useState } from 'react';
-import { EMOJI_COUNT, searchEmoji } from '@/lib/emoji';
+import { searchEmoji } from '@/lib/emoji';
 
 /**
  * 페이지 아이콘 고르는 창.
@@ -38,7 +38,7 @@ export function IconPicker({
             onKeyDown={(e) => {
               if (e.key === 'Escape') onClose();
             }}
-            placeholder={`아이콘 ${EMOJI_COUNT}개 — 회의, 예산, 마감…`}
+            placeholder="검색"
             aria-label="아이콘 검색"
             className="w-full min-w-0 bg-transparent text-sm outline-none placeholder:text-zinc-400"
           />

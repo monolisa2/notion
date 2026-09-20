@@ -40,8 +40,14 @@ export const schema = BlockNoteSchema.create().extend({
 
 export type TeamHubEditor = typeof schema.BlockNoteEditor;
 
-/** `@` 입력 시 사람 자동완성. BlockNoteView 의 자식으로 넣는다. */
-export function MentionMenu({ people, excludeId }: { people: Person[]; excludeId?: string }) {
+/**
+ * `@` 입력 시 사람 자동완성. BlockNoteView 의 자식으로 넣는다.
+ *
+ * 본인도 고를 수 있다 — "문의 @홍길동", "작성 @홍길동" 처럼
+ * 글에 자기 이름을 적는 쓰임이 흔하다.
+ * 자기 멘션이 알림으로 가지 않는 것은 DB(enqueue_notification)가 이미 처리한다.
+ */
+export function MentionMenu({ people, meId }: { people: Person[]; meId?: string }) {
   const editor = useBlockNoteEditor<
     typeof schema.blockSchema,
     typeof schema.inlineContentSchema,
@@ -49,10 +55,9 @@ export function MentionMenu({ people, excludeId }: { people: Person[]; excludeId
   >();
 
   const getItems = async (query: string): Promise<DefaultReactSuggestionItem[]> => {
-    const items = people
-      .filter((p) => p.id !== excludeId)
-      .map((p) => ({
-        title: p.name,
+    const items = people.map((p) => ({
+        // 목록에서 본인을 알아보기 쉽게 (넣는 값은 이름 그대로)
+        title: p.id === meId ? `${p.name} (나)` : p.name,
         group: '사람',
         icon: <Avatar name={p.name} src={p.avatar_url} size={18} />,
         onItemClick: () => {

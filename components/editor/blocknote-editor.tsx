@@ -86,7 +86,7 @@ export default function BlockNoteEditor({
 
   return (
     <BlockNoteView editor={editor} editable={editable} theme={isDark ? 'dark' : 'light'} className="teamhub-editor">
-      <MentionMenu people={people} excludeId={meId} />
+      <MentionMenu people={people} meId={meId} />
     </BlockNoteView>
   );
 }

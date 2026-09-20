@@ -71,7 +71,7 @@ export default function CommentEditor({
         emojiPicker={false}
         className="teamhub-comment-editor"
       >
-        <MentionMenu people={people} excludeId={meId} />
+        <MentionMenu people={people} meId={meId} />
       </BlockNoteView>
       <div className="flex items-center justify-end gap-2 border-t border-zinc-100 px-2 py-1.5 dark:border-zinc-800">
         <span className="mr-auto text-[11px] text-zinc-400">⌘/Ctrl+Enter</span>
