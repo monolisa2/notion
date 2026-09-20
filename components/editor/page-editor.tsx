@@ -8,7 +8,7 @@ import { createClient } from '@/lib/supabase/client';
 import { savePage } from '@/lib/mentions';
 import { useAutosave, type SaveStatus } from '@/hooks/use-autosave';
 import { setPageIcon } from '@/lib/pages';
-import { ICON_CHOICES } from '@/lib/templates';
+import { IconPicker } from '@/components/icon-picker';
 import { useRouter } from 'next/navigation';
 import type { PageRow } from '@/lib/types';
 import { stableJson } from '@/lib/history';
@@ -172,23 +172,12 @@ export function PageEditor({ page, userId }: { page: PageRow; userId: string }) 
           {icon ?? <span className="text-xs">아이콘 추가</span>}
         </button>
         {iconOpen && (
-          <>
-            <div className="fixed inset-0 z-10" onMouseDown={() => setIconOpen(false)} />
-            <div className="absolute left-0 top-full z-20 mt-1 w-72 rounded-xl border border-zinc-200 bg-white p-2 shadow-xl">
-              <div className="grid grid-cols-8 gap-1">
-                {ICON_CHOICES.map((e) => (
-                  <button key={e} type="button" onClick={() => void changeIcon(e)} className="flex h-8 w-8 items-center justify-center rounded text-lg hover:bg-zinc-100">
-                    {e}
-                  </button>
-                ))}
-              </div>
-              {icon && (
-                <button type="button" onClick={() => void changeIcon(null)} className="mt-2 w-full rounded-md px-2 py-1 text-left text-xs text-zinc-500 hover:bg-zinc-100">
-                  아이콘 제거
-                </button>
-              )}
-            </div>
-          </>
+          <IconPicker
+            current={icon}
+            onPick={(e) => void changeIcon(e)}
+            onClear={() => void changeIcon(null)}
+            onClose={() => setIconOpen(false)}
+          />
         )}
       </div>
 
