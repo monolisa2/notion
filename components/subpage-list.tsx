@@ -19,7 +19,9 @@ export function SubpageList({ page, statuses = DEFAULT_STATUSES }: { page: PageR
   const { open } = useNewPage();
   const router = useRouter();
   const supabase = useMemo(() => createClient(), []);
-  const [view, setView] = useState<'list' | 'board'>('list');
+  // 기본은 보드 — 상태별로 늘어서는 편이 한눈에 들어온다.
+  // 단, 업무가 하나도 없으면 보드는 빈 칸만 나오므로 목록으로 떨어뜨린다 (아래 view)
+  const [viewPref, setViewPref] = useState<'list' | 'board'>('board');
   const children = useMemo(
     () =>
       rows
@@ -29,6 +31,8 @@ export function SubpageList({ page, statuses = DEFAULT_STATUSES }: { page: PageR
   );
 
   const tasks = children.filter((c) => c.type === 'task');
+  const docs = children.filter((c) => c.type !== 'task');
+  const view = tasks.length > 0 ? viewPref : 'list';
   const moveStatus = async (id: string, status: string) => {
     const { error } = await supabase.from('pages').update({ status }).eq('id', id);
     if (error) toast.error(`상태 변경 실패: ${errorMessage(error)}`);
@@ -65,7 +69,7 @@ export function SubpageList({ page, statuses = DEFAULT_STATUSES }: { page: PageR
                 <button
                   key={v}
                   type="button"
-                  onClick={() => setView(v)}
+                  onClick={() => setViewPref(v)}
                   className={`rounded px-2 py-0.5 text-[11px] ${
                     view === v
                       ? 'bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900'
@@ -95,7 +99,25 @@ export function SubpageList({ page, statuses = DEFAULT_STATUSES }: { page: PageR
         </div>
       </div>
       {view === 'board' && tasks.length > 0 && (
-        <SubpageBoard tasks={tasks} statuses={statuses} onStatus={moveStatus} />
+        <>
+          <SubpageBoard tasks={tasks} statuses={statuses} onStatus={moveStatus} />
+          {/* 보드는 업무만 늘어놓는다 — 문서 하위 페이지가 사라지지 않게 아래에 따로 */}
+          {docs.length > 0 && (
+            <ul className="mt-2 flex flex-wrap gap-2">
+              {docs.map((d) => (
+                <li key={d.id}>
+                  <Link
+                    href={`/p/${d.id}`}
+                    className="flex items-center gap-1.5 rounded-lg border border-zinc-200 px-2.5 py-1.5 text-xs hover:border-zinc-300 hover:bg-zinc-50 dark:border-zinc-700 dark:hover:bg-zinc-800"
+                  >
+                    <span aria-hidden="true">{d.icon ?? '📄'}</span>
+                    <span className="max-w-[16rem] truncate">{d.title}</span>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       )}
 
       {view === 'list' && children.length > 0 && (
@@ -155,7 +177,8 @@ function SubpageBoard({
                 <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${statusClass(st, statuses)}`}>{st}</span>
                 <span className="text-[10px] text-zinc-400">{col.length}</span>
               </div>
-              <ul className="mt-1 space-y-1.5">
+              {/* 빈 열에도 카드를 떨어뜨릴 자리를 남긴다 (드래그로 상태를 바꾸는 곳이라) */}
+              <ul className="mt-1 min-h-[112px] space-y-1.5">
                 {col.map((t) => (
                   <li
                     key={t.id}
@@ -170,6 +193,11 @@ function SubpageBoard({
                     {t.due_date && <div className="mt-1 text-[10px] text-zinc-400">기한 {t.due_date}</div>}
                   </li>
                 ))}
+                {col.length === 0 && (
+                  <li className="flex h-[104px] items-center justify-center rounded-md border border-dashed border-zinc-200 text-[11px] text-zinc-300 dark:border-zinc-700">
+                    여기로 끌어다 놓기
+                  </li>
+                )}
               </ul>
             </div>
           );

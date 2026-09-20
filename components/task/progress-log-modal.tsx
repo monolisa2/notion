@@ -7,6 +7,7 @@ import { errorMessage } from '@/lib/errors';
 import { insertProgressLog, notifyLogMentions } from '@/lib/updates';
 import type { Me } from '@/lib/types';
 import { Avatar } from '@/components/avatar';
+import { statusClass } from '@/lib/status-style';
 
 type TaskLite = { id: string; title: string; status: string | null; progress: number | null };
 type Person = { id: string; name: string; avatar_url: string | null };
@@ -31,8 +32,13 @@ export function ProgressLogModal({
   const supabase = useMemo(() => createClient(), []);
   const [task, setTask] = useState<TaskLite | null>(null);
   const [taskLoading, setTaskLoading] = useState(!!initialPageId);
-  const [candidates, setCandidates] = useState<TaskLite[]>([]);
+  /** 내 업무(담당 ∪ 참여) — 처음 한 번 채우고 그대로 둔다 */
+  const [myTasks, setMyTasks] = useState<TaskLite[]>([]);
+  /** 이름으로 찾은 결과 — 검색어를 지우면 다시 내 업무가 보여야 하므로 따로 둔다 */
+  const [searchHits, setSearchHits] = useState<TaskLite[]>([]);
+  /** 검색어를 입력한 상태인지 — 목록 라벨과 빈 메시지를 바꾼다 */
   const [taskQuery, setTaskQuery] = useState('');
+  const searching = taskQuery.trim().length > 0;
 
   const [content, setContent] = useState('');
   const [progress, setProgress] = useState(0);
@@ -48,6 +54,9 @@ export function ProgressLogModal({
   const [mentionIndex, setMentionIndex] = useState(0);
   const mentioned = useRef<Map<string, string>>(new Map());
   const textRef = useRef<HTMLTextAreaElement>(null);
+
+  const candidates = searching ? searchHits : myTasks;
+  const mineIds = useMemo(() => new Set(myTasks.map((t) => t.id)), [myTasks]);
 
   // 대상 업무 로드
   useEffect(() => {
@@ -73,16 +82,38 @@ export function ProgressLogModal({
         .in('kind', ['대기', '진행']);
       const openNames =
         statusRows && statusRows.length > 0 ? statusRows.map((s) => s.name) : ['대기', '진행', '검토'];
-      const { data: mine } = await supabase
-        .from('pages')
-        .select('id, title, status, progress')
-        .eq('type', 'task')
-        .eq('assignee_id', me.id)
-        .in('status', openNames)
-        .is('archived_at', null)
-        .order('updated_at', { ascending: false })
-        .limit(20);
-      if (!cancelled) setCandidates(mine ?? []);
+      // 담당 ∪ 참여 — 참여자로만 들어가 있어도 내 일이다 (0013)
+      const [{ data: mine }, { data: joined }] = await Promise.all([
+        supabase
+          .from('pages')
+          .select('id, title, status, progress')
+          .eq('type', 'task')
+          .eq('assignee_id', me.id)
+          .in('status', openNames)
+          .is('archived_at', null)
+          .order('updated_at', { ascending: false })
+          .limit(20),
+        supabase
+          .from('page_people')
+          .select('page_id')
+          .eq('user_id', me.id)
+          .then(async ({ data }) => {
+            const ids = (data ?? []).map((r) => r.page_id);
+            if (ids.length === 0) return { data: [] as TaskLite[] };
+            return supabase
+              .from('pages')
+              .select('id, title, status, progress')
+              .in('id', ids)
+              .eq('type', 'task')
+              .in('status', openNames)
+              .is('archived_at', null)
+              .order('updated_at', { ascending: false })
+              .limit(20);
+          }),
+      ]);
+      const seen = new Set((mine ?? []).map((t) => t.id));
+      const merged = [...(mine ?? []), ...((joined ?? []) as TaskLite[]).filter((t) => !seen.has(t.id))];
+      if (!cancelled) setMyTasks(merged);
 
       const { data: ppl } = await supabase
         .from('profiles')
@@ -127,7 +158,7 @@ export function ProgressLogModal({
         .ilike('title', `%${taskQuery.trim()}%`)
         .order('updated_at', { ascending: false })
         .limit(20);
-      setCandidates(data ?? []);
+      setSearchHits(data ?? []);
     }, 250);
     return () => clearTimeout(t);
   }, [supabase, task, taskQuery]);
@@ -245,17 +276,25 @@ export function ProgressLogModal({
         ) : (
           <div>
             <p className="text-sm font-medium">어느 업무의 진행 상황인가요?</p>
-            <input
-              autoFocus
-              value={taskQuery}
-              onChange={(e) => setTaskQuery(e.target.value)}
-              placeholder="업무 이름으로 검색"
-              className="mt-2 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-1.5 text-sm outline-none focus:border-blue-500 dark:border-zinc-700"
-            />
-            <ul className="mt-2 max-h-56 divide-y divide-zinc-100 overflow-y-auto rounded-md border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+            <p className="mt-1 text-xs leading-relaxed text-zinc-500">
+              오늘 무엇을 했는지 한 줄 남기는 곳입니다. 남기면 진행률이 바뀌고, 그 업무를 보는 사람들이 바로 알 수 있어요.
+            </p>
+
+            {/* 내 업무를 먼저 보여 준다 — 대부분 여기서 고른다 */}
+            <div className="mt-3 flex items-baseline gap-2">
+              <span className="text-xs font-medium text-zinc-600 dark:text-zinc-300">
+                {searching ? '검색 결과' : '내 업무'}
+              </span>
+              <span className="text-xs text-zinc-400">{candidates.length}건</span>
+              <span className="ml-auto text-[11px] text-zinc-400">담당 + 참여 · 진행 중만</span>
+            </div>
+
+            <ul className="mt-1.5 max-h-56 divide-y divide-zinc-100 overflow-y-auto rounded-md border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
               {candidates.length === 0 && (
-                <li className="px-3 py-3 text-center text-xs text-zinc-400">
-                  {taskQuery ? '검색 결과가 없습니다' : '내게 배정된 진행 중 업무가 없습니다. 이름으로 검색해 보세요.'}
+                <li className="px-3 py-4 text-center text-xs leading-relaxed text-zinc-400">
+                  {searching
+                    ? '검색 결과가 없습니다'
+                    : '맡았거나 참여 중인 진행 중 업무가 없습니다.\n아래에서 업무 이름으로 찾아보세요.'}
                 </li>
               )}
               {candidates.map((c) => (
@@ -268,12 +307,31 @@ export function ProgressLogModal({
                     }}
                     className="flex w-full items-center gap-2 px-3 py-2 text-left text-sm hover:bg-zinc-50 dark:hover:bg-zinc-800"
                   >
+                    <span aria-hidden="true">☑</span>
                     <span className="min-w-0 flex-1 truncate">{c.title}</span>
-                    <span className="text-xs text-zinc-400">{c.progress ?? 0}%</span>
+                    {searching && mineIds.has(c.id) && (
+                      <span className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500 dark:bg-zinc-800">
+                        내 업무
+                      </span>
+                    )}
+                    {c.status && (
+                      <span className={`shrink-0 rounded px-1.5 py-0.5 text-[10px] ${statusClass(c.status)}`}>
+                        {c.status}
+                      </span>
+                    )}
+                    <span className="w-9 shrink-0 text-right text-xs tabular-nums text-zinc-400">{c.progress ?? 0}%</span>
                   </button>
                 </li>
               ))}
             </ul>
+
+            {/* 검색은 "내 업무에 없을 때" 쓰는 보조 수단이라 아래에 둔다 */}
+            <input
+              value={taskQuery}
+              onChange={(e) => setTaskQuery(e.target.value)}
+              placeholder="목록에 없나요? 업무 이름으로 찾기"
+              className="mt-2 w-full rounded-md border border-zinc-300 bg-transparent px-3 py-1.5 text-sm outline-none focus:border-blue-500 dark:border-zinc-700"
+            />
           </div>
         )}
 
