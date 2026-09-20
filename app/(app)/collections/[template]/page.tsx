@@ -5,10 +5,9 @@ import type { OrgUnitRow } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
 
+// 이 화면은 회의록 전용 (공지 → /notices, 주간 정리 → /weekly)
 const COLLECTION_META: Record<string, { label: string; icon: string; dateLabel: string }> = {
   meeting: { label: '회의록', icon: '📝', dateLabel: '회의일' },
-  weekly: { label: '주간 정리', icon: '🗓', dateLabel: '기준일' },
-  notice: { label: '공지', icon: '📢', dateLabel: '게시일' },
 };
 
 export default async function CollectionPage({
@@ -20,8 +19,9 @@ export default async function CollectionPage({
 }) {
   const { template } = await params;
   const { unit, period } = await searchParams;
-  // 공지는 "고정" 기준의 전용 화면으로 옮겼다 (옛 링크 대응)
+  // 공지·주간 정리는 각각 전용 화면으로 옮겼다 (옛 링크 대응)
   if (template === 'notice') redirect('/notices');
+  if (template === 'weekly') redirect('/weekly');
   if (!COLLECTION_META[template]) notFound();
 
   const supabase = await createClient();

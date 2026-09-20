@@ -219,30 +219,18 @@ export function CollectionView({
     }
   };
 
-  const tab = (key: string, label: string, icon: string) => (
-    <Link
-      key={key}
-      href={`/collections/${key}`}
-      className={`rounded-md px-3 py-1.5 text-sm ${template === key ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-100'}`}
-    >
-      {icon} {label}
-    </Link>
-  );
-
   const sel = 'rounded-md border border-zinc-200 bg-white px-2 py-1 text-xs outline-none';
 
   return (
     <div className="mx-auto w-full max-w-4xl px-6 py-8 sm:px-10">
+      {/* 이 화면은 회의록만 다룬다 —
+          공지는 /notices, 주간 정리는 /weekly(주간 현황)로 각각 옮겼다.
+          한 화면에 탭으로 묶어 두니 사이드바 메뉴와 이름이 겹쳐 헷갈렸다 */}
       <div className="flex flex-wrap items-center gap-2">
-        <h1 className="mr-2 text-2xl font-semibold tracking-tight">모아보기</h1>
-        <div className="flex gap-1 rounded-lg border border-zinc-200 p-0.5">
-          {tab('meeting', '회의록', '📝')}
-          {tab('weekly', '주간 정리', '🗓')}
-          {/* 공지는 "고정" 이 기준이라 별도 화면(/notices)으로 뺐다 */}
-        </div>
+        <h1 className="mr-2 text-2xl font-semibold tracking-tight">📝 회의록</h1>
       </div>
       <p className="mt-2 text-sm text-zinc-500">
-        {meta.label} 양식으로 만든 페이지를 조직·기간으로 모아 봅니다. 팀장은 팀을, 실장은 실 전체를 고르세요.
+        회의록 양식으로 만든 페이지를 조직·기간으로 모아 봅니다. 팀장은 팀을, 실장은 실 전체를 고르세요.
       </p>
 
       <div className="mt-4 flex flex-wrap items-center gap-2">

@@ -19,6 +19,14 @@ type DigestRow = {
   blockers: string | null;
 };
 type SilentRow = { profile_id: string; name: string; open_tasks: number; last_log_at: string | null };
+type WeeklyDoc = {
+  id: string;
+  title: string;
+  icon: string | null;
+  event_date: string | null;
+  created_at: string;
+  author: { name: string } | null;
+};
 
 /**
  * 주간 모아보기 — 지난 N일의 진행 로그를 "사람별 → 업무별" 로 묶어서 보여준다.
@@ -31,11 +39,21 @@ export default async function WeeklyPage({ searchParams }: { searchParams: Promi
   const user = await getSessionUser(supabase);
   if (!user) redirect('/login');
 
-  const [{ data: digest }, { data: profile }, { data: statusRows }, units] = await Promise.all([
+  const [{ data: digest }, { data: profile }, { data: statusRows }, units, { data: weeklyDocs }] = await Promise.all([
     supabase.rpc('weekly_digest', { p_days: days }),
     supabase.from('profiles').select('is_admin, job_title, unit_id').eq('id', user.id).maybeSingle(),
     supabase.from('page_statuses').select('*').order('sort_order'),
     getUnits(),
+    // 주간 정리 **문서** — 예전엔 모아보기의 탭이었는데, 사이드바의 "주간 현황" 과
+    // 이름이 겹쳐 헷갈렸다. 주간에 관한 것은 이 화면 하나로 모은다
+    supabase
+      .from('pages')
+      .select('id, title, icon, event_date, created_at, author:profiles!pages_created_by_fkey(name)')
+      .eq('template', 'weekly')
+      .is('archived_at', null)
+      .order('event_date', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
+      .limit(20),
   ]);
   const rootUnitId = units.find((u) => !u.parent_id)?.id ?? null;
   const statuses = statusRows && statusRows.length > 0 ? statusRows : DEFAULT_STATUSES;
@@ -119,6 +137,35 @@ export default async function WeeklyPage({ searchParams }: { searchParams: Promi
           ))}
         </div>
       )}
+
+      {/* 주간 정리 문서 — 위가 "자동으로 모인 로그" 라면 이건 "사람이 쓴 정리" */}
+      <section className="mt-10">
+        <div className="flex items-baseline gap-2">
+          <h2 className="text-sm font-semibold text-zinc-700">주간 정리 문서</h2>
+          <span className="text-xs text-zinc-400">{(weeklyDocs ?? []).length}건</span>
+          <span className="ml-auto text-[11px] text-zinc-400">주간 정리 양식으로 쓴 페이지</span>
+        </div>
+        {(weeklyDocs ?? []).length === 0 ? (
+          <p className="mt-2 rounded-xl border border-dashed border-zinc-200 px-4 py-4 text-center text-xs text-zinc-400 dark:border-zinc-700">
+            아직 없습니다. 위 &ldquo;주간 정리 초안 만들기&rdquo; 를 누르면 이 화면의 로그로 초안이 만들어집니다.
+          </p>
+        ) : (
+          <ul className="mt-2 divide-y divide-zinc-100 rounded-xl border border-zinc-200 dark:divide-zinc-800 dark:border-zinc-800">
+            {((weeklyDocs ?? []) as unknown as WeeklyDoc[]).map((d) => (
+              <li key={d.id}>
+                <Link href={`/p/${d.id}`} className="flex items-center gap-3 px-4 py-2.5 text-sm hover:bg-zinc-50 dark:hover:bg-zinc-900/60">
+                  <span className="w-5 text-center" aria-hidden="true">{d.icon ?? '🗓'}</span>
+                  <span className="min-w-0 flex-1 truncate">{d.title}</span>
+                  <span className="shrink-0 text-xs text-zinc-400">{d.author?.name}</span>
+                  <span className="shrink-0 text-xs tabular-nums text-zinc-400">
+                    {d.event_date ?? d.created_at.slice(0, 10)}
+                  </span>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
+      </section>
 
       <p className="mt-8 text-xs text-zinc-400">
         기간 중 담당자가 바뀌어도 정확하도록 &ldquo;로그를 쓴 사람&rdquo; 기준으로 묶습니다. 텍스트로 복사해 주간보고에 붙여 쓰세요.
