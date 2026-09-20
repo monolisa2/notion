@@ -25,7 +25,7 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 | DB / Auth / Realtime / Storage | Supabase (Free) |
 | 에디터 | BlockNote (mantine) — 블록 중첩·슬래시·드래그·되돌리기는 전부 위임 |
 | 스타일 | Tailwind CSS 4 |
-| 글꼴 | **웹폰트 없음.** 라틴은 Arial, 한글은 기기 글꼴(맑은 고딕·Apple SD Gothic Neo)로 떨어진다. `--font-sans` 하나로 관리 |
+| 글꼴 | **Noto Sans KR** — `next/font` 로 빌드 때 받아 자체 호스팅(구글 CDN 런타임 의존 없음, 무료). 기기 글꼴은 컴퓨터마다 화면이 달라져 되돌렸다. `--font-sans` 하나로 관리 |
 | 배포 | Vercel |
 | 로그인 | **회사 이메일 + 비밀번호.** 가입은 닫고 관리자가 계정 생성(임시 비밀번호, 첫 로그인 변경 강제) |
 | 외부 알림 | 네이버웍스 봇 (Edge Function, 코드 보관 중 · 나중에 켬) |
@@ -94,7 +94,7 @@ Claude Code 는 이 파일을 매 세션 자동으로 읽는다. 작업 전 반�
 ## 6. 화면 원칙
 
 - 한국어 UI, 날짜 `YYYY-MM-DD`, 상태 값은 DB 의 한글 문자열 그대로
-- **글자 크기의 기준은 `app/globals.css` 의 `html { font-size }` 하나다** (현재 16px).
+- **글자 크기의 기준은 `app/globals.css` 의 `html { font-size }` 하나다** (현재 15px — Noto Sans KR 이 커 보여 보정).
   Tailwind 의 text-*·여백이 전부 rem 이라 이 값 하나로 화면 전체가 같이 움직인다.
   px 로 박아 둔 곳은 세 군데뿐 — 사이드바 14px · 에디터 본문 16px · 페이지 제목 40px.
   크기 조절 요청이 오면 개별 컴포넌트를 고치지 말고 이 네 값만 손댈 것

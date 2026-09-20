@@ -13,14 +13,13 @@
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   /*
-   * 라틴·숫자는 Arial, 한글은 기기 글꼴.
+   * Noto Sans KR (app/layout.tsx 에서 next/font 로 받아 자체 호스팅).
    *
-   * Arial 에는 한글 글리프가 없어서 한글은 자연히 뒤쪽으로 넘어간다 —
-   * 윈도우는 맑은 고딕, 맥은 Apple SD Gothic Neo. (노션도 한글은 OS 글꼴로 떨어뜨린다)
-   * 웹폰트는 받지 않는다.
+   * 기기 글꼴을 쓰면 보는 사람 컴퓨터에 따라 같은 화면이 달라진다.
+   * 뒤쪽은 폰트가 드물게 안 받아질 때를 위한 대비책이다.
    */
-  --font-sans: Arial, Helvetica, "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo",
-    "Noto Sans KR", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+  --font-sans: var(--font-noto-sans-kr), "Malgun Gothic", "맑은 고딕", "Apple SD Gothic Neo",
+    Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
 }
 
@@ -31,12 +30,12 @@
  * Tailwind 의 text-sm / text-xs / 여백(p-2, gap-3 …)은 전부 rem 이라
  * **이 값 하나로 화면 전체가 같이 줄고 늘어난다.**
  *
- * 노션과 같은 기기 글꼴을 쓰게 되면서 16px 로 되돌렸다 —
- * Noto Sans KR 이 크게 보여 15px 로 낮춰 뒀던 보정이 이제 필요 없다.
+ * Noto Sans KR 로 돌아오면서 15px — 같은 16px 에서도 Noto 가 Arial·맑은 고딕보다 크게 보여,
+ * "노션처럼 줄이자" 로 맞춰 둔 화면 크기를 그대로 유지하려면 보정이 필요하다.
  * 크기를 다시 조절할 일이 생기면 **이 숫자만** 바꾸면 된다.
  */
 html {
-  font-size: 16px;
+  font-size: 15px;
 }
 
 body {
