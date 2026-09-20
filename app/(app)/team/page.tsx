@@ -5,6 +5,7 @@ import { getStatuses, getUnits } from '@/lib/reference';
 import { statusClass, statusKind } from '@/lib/status-style';
 import { subtreeOf, unitLabel } from '@/lib/org';
 import { Avatar } from '@/components/avatar';
+import { fetchParticipantsByPage } from '@/lib/participation';
 
 export const dynamic = 'force-dynamic';
 
@@ -70,14 +71,18 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
 
   // 각 업무의 마지막 진행 기록 (한 번에 받아 클라이언트에서 묶는다)
   const ids = open.map((t) => t.id);
-  const { data: logRows } = ids.length
-    ? await supabase
-        .from('page_updates')
-        .select('page_id, content, created_at, author:profiles!page_updates_author_id_fkey(name)')
-        .in('page_id', ids)
-        .order('created_at', { ascending: false })
-        .limit(400)
-    : { data: [] as LastLog[] };
+  const [{ data: logRows }, participants] = await Promise.all([
+    ids.length
+      ? supabase
+          .from('page_updates')
+          .select('page_id, content, created_at, author:profiles!page_updates_author_id_fkey(name)')
+          .in('page_id', ids)
+          .order('created_at', { ascending: false })
+          .limit(400)
+      : Promise.resolve({ data: [] as LastLog[] }),
+    // 참여자(0013) — 담당자 말고 누가 같이 붙어 있는지도 보여야 한다
+    fetchParticipantsByPage(supabase, ids),
+  ]);
   const lastLog = new Map<string, LastLog>();
   for (const l of (logRows ?? []) as unknown as LastLog[]) {
     if (!lastLog.has(l.page_id)) lastLog.set(l.page_id, l);
@@ -191,6 +196,24 @@ export default async function TeamPage({ searchParams }: { searchParams: Promise
                           </span>
                           <span className="w-9 text-right text-xs tabular-nums text-zinc-600">{t.progress ?? 0}%</span>
                         </span>
+                        {(participants.get(t.id) ?? []).filter((u) => u.id !== t.assignee?.id).length > 0 && (
+                          <span
+                            className="flex shrink-0 -space-x-1.5"
+                            title={`참여: ${(participants.get(t.id) ?? [])
+                              .filter((u) => u.id !== t.assignee?.id)
+                              .map((u) => u.name)
+                              .join(', ')}`}
+                          >
+                            {(participants.get(t.id) ?? [])
+                              .filter((u) => u.id !== t.assignee?.id)
+                              .slice(0, 3)
+                              .map((u) => (
+                                <span key={u.id} className="rounded-full ring-2 ring-white dark:ring-zinc-900">
+                                  <Avatar name={u.name} src={u.avatar_url} size={16} />
+                                </span>
+                              ))}
+                          </span>
+                        )}
                         {d && (
                           <span className={`shrink-0 text-xs tabular-nums ${d.tone}`} title={`기한 ${t.due_date}`}>
                             {d.label}

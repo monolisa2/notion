@@ -3,13 +3,14 @@ import { getStatuses, getUnits } from '@/lib/reference';
 import { fetchTasks } from '@/lib/tasks';
 import { TaskList } from '@/components/tasks/task-list';
 import { LEADER_TITLES } from '@/lib/org';
+import { fetchMyParticipations } from '@/lib/participation';
 
 export const dynamic = 'force-dynamic';
 
 export default async function TasksPage() {
   const supabase = await createClient();
   const user = await getSessionUser(supabase);
-  const [tasks, { data: people }, units, statuses, { data: me }] = await Promise.all([
+  const [tasks, { data: people }, units, statuses, { data: me }, myParticipantIds] = await Promise.all([
     fetchTasks(supabase),
     supabase.from('profiles').select('id, name, avatar_url').is('deactivated_at', null).order('name'),
     getUnits(),
@@ -17,6 +18,7 @@ export default async function TasksPage() {
     user
       ? supabase.from('profiles').select('is_admin, job_title').eq('id', user.id).maybeSingle()
       : Promise.resolve({ data: null }),
+    user ? fetchMyParticipations(supabase, user.id) : Promise.resolve([] as string[]),
   ]);
   const canManageStatuses =
     !!me && (me.is_admin || (LEADER_TITLES as readonly string[]).includes(me.job_title ?? ''));
@@ -28,6 +30,7 @@ export default async function TasksPage() {
       statuses={statuses}
       meId={user?.id}
       canManageStatuses={canManageStatuses}
+      myParticipantIds={myParticipantIds}
     />
   );
 }

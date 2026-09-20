@@ -57,7 +57,14 @@ export function PropertyBar({
   // 마지막으로 "저장된" 값 — 자동 기록의 비교 기준.
   // (fields 는 조작 중에 먼저 바뀌므로 비교 기준으로 쓰면 안 된다.
   //  서버 값 변경은 아래 Realtime 핸들러가 갱신한다)
-  const committedRef = useRef({ status: page.status, progress: page.progress });
+  const committedRef = useRef<TaskFields>({
+    status: page.status,
+    assignee_id: page.assignee_id,
+    progress: page.progress,
+    start_date: page.start_date,
+    due_date: page.due_date,
+    priority: page.priority,
+  });
 
   // 이 페이지 행의 변경을 구독 (진행 로그 INSERT 트리거 / 다른 사용자 편집)
   useEffect(() => {
@@ -68,7 +75,14 @@ export function PropertyBar({
         { event: 'UPDATE', schema: 'public', table: 'pages', filter: `id=eq.${page.id}` },
         (payload) => {
           const row = payload.new as PageRow;
-          committedRef.current = { status: row.status, progress: row.progress };
+          committedRef.current = {
+            status: row.status,
+            assignee_id: row.assignee_id,
+            progress: row.progress,
+            start_date: row.start_date,
+            due_date: row.due_date,
+            priority: row.priority,
+          };
           setFields({
             status: row.status,
             assignee_id: row.assignee_id,
@@ -85,6 +99,9 @@ export function PropertyBar({
     };
   }, [supabase, page.id]);
 
+  const assigneeName = (id: string | null | undefined) =>
+    id ? (assignees.find((a) => a.id === id)?.name ?? '알 수 없음') : '없음';
+
   const update = async (patch: Partial<TaskFields>) => {
     const prev = fieldsRef.current;
     const committed = { ...committedRef.current };
@@ -95,20 +112,24 @@ export function PropertyBar({
       toast.error(`저장 실패: ${errorMessage(error)}`);
       return;
     }
-    // 상태 변경은 "누가 바꿨는지" 타임라인에 자동 기록
-    if (meId && patch.status !== undefined && patch.status !== committed.status) {
-      committedRef.current = { ...committedRef.current, status: patch.status };
-      try {
-        await insertAutoLog(supabase, {
-          pageId: page.id,
-          authorId: meId,
-          content: `상태 변경: ${committed.status ?? '없음'} → ${patch.status}`,
-          progress: committed.progress,
-          status: patch.status,
-        });
-      } catch {
-        // 자동 기록 실패는 조용히 넘어간다 (본 저장은 이미 성공)
-      }
+    committedRef.current = { ...committedRef.current, ...patch };
+
+    // "누가 무엇을 바꿨는지" 타임라인에 자동 기록.
+    // 상태뿐 아니라 기한·담당자·우선순위도 남긴다 — 일정이 밀린 이유가 여기서 보인다.
+    if (!meId) return;
+    const note = describeChange(patch, committed, assigneeName);
+    if (!note) return;
+    try {
+      await insertAutoLog(supabase, {
+        pageId: page.id,
+        authorId: meId,
+        content: note,
+        progress: committed.progress,
+        // 상태를 바꾼 게 아니면 status_snapshot 은 건드리지 않는다 (0002 트리거가 coalesce)
+        status: patch.status !== undefined && patch.status !== committed.status ? patch.status : null,
+      });
+    } catch {
+      // 자동 기록 실패는 조용히 넘어간다 (본 저장은 이미 성공)
     }
   };
 
@@ -304,6 +325,36 @@ export function PropertyBar({
       </button>
     </div>
   );
+}
+
+const DATE_LABEL: Record<string, string> = { start_date: '시작일', due_date: '기한' };
+
+/**
+ * 바뀐 속성을 한 줄 한국어로. 바뀐 게 없으면 null → 기록하지 않는다.
+ * (진행률은 여기서 바꿀 수 없다 — 진행 로그를 통해서만 바뀐다)
+ */
+function describeChange(
+  patch: Partial<TaskFields>,
+  before: TaskFields,
+  nameOf: (id: string | null | undefined) => string,
+): string | null {
+  const parts: string[] = [];
+  if (patch.status !== undefined && patch.status !== before.status) {
+    parts.push(`상태 변경: ${before.status ?? '없음'} → ${patch.status}`);
+  }
+  if (patch.assignee_id !== undefined && patch.assignee_id !== before.assignee_id) {
+    parts.push(`담당자 변경: ${nameOf(before.assignee_id)} → ${nameOf(patch.assignee_id)}`);
+  }
+  for (const key of ['start_date', 'due_date'] as const) {
+    const next = patch[key];
+    if (next !== undefined && next !== before[key]) {
+      parts.push(`${DATE_LABEL[key]} 변경: ${before[key] ?? '없음'} → ${next ?? '없음'}`);
+    }
+  }
+  if (patch.priority !== undefined && patch.priority !== before.priority) {
+    parts.push(`우선순위 변경: ${before.priority ?? '없음'} → ${patch.priority ?? '없음'}`);
+  }
+  return parts.length > 0 ? parts.join(' · ') : null;
 }
 
 function Chevron() {

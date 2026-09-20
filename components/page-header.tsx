@@ -11,6 +11,7 @@ import { ancestorIds, buildTree, collectSubtreeIds, findNode } from '@/lib/tree'
 import { changeableUnitsFor, unitLabel } from '@/lib/org';
 import type { OrgUnitRow, PageRow, PageVisibility } from '@/lib/types';
 import { useTree } from '@/components/tree-context';
+import { PageHistory } from '@/components/page-history';
 
 const VIS_LABEL: Record<PageVisibility, string> = { 본부: '본부 전체', 소속: '소속 조직만', 개인: '나만 봄' };
 
@@ -38,6 +39,7 @@ export function PageHeader({
   const { rows } = useTree();
   const [busy, setBusy] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [historyOpen, setHistoryOpen] = useState(false);
 
   const tree = useMemo(() => buildTree(rows), [rows]);
   const crumbs = useMemo(
@@ -207,6 +209,17 @@ export function PageHeader({
                   {page.pinned ? '공지 고정 해제' : '공지로 고정 (홈 상단)'}
                 </button>
               )}
+              <button
+                type="button"
+                role="menuitem"
+                onClick={() => {
+                  setMenuOpen(false);
+                  setHistoryOpen(true);
+                }}
+                className="block w-full rounded-md px-3 py-1.5 text-left hover:bg-zinc-100"
+              >
+                본문 기록 · 되돌리기
+              </button>
               <button type="button" role="menuitem" onClick={archive} className="block w-full rounded-md px-3 py-1.5 text-left text-red-600 hover:bg-zinc-100">
                 보관
               </button>
@@ -214,6 +227,10 @@ export function PageHeader({
           </>
         )}
       </div>
+
+      {historyOpen && meId && (
+        <PageHistory pageId={page.id} meId={meId} currentContent={page.content} onClose={() => setHistoryOpen(false)} />
+      )}
     </div>
   );
 }

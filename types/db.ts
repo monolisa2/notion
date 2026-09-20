@@ -689,6 +689,94 @@ export type Database = {
           },
         ]
       }
+      page_snapshots: {
+        Row: {
+          content: Json | null
+          created_at: string
+          id: string
+          page_id: string
+          replaced_by: string | null
+          title: string
+        }
+        Insert: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          page_id: string
+          replaced_by?: string | null
+          title: string
+        }
+        Update: {
+          content?: Json | null
+          created_at?: string
+          id?: string
+          page_id?: string
+          replaced_by?: string | null
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "page_snapshots_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_snapshots_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_blocked_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_snapshots_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_due_risk"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_snapshots_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_favorite_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_snapshots_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_page_tree"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_snapshots_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_recent_pages"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_snapshots_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_stale_tasks"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_snapshots_page_id_fkey"
+            columns: ["page_id"]
+            referencedRelation: "v_trash"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_snapshots_replaced_by_fkey"
+            columns: ["replaced_by"]
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "page_snapshots_replaced_by_fkey"
+            columns: ["replaced_by"]
+            referencedRelation: "v_assignee_summary"
+            referencedColumns: ["assignee_id"]
+          },
+        ]
+      }
       page_statuses: {
         Row: {
           color: string
@@ -1668,6 +1756,8 @@ export type Database = {
           visibility: string
         }[]
       }
+      show_limit: { Args: Record<PropertyKey, never>; Returns: number }
+      show_trgm: { Args: { "": string }; Returns: string[] }
       silent_members: {
         Args: { p_days?: number }
         Returns: {

@@ -59,6 +59,7 @@ export function TaskList({
   statuses = DEFAULT_STATUSES,
   meId,
   canManageStatuses = false,
+  myParticipantIds = [],
 }: {
   tasks: TaskRow[];
   people: Person[];
@@ -66,6 +67,8 @@ export function TaskList({
   statuses?: StatusRow[];
   meId?: string;
   canManageStatuses?: boolean;
+  /** 내가 참여자(page_people)로 들어가 있는 페이지 id — "내 업무"는 담당 ∪ 참여 */
+  myParticipantIds?: string[];
 }) {
   const supabase = useMemo(() => createClient(), []);
   const router = useRouter();
@@ -78,6 +81,14 @@ export function TaskList({
   const status = params.get('status') ?? '';
   const due = (params.get('due') as DueFilter) || 'all';
   const showClosed = params.get('closed') === '1';
+  const mine = params.get('mine') === '1';
+
+  // 담당자가 아니어도 참여자로 들어가 있으면 내 업무다
+  const myPages = useMemo(() => new Set(myParticipantIds), [myParticipantIds]);
+  const isMine = useCallback(
+    (t: TaskRow) => !!meId && (t.assignee_id === meId || myPages.has(t.id)),
+    [meId, myPages],
+  );
 
   const setParam = useCallback(
     (patch: Record<string, string | null>) => {
@@ -107,6 +118,7 @@ export function TaskList({
   const filtered = useMemo(() => {
     return tasks.filter((t) => {
       if (!showClosed && !status && ['완료', '드롭'].includes(statusKind(t.status, statuses) ?? '')) return false;
+      if (mine && !isMine(t)) return false;
       if (assignee === 'none' ? t.assignee_id !== null : assignee && t.assignee_id !== assignee) return false;
       if (status && t.status !== status) return false;
       if (due === 'none' && t.due_date) return false;
@@ -115,7 +127,7 @@ export function TaskList({
       if (due === 'week' && !(t.due_date && t.due_date >= today && t.due_date <= addDays(today, 7))) return false;
       return true;
     });
-  }, [tasks, assignee, status, due, showClosed, today, statuses]);
+  }, [tasks, assignee, status, due, showClosed, today, statuses, mine, isMine]);
 
   const changeStatus = async (id: string, next: string) => {
     const before = tasks.find((t) => t.id === id);
@@ -182,13 +194,13 @@ export function TaskList({
         {meId && (
           <button
             type="button"
-            onClick={() => setParam({ assignee: assignee === meId ? null : meId })}
+            onClick={() => setParam({ mine: mine ? null : '1' })}
             className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
-              assignee === meId
+              mine
                 ? 'border-zinc-900 bg-zinc-900 text-white'
                 : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'
             }`}
-            title="내가 담당인 업무만 보기"
+            title="내가 담당이거나 참여자로 들어가 있는 업무만 보기"
           >
             내 업무만
           </button>
@@ -224,10 +236,10 @@ export function TaskList({
           </label>
         )}
         {canManageStatuses && <StatusManager statuses={statuses} />}
-        {(assignee || status || due !== 'all' || showClosed) && (
+        {(assignee || status || due !== 'all' || showClosed || mine) && (
           <button
             type="button"
-            onClick={() => setParam({ assignee: null, status: null, due: null, closed: null })}
+            onClick={() => setParam({ assignee: null, status: null, due: null, closed: null, mine: null })}
             className="text-xs text-zinc-400 underline hover:text-zinc-700 dark:hover:text-zinc-200"
           >
             초기화
@@ -237,7 +249,7 @@ export function TaskList({
 
       <div className="mt-4">
         {view === 'table' ? (
-          <TaskTable rows={filtered} today={today} statuses={statuses} onStatus={changeStatus} />
+          <TaskTable rows={filtered} today={today} statuses={statuses} onStatus={changeStatus} isMine={isMine} meId={meId} />
         ) : view === 'timeline' ? (
           <TaskTimeline rows={filtered} today={today} units={units} statuses={statuses} />
         ) : (
@@ -263,11 +275,15 @@ function TaskTable({
   today,
   statuses,
   onStatus,
+  isMine,
+  meId,
 }: {
   rows: TaskRow[];
   today: string;
   statuses: StatusRow[];
   onStatus: (id: string, s: string) => void;
+  isMine: (t: TaskRow) => boolean;
+  meId?: string;
 }) {
   if (rows.length === 0) {
     return <p className="py-16 text-center text-sm text-zinc-400">조건에 맞는 업무가 없습니다.</p>;
@@ -290,9 +306,19 @@ function TaskTable({
           {rows.map((t) => (
             <tr key={t.id} className="border-t border-zinc-100 hover:bg-zinc-50 dark:border-zinc-800 dark:hover:bg-zinc-900/60">
               <td className="max-w-md px-3 py-2">
-                <Link href={`/p/${t.id}`} className="block truncate hover:underline">
-                  {t.icon ?? '☑'} {t.title}
-                </Link>
+                <span className="flex items-center gap-1.5">
+                  <Link href={`/p/${t.id}`} className="min-w-0 flex-1 truncate hover:underline">
+                    {t.icon ?? '☑'} {t.title}
+                  </Link>
+                  {meId && t.assignee_id !== meId && isMine(t) && (
+                    <span
+                      className="shrink-0 rounded bg-zinc-100 px-1.5 py-0.5 text-[10px] text-zinc-500 dark:bg-zinc-800"
+                      title="담당자는 다른 분이고, 나는 참여자입니다"
+                    >
+                      참여
+                    </span>
+                  )}
+                </span>
               </td>
               <td className="px-3 py-2">
                 <select
