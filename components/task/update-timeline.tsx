@@ -171,7 +171,7 @@ export function UpdateTimeline({
             <button
               type="submit"
               disabled={saving || !text.trim()}
-              className="shrink-0 rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40"
+              className="shrink-0 rounded-md btn-primary px-3 py-1 text-xs font-medium disabled:opacity-40"
             >
               남기기
             </button>
@@ -267,7 +267,7 @@ function ReplyInput({ onSubmit, onCancel }: { onSubmit: (v: string) => void; onC
         placeholder="답글…"
         className="min-w-0 flex-1 rounded-md border border-zinc-200 px-2 py-1 text-sm outline-none focus:border-zinc-400"
       />
-      <button type="submit" disabled={!v.trim()} className="rounded-md bg-zinc-900 px-2 py-1 text-[11px] font-medium text-white disabled:opacity-40">
+      <button type="submit" disabled={!v.trim()} className="rounded-md btn-primary px-2 py-1 text-[11px] font-medium disabled:opacity-40">
         답글
       </button>
       <button type="button" onClick={onCancel} className="rounded-md px-1.5 py-1 text-[11px] text-zinc-400 hover:bg-zinc-100">

@@ -37,7 +37,7 @@ export default async function SearchPage({ searchParams }: { searchParams: Promi
           placeholder="제목·본문에서 찾기"
           className="w-full rounded-lg border border-zinc-300 px-4 py-2.5 text-base outline-none focus:border-zinc-500"
         />
-        <button type="submit" className="rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-medium text-white">검색</button>
+        <button type="submit" className="btn-primary rounded-lg px-4 py-2.5 text-sm font-medium">검색</button>
       </form>
 
       {error && <p className="mt-4 text-sm text-red-600">검색 실패: {error.message}</p>}

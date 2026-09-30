@@ -260,7 +260,7 @@ export function CollectionView({
                 setPeriod(p.v);
                 setQuery(unit, p.v);
               }}
-              className={`rounded px-2 py-0.5 text-xs ${period === p.v ? 'bg-zinc-900 text-white' : 'text-zinc-600 hover:bg-zinc-100'}`}
+              className={`rounded px-2 py-0.5 text-xs ${period === p.v ? 'btn-primary' : 'text-zinc-600 hover:bg-zinc-100'}`}
             >
               {p.label}
             </button>
@@ -279,7 +279,7 @@ export function CollectionView({
           type="button"
           disabled={busy || filtered.length === 0}
           onClick={() => void mergeIntoPage()}
-          className="rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40"
+          className="rounded-md btn-primary px-3 py-1 text-xs font-medium disabled:opacity-40"
           title="필터된 페이지들을 이어 붙인 새 페이지를 만듭니다 (원본은 그대로)"
         >
           {busy ? '합치는 중…' : '한 페이지로 합치기'}

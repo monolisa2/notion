@@ -85,7 +85,7 @@ export default async function WeeklyPage({ searchParams }: { searchParams: Promi
             <Link
               key={d}
               href={d === 7 ? '/weekly' : `/weekly?days=${d}`}
-              className={`rounded px-2.5 py-1 ${days === d ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-100'}`}
+              className={`rounded px-2.5 py-1 ${days === d ? 'btn-primary' : 'text-zinc-500 hover:bg-zinc-100'}`}
             >
               {d}일
             </Link>

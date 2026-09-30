@@ -170,6 +170,8 @@ body {
 .btn-primary {
   background-color: var(--btn-bg);
   color: var(--btn-fg);
+  /* border 를 함께 쓰는 버튼(홈 CTA·기한 칩)이 있어 테두리도 같은 색으로 */
+  border-color: var(--btn-bg);
 }
 .btn-primary:hover:not(:disabled) {
   background-color: var(--btn-bg-hover);

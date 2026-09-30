@@ -235,7 +235,7 @@ async function GuideLink() {
   return (
     <Link
       href={`/p/${data.id}`}
-      className="mt-3 inline-flex items-center gap-1.5 rounded-lg border border-zinc-900 bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700"
+      className="mt-3 inline-flex items-center gap-1.5 rounded-lg border btn-primary px-3 py-1.5 text-xs font-medium"
     >
       📖 팀허브 3분 사용법 읽기
     </Link>

@@ -134,7 +134,7 @@ export function PageHistory({
                 type="button"
                 disabled={busy}
                 onClick={() => void restore(selected)}
-                className="shrink-0 rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
+                className="shrink-0 rounded-md btn-primary px-3 py-1 text-xs font-medium disabled:opacity-50"
               >
                 이 내용으로 되돌리기
               </button>

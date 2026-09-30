@@ -14,7 +14,7 @@ export default function AppError({ error, reset }: { error: Error & { digest?: s
       <button
         type="button"
         onClick={() => reset()}
-        className="mt-2 rounded-md bg-zinc-900 px-4 py-1.5 text-sm font-medium text-white hover:bg-zinc-700"
+        className="mt-2 rounded-md btn-primary px-4 py-1.5 text-sm font-medium"
       >
         다시 시도
       </button>

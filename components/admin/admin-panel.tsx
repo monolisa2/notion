@@ -117,7 +117,7 @@ export function AdminPanel({
               key={t}
               type="button"
               onClick={() => setTab(t)}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium ${tab === t ? 'bg-zinc-900 text-white' : 'text-zinc-500 hover:bg-zinc-100'}`}
+              className={`rounded-md px-4 py-1.5 text-sm font-medium ${tab === t ? 'btn-primary' : 'text-zinc-500 hover:bg-zinc-100'}`}
             >
               {t === 'members' ? `👥 멤버 관리 (${members.filter((m) => !m.deactivated_at).length})` : `🏢 조직도 관리 (${units.length})`}
             </button>
@@ -742,7 +742,7 @@ function OrgTab({
               </button>
               <button
                 type="button"
-                className="rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700"
+                className="rounded-md btn-primary px-3 py-1 text-xs font-medium"
                 onClick={() => {
                   const unitId = editingWriters;
                   setEditingWriters(null);

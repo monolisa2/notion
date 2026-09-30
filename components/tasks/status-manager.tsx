@@ -201,7 +201,7 @@ export function StatusManager({ statuses }: { statuses: StatusRow[] }) {
                   </option>
                 ))}
               </select>
-              <button type="submit" disabled={busy || !newName.trim()} className="ml-auto rounded-md bg-zinc-900 px-2.5 py-1 text-xs font-medium text-white disabled:opacity-40">
+              <button type="submit" disabled={busy || !newName.trim()} className="ml-auto rounded-md btn-primary px-2.5 py-1 text-xs font-medium disabled:opacity-40">
                 추가
               </button>
             </form>

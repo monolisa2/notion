@@ -203,7 +203,7 @@ export function TaskList({
             onClick={() => setParam({ mine: mine ? null : '1' })}
             className={`rounded-md border px-2.5 py-1 text-xs font-medium ${
               mine
-                ? 'border-zinc-900 bg-zinc-900 text-white'
+                ? 'btn-primary'
                 : 'border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50'
             }`}
             title="내가 담당이거나 참여자로 들어가 있는 업무만 보기"

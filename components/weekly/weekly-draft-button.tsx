@@ -150,7 +150,7 @@ export function WeeklyDraftButton({
       type="button"
       disabled={busy || rows.length === 0}
       onClick={() => void create()}
-      className="rounded-md bg-zinc-900 px-3 py-1.5 text-xs font-medium text-white hover:bg-zinc-700 disabled:opacity-40"
+      className="rounded-md btn-primary px-3 py-1.5 text-xs font-medium disabled:opacity-40"
       title={rows.length === 0 ? '모을 로그가 없습니다' : '이 화면의 로그로 주간 정리 페이지 초안을 만듭니다'}
     >
       📝 주간 정리 초안 만들기

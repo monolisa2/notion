@@ -319,7 +319,7 @@ export function PropertyBar({
       <button
         type="button"
         onClick={() => openLog(page.id)}
-        className="ml-auto shrink-0 rounded-md bg-zinc-900 px-3 py-1 text-xs font-medium text-white hover:bg-zinc-700"
+        className="ml-auto shrink-0 rounded-md btn-primary px-3 py-1 text-xs font-medium"
       >
         진행 기록 <kbd className="ml-1 opacity-60">⌃⇧L</kbd>
       </button>

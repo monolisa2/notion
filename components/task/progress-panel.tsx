@@ -140,7 +140,7 @@ export function ProgressPanel({
       <button
         type="button"
         onClick={() => openLog(page.id)}
-        className="fixed bottom-4 right-4 z-30 rounded-full bg-zinc-900 px-4 py-3 text-sm font-medium text-white shadow-lg md:hidden"
+        className="fixed bottom-4 right-4 z-30 rounded-full btn-primary px-4 py-3 text-sm font-medium shadow-lg md:hidden"
       >
         ✏️ 진행 기록
       </button>
